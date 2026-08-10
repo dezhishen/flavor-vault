@@ -1,0 +1,72 @@
+{
+  "id": "ma-po-dou-fu",
+  "name": "麻婆豆腐",
+  "description": "麻辣鲜香的川味名菜，豆腐嫩滑入味。",
+  "tags": [
+    "热菜",
+    "川菜",
+    "下饭菜"
+  ],
+  "kitchenware": [
+    "炒锅"
+  ],
+  "ingredients": {
+    "main": [
+      {
+        "name": "嫩豆腐",
+        "amount": "400g"
+      },
+      {
+        "name": "牛肉末",
+        "amount": "100g"
+      }
+    ],
+    "side": [
+      {
+        "name": "豆瓣酱",
+        "amount": "1勺"
+      },
+      {
+        "name": "花椒粉",
+        "amount": "1小勺"
+      },
+      {
+        "name": "蒜苗",
+        "amount": "2根"
+      },
+      {
+        "name": "淀粉",
+        "amount": "适量"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "order": 1,
+      "description": "豆腐切块，盐水焯烫后沥干。"
+    },
+    {
+      "order": 2,
+      "description": "炒锅下油，煸炒牛肉末至酥香。"
+    },
+    {
+      "order": 3,
+      "description": "下豆瓣酱炒出红油，加适量水烧开。"
+    },
+    {
+      "order": 4,
+      "description": "下豆腐小火煮 3 分钟，勾芡撒花椒粉和蒜苗。"
+    }
+  ],
+  "media": {
+    "cover": "images/ma-po-dou-fu.jpg",
+    "images": null
+  },
+  "stats": {
+    "prep_time": 10,
+    "cook_time": 15,
+    "difficulty": 2
+  },
+  "created_at": "2026-08-10T20:26:16.689547303+08:00",
+  "updated_at": "2026-08-10T20:26:16.690070835+08:00"
+}

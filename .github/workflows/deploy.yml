@@ -1,0 +1,68 @@
+name: Deploy to GitHub Pages & Release
+
+on:
+  push:
+    branches: [main, master]
+    # 发版：推送 v* tag（如 v1.0.0）时基于该 tag 创建 Release
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build CLI
+        run: |
+          go build -o fv ./cmd/fv
+          mkdir -p release && cp fv release/fv-linux-amd64
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd web
+          npm install --frozen-lockfile
+
+      - name: Build Vue frontend
+        run: |
+          cd web
+          npm run build
+
+      - name: Run ETL pipeline
+        # fv build 会将 web/dist 前端产物合并到根 dist
+        run: ./fv build --force
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          force_orphan: true
+
+      # 发版：仅在推送 v* tag 时，基于该 tag 创建 GitHub Release
+      - name: Create Release (v* tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            release/fv-linux-amd64
+            dist/data/ai-corpus.json
