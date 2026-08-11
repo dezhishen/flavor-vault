@@ -112,7 +112,8 @@ func newAddCmd() *cobra.Command {
 	return cmd
 }
 
-// promptAddRecipe 交互式收集菜谱字段，使用 draft 中的值作为默认值
+// promptAddRecipe 交互式收集菜谱字段，使用 draft 中的值作为默认值。
+// 支持多版本：先收集默认版本，再询问是否添加其他版本（多做法/口味）。
 func promptAddRecipe(reader *bufio.Reader, cfg *models.Config, projectRoot string, draft *models.Recipe) (*models.Recipe, error) {
 	r := &models.Recipe{}
 	if draft != nil {
@@ -152,47 +153,106 @@ func promptAddRecipe(reader *bufio.Reader, cfg *models.Config, projectRoot strin
 		r.Kitchenware = kw
 	}
 
+	// 默认版本内容（草稿有 versions 则基于第一个版本）
+	var versions []*models.Version
+	if len(r.Versions) > 0 {
+		versions = []*models.Version{&r.Versions[0]}
+	} else {
+		versions = []*models.Version{{
+			Ingredients: r.Ingredients,
+			Seasonings:  r.Seasonings,
+			Steps:       r.Steps,
+			Stats:       r.Stats,
+		}}
+	}
+	if err := promptVersion(reader, cfg, projectRoot, r.Name, "", versions[0]); err != nil {
+		return nil, err
+	}
+
+	// 其他版本（多做法/口味）
+	moreVersions, _ := promptBool(reader, "添加其他版本（多做法/口味，如 少油版/免辣版）?", len(r.Versions) > 1)
+	for moreVersions {
+		vName, _ := prompt(reader, "版本名（如 少油版；回车留空）", "")
+		v := &models.Version{Name: strings.TrimSpace(vName)}
+		if err := promptVersion(reader, cfg, projectRoot, r.Name, v.Name, v); err != nil {
+			return nil, err
+		}
+		versions = append(versions, v)
+		moreVersions, _ = promptBool(reader, "继续添加版本?", false)
+	}
+
+	if len(versions) > 1 {
+		// 多版本 → 写入 versions，顶层内容清空
+		r.Versions = make([]models.Version, 0, len(versions))
+		for _, v := range versions {
+			r.Versions = append(r.Versions, *v)
+		}
+		r.Ingredients = models.Ingredients{}
+		r.Seasonings = nil
+		r.Steps = nil
+		r.Stats = models.Stats{}
+	} else {
+		// 单版本 → 保留顶层结构（默认版本）
+		r.Versions = nil
+		r.Ingredients = versions[0].Ingredients
+		r.Seasonings = versions[0].Seasonings
+		r.Steps = versions[0].Steps
+		r.Stats = versions[0].Stats
+	}
+
+	id, _ := prompt(reader, "ID（回车自动生成）", r.ID)
+	if id != "" {
+		r.ID = id
+	}
+	return r, nil
+}
+
+// promptVersion 交互式收集一个版本的内容（食材/调料/步骤/统计）
+func promptVersion(reader *bufio.Reader, cfg *models.Config, projectRoot, recipeName, versionName string, v *models.Version) error {
+	if versionName != "" {
+		fmt.Fprintf(os.Stderr, "\n—— 版本[%s] ——\n", versionName)
+	}
 	// 主要食材
-	if len(r.Ingredients.Main) == 0 {
+	if len(v.Ingredients.Main) == 0 {
 		for {
-			more, _ := promptBool(reader, "添加主要食材?", len(r.Ingredients.Main) == 0)
+			more, _ := promptBool(reader, "添加主要食材?", len(v.Ingredients.Main) == 0)
 			if !more {
 				break
 			}
 			ing, err := promptIngredient(reader, "主要")
 			if err != nil {
-				return nil, err
+				return err
 			}
-			r.Ingredients.Main = append(r.Ingredients.Main, ing)
+			v.Ingredients.Main = append(v.Ingredients.Main, ing)
 		}
 	} else {
 		fmt.Fprintln(os.Stderr, "ℹ 主要食材已存在（来自草稿），如需修改请用 --json 或 fv edit")
 	}
 
 	// 配菜/辅料
-	moreSide, _ := promptBool(reader, "添加配菜/辅料?", len(r.Ingredients.Side) > 0)
+	moreSide, _ := promptBool(reader, "添加配菜/辅料?", len(v.Ingredients.Side) > 0)
 	for moreSide {
 		ing, err := promptIngredient(reader, "辅料")
 		if err != nil {
-			return nil, err
+			return err
 		}
-		r.Ingredients.Side = append(r.Ingredients.Side, ing)
+		v.Ingredients.Side = append(v.Ingredients.Side, ing)
 		moreSide, _ = promptBool(reader, "继续添加辅料?", false)
 	}
 
 	// 非必须（可选）食材
-	moreOpt, _ := promptBool(reader, "添加非必须（可选）食材?", len(r.Ingredients.Optional) > 0)
+	moreOpt, _ := promptBool(reader, "添加非必须（可选）食材?", len(v.Ingredients.Optional) > 0)
 	for moreOpt {
 		ing, err := promptIngredient(reader, "可选")
 		if err != nil {
-			return nil, err
+			return err
 		}
-		r.Ingredients.Optional = append(r.Ingredients.Optional, ing)
+		v.Ingredients.Optional = append(v.Ingredients.Optional, ing)
 		moreOpt, _ = promptBool(reader, "继续添加可选食材?", false)
 	}
 
 	// 调料（方案一 + 备选方案二/三…，如 香葱 / 香菜）
-	moreSeas, _ := promptBool(reader, "添加调料?", len(r.Seasonings) > 0)
+	moreSeas, _ := promptBool(reader, "添加调料?", len(v.Seasonings) > 0)
 	for moreSeas {
 		seasName, _ := prompt(reader, "调料名称（方案一，如 香葱）", "")
 		if strings.TrimSpace(seasName) == "" {
@@ -210,17 +270,17 @@ func promptAddRecipe(reader *bufio.Reader, cfg *models.Config, projectRoot strin
 			seas.Alternatives = append(seas.Alternatives, models.SeasoningOption{Name: strings.TrimSpace(altName), Amount: strings.TrimSpace(altAmount)})
 			moreAlt, _ = promptBool(reader, "再添加备选方案（方案三）?", false)
 		}
-		r.Seasonings = append(r.Seasonings, seas)
+		v.Seasonings = append(v.Seasonings, seas)
 		moreSeas, _ = promptBool(reader, "继续添加调料?", false)
 	}
 
 	// 步骤（自然语言：第一步/第二步…，每步之间可插图片）
-	if len(r.Steps) == 0 {
+	if len(v.Steps) == 0 {
 		for {
-			n := len(r.Steps) + 1
+			n := len(v.Steps) + 1
 			desc, err := prompt(reader, fmt.Sprintf("第 %d 步做什么？（直接回车结束步骤）", n), "")
 			if err != nil {
-				return nil, err
+				return err
 			}
 			if strings.TrimSpace(desc) == "" {
 				break
@@ -228,31 +288,26 @@ func promptAddRecipe(reader *bufio.Reader, cfg *models.Config, projectRoot strin
 			img, _ := prompt(reader, fmt.Sprintf("第 %d 步配图（本地路径将复制到 assets / 图片URL，回车跳过）", n), "")
 			imgRef := ""
 			if strings.TrimSpace(img) != "" {
-				ref, err := resolveStepImage(projectRoot, cfg, r.Name, n, strings.TrimSpace(img))
+				ref, err := resolveStepImage(projectRoot, cfg, recipeName, n, strings.TrimSpace(img))
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "⚠ 配图失败（已跳过）: %v\n", err)
 				} else {
 					imgRef = ref
 				}
 			}
-			r.Steps = append(r.Steps, models.Step{Order: n, Description: desc, ImageRef: imgRef})
+			v.Steps = append(v.Steps, models.Step{Order: n, Description: desc, ImageRef: imgRef})
 		}
 	} else {
 		fmt.Fprintln(os.Stderr, "ℹ 步骤已存在（来自草稿），如需修改请用 --json 或 fv edit")
 	}
 
-	prepTime, _ := promptInt(reader, "准备时间(分钟)", orDefault(r.Stats.PrepTime, 10))
-	cookTime, _ := promptInt(reader, "烹饪时间(分钟)", orDefault(r.Stats.CookTime, 15))
-	difficulty, _ := promptInt(reader, "难度(1-5)", defaultDifficulty(r.Stats.Difficulty))
-	r.Stats.PrepTime = prepTime
-	r.Stats.CookTime = cookTime
-	r.Stats.Difficulty = difficulty
-
-	id, _ := prompt(reader, "ID（回车自动生成）", r.ID)
-	if id != "" {
-		r.ID = id
-	}
-	return r, nil
+	prepTime, _ := promptInt(reader, "准备时间(分钟)", orDefault(v.Stats.PrepTime, 10))
+	cookTime, _ := promptInt(reader, "烹饪时间(分钟)", orDefault(v.Stats.CookTime, 15))
+	difficulty, _ := promptInt(reader, "难度(1-5)", defaultDifficulty(v.Stats.Difficulty))
+	v.Stats.PrepTime = prepTime
+	v.Stats.CookTime = cookTime
+	v.Stats.Difficulty = difficulty
+	return nil
 }
 
 func defaultDifficulty(d int) int {

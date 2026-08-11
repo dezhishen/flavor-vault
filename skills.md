@@ -152,11 +152,14 @@ fv list -c "$CONFIG"
 fv search 红烧 -c "$CONFIG"
 fv show <id> -c "$CONFIG"
 
-# 2. 新增菜谱（先构造合法 JSON：name/ingredients.main/steps/stats.difficulty 1-5 必填）
+# 2. 新增菜谱（先构造合法 JSON：name + 每版本 ingredients.main/steps/stats.difficulty 1-5 必填）
 export GITHUB_TOKEN=ghp_xxx
-fv add -c "$CONFIG" --repo <owner>/<repo> --branch recipes --json '{"name":"...", ...}'
+# 单版本（顶层字段即默认版本）
+fv add -c "$CONFIG" --repo <owner>/<repo> --branch recipes --json '{"name":"...", "ingredients":{"main":[{"name":"材料","amount":"1"}]}, "steps":[{"order":1,"description":"做"}], "stats":{"prep_time":10,"cook_time":20,"difficulty":2}}'
+# 多版本（versions 数组；或交互式 fv add 时选择“添加其他版本”逐个录入）
+fv add -c "$CONFIG" --repo <owner>/<repo> --branch recipes --json '{"name":"...", "versions":[{"name":"经典版","ingredients":{"main":[{"name":"五花肉","amount":"500g"}]},"steps":[{"order":1,"description":"焯水"}],"stats":{"difficulty":3}},{"name":"少油版","ingredients":{"main":[{"name":"白萝卜","amount":"1根"}]},"steps":[{"order":1,"description":"煎"}],"stats":{"difficulty":2}}]}'
 
-# 3. 编辑（补丁式）
+# 3. 编辑（补丁式；多版本菜谱默认编辑第一个版本，补丁含 versions 则整体替换）
 fv edit -c "$CONFIG" <id> --repo <owner>/<repo> --branch recipes --json '{"stats":{"difficulty":4}}'
 
 # 4. 删除
@@ -169,4 +172,4 @@ fv update --check
 fv build --force --output ./dist --asset-dir .flavor-vault/assets --ai-snapshot --endpoint <url>
 ```
 
-> 校验规则：`name` 非空、`ingredients.main` 至少一项、`steps` 至少一步、`difficulty` 1–5。失败会提示并用 `--action-id` 缓存草稿供修正后重试。
+> 校验规则：`name` 非空；每个版本需 `ingredients.main` 至少一项、`steps` 至少一步、`difficulty` 1–5；调料与备选方案需有 `name`。失败会提示并用 `--action-id` 缓存草稿供修正后重试。

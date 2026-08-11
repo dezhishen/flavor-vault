@@ -10,7 +10,7 @@ import (
 	"flavor-vault/internal/plugins"
 )
 
-var version = "0.1.0"
+var version = "0.0.3"
 
 // NewRootCommand 创建根命令
 func NewRootCommand() *cobra.Command {

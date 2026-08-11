@@ -54,6 +54,8 @@ fv init --github --repo <owner>/<repo>     # 非交互：一并配置编辑仓�
 | **只读** | 查询菜谱 | 无需配置（默认端点 `https://fv.sdniu.top/data`；本地有 `dist/data` 时读本地） |
 | **读写** | 新增/编辑/删除菜谱 | `GITHUB_TOKEN` + `--repo owner/repo` + `--branch recipes`（或写入配置） |
 
+**多版本**：同一道菜可含多个 `versions`（每版本独立食材/调料/步骤/统计）。`fv add` 交互式选择“添加其他版本”逐个录入，或用 `--json` 直接提供 `versions` 数组；`fv edit --json` 默认编辑第一个版本（补丁含 `versions` 则整体替换）。版本内食材分 `main`（必选）/`side`（配菜）/`optional`（非必须），调料 `seasonings[].alternatives` 为备选方案（如香菜代替香葱）。
+
 > **AI 助手（OpenClaw 等）请统一 `fv init` 生成配置，所有命令显式 `-c ~/.flavor-vault/config.yaml`**，不要依赖工作目录自动查找。
 
 ```bash
