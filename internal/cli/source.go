@@ -13,98 +13,124 @@ import (
 	"flavor-vault/internal/vault"
 )
 
-// newSourceCmd 管理外部菜谱数据源（引用本项目外部的菜谱仓库）
+// newSourceCmd 管理唯一菜谱数据源（GitHub，与代码隔离）。
+// CLI 的增删改/推送只作用于该数据源，绝不写入程序代码所在分支。
 func newSourceCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "source",
-		Short: "管理外部菜谱数据源（引用其他仓库的菜谱，维护者聚合/使用者浏览）",
+		Short: "管理唯一菜谱数据源（GitHub；维护者配置，CLI 只操作该数据源，不触碰代码分支）",
 	}
 	cmd.AddCommand(
-		newSourceAddCmd(),
-		newSourceListCmd(),
-		newSourceRemoveCmd(),
+		newSourceShowCmd(),
+		newSourceSetCmd(),
 		newSourcePullCmd(),
+		newSourceRemoveCmd(),
 	)
 	return cmd
 }
 
-// allRecipeDirs 返回构建/查找用到的全部菜谱目录：本地 + 已克隆的外部数据源
+// allRecipeDirs 返回构建/查找用到的全部菜谱目录：唯一数据源的检出目录
 func allRecipeDirs(cfg *models.Config, projectRoot string) []string {
-	dirs := []string{recipesDir(cfg, projectRoot)}
-	for _, s := range cfg.Sources {
-		name := strings.TrimSpace(s.Name)
-		if name == "" {
-			continue
-		}
-		d := vault.SourceRecipesDir(projectRoot, name)
-		if _, err := os.Stat(d); err == nil {
-			dirs = append(dirs, d)
-		}
-	}
-	return dirs
+	return []string{recipesDir(cfg, projectRoot)}
 }
 
-func newSourceAddCmd() *cobra.Command {
-	var branch string
-	cmd := &cobra.Command{
-		Use:   "add <name> <repo-url>",
-		Short: "添加外部菜谱数据源（git 仓库 URL）",
-		Args:  cobra.ExactArgs(2),
-		Example: `  fv source add community git@github.com:someone/recipes.git
-  fv source add community https://github.com/someone/recipes.git --branch main`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, projectRoot, cfgPath, err := loadProjectConfig(cmd)
-			if err != nil {
-				return err
-			}
-			name := strings.TrimSpace(args[0])
-			if name == "" {
-				return fmt.Errorf("数据源名称不能为空")
-			}
-			for _, s := range cfg.Sources {
-				if s.Name == name {
-					return fmt.Errorf("数据源 %q 已存在（可用 fv source remove 移除后重加）", name)
-				}
-			}
-			if branch == "" {
-				branch = "recipes"
-			}
-			cfg.Sources = append(cfg.Sources, models.SourceConfig{Name: name, Repo: args[1], Branch: branch})
-			if err := vault.SaveConfigAt(cfgPath, cfg); err != nil {
-				return err
-			}
-			_ = projectRoot
-			fmt.Fprintf(cmd.OutOrStdout(), "✔ 已添加数据源 %s -> %s（分支 %s）\n", name, args[1], branch)
-			fmt.Fprintln(cmd.OutOrStdout(), "  运行 fv source pull 拉取菜谱，fv build 合并构建。")
-			return nil
-		},
-	}
-	cmd.Flags().StringVar(&branch, "branch", "recipes", "外部仓库的菜谱分支（默认 recipes）")
-	return cmd
-}
-
-func newSourceListCmd() *cobra.Command {
+func newSourceShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "list",
-		Short: "列出已配置的外部菜谱数据源",
+		Use:   "show",
+		Short: "显示菜谱数据源与 endpoint 配置",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, projectRoot, _, err := loadProjectConfig(cmd)
 			if err != nil {
 				return err
 			}
-			if len(cfg.Sources) == 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), "(未配置外部数据源，运行 fv source add <name> <url> 添加)")
-				return nil
-			}
-			fmt.Fprintln(cmd.OutOrStdout(), "外部菜谱数据源:")
-			for _, s := range cfg.Sources {
-				dir := vault.SourceCloneDir(projectRoot, s.Name)
-				status := "未拉取"
-				if _, err := os.Stat(dir); err == nil {
-					status = "已拉取"
+			repo := strings.TrimSpace(cfg.Source.Repo)
+			branch := strings.TrimSpace(cfg.Source.Branch)
+			if cfg.Maintainer() {
+				if repo == "" {
+					repo = "（当前仓库）"
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "  %-16s %-8s 分支 %-10s %s\n", s.Name, status, s.Branch, s.Repo)
+				fmt.Fprintf(cmd.OutOrStdout(), "菜谱数据源: %s（分支 %s）\n", repo, orDash(branch))
+				status := "未检出"
+				if _, err := os.Stat(vault.RecipesWorktree(projectRoot)); err == nil {
+					status = "已检出（worktree）"
+				} else if _, err := os.Stat(vault.SourceDir(projectRoot)); err == nil {
+					status = "已检出（.flavor-vault/source）"
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "本地检出: %s\n", status)
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), "菜谱数据源: 未配置（使用者模式，通过 endpoint 读取）")
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "endpoint: %s\n", orDash(cfg.Endpoint))
+			fmt.Fprintln(cmd.OutOrStdout(), "  （未配置时使用默认：本地 dist/data；构建时可用 FV_ENDPOINT 注入实际部署地址）")
+			return nil
+		},
+	}
+}
+
+func newSourceSetCmd() *cobra.Command {
+	var (
+		sameRepo bool
+		branch   string
+	)
+	cmd := &cobra.Command{
+		Use:   "set [repo]",
+		Short: "配置唯一菜谱数据源（GitHub 仓库；--same-repo 表示当前仓库的独立数据分支）",
+		Example: `  fv source set --same-repo --branch recipes   # 当前仓库的 recipes 分支作为数据源
+  fv source set owner/recipes --branch recipes # 独立仓库作为数据源
+  fv source pull                                # 检出/更新数据源到本地`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, _, cfgPath, err := loadProjectConfig(cmd)
+			if err != nil {
+				return err
+			}
+			repo := ""
+			if len(args) == 1 {
+				repo = strings.TrimSpace(args[0])
+			}
+			if sameRepo {
+				repo = ""
+			}
+			if repo == "" && strings.TrimSpace(cfg.Source.Repo) == "" && branch == "" && !sameRepo {
+				return fmt.Errorf("请提供数据源仓库（如 owner/recipes）或 --same-repo")
+			}
+			if branch == "" {
+				branch = "recipes"
+			}
+			cfg.Source = models.SourceConfig{Repo: repo, Branch: branch}
+			if err := vault.SaveConfigAt(cfgPath, cfg); err != nil {
+				return err
+			}
+			if repo == "" {
+				fmt.Fprintf(cmd.OutOrStdout(), "✔ 已配置数据源：当前仓库 %s 分支\n", branch)
+			} else {
+				fmt.Fprintf(cmd.OutOrStdout(), "✔ 已配置数据源：%s（分支 %s）\n", repo, branch)
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), "  运行 fv source pull 检出到本地，之后 fv add / fv build / fv gh push 均只作用于该数据源。")
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&sameRepo, "same-repo", false, "使用当前仓库的独立数据分支（repo 留空）")
+	cmd.Flags().StringVar(&branch, "branch", "", "数据源分支（默认 recipes）")
+	return cmd
+}
+
+func newSourcePullCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "pull",
+		Short: "检出/更新菜谱数据源到本地（.flavor-vault/source 或 .recipes worktree）",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, projectRoot, _, err := loadProjectConfig(cmd)
+			if err != nil {
+				return err
+			}
+			if !cfg.Maintainer() {
+				return fmt.Errorf("未配置菜谱数据源，先运行 fv source set <repo>（或 --same-repo）")
+			}
+			if err := pullSource(cmd, projectRoot, cfg); err != nil {
+				return err
 			}
 			return nil
 		},
@@ -113,110 +139,78 @@ func newSourceListCmd() *cobra.Command {
 
 func newSourceRemoveCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "remove <name>",
-		Short: "移除外部菜谱数据源（可保留已克隆的数据）",
-		Args:  cobra.ExactArgs(1),
+		Use:   "remove",
+		Short: "移除菜谱数据源配置（保留本地检出）",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, _, cfgPath, err := loadProjectConfig(cmd)
 			if err != nil {
 				return err
 			}
-			name := args[0]
-			found := false
-			out := cfg.Sources[:0]
-			for _, s := range cfg.Sources {
-				if s.Name == name {
-					found = true
-					continue
-				}
-				out = append(out, s)
+			if !cfg.Maintainer() {
+				return fmt.Errorf("未配置菜谱数据源")
 			}
-			cfg.Sources = out
-			if !found {
-				return fmt.Errorf("数据源 %q 不存在", name)
-			}
+			cfg.Source = models.SourceConfig{}
 			if err := vault.SaveConfigAt(cfgPath, cfg); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "✔ 已移除数据源 %s（本地克隆可手动删除 %s）\n", name, vault.SourceCloneDir(projectRootForRemove(cmd), name))
+			fmt.Fprintln(cmd.OutOrStdout(), "✔ 已移除数据源配置（本地检出可手动删除）")
 			return nil
 		},
 	}
 }
 
-func newSourcePullCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "pull [name...]",
-		Short: "克隆/更新外部菜谱数据源到本地",
-		Args:  cobra.ArbitraryArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, projectRoot, _, err := loadProjectConfig(cmd)
-			if err != nil {
-				return err
-			}
-			if len(cfg.Sources) == 0 {
-				return fmt.Errorf("未配置外部数据源，先运行 fv source add <name> <url>")
-			}
-			want := map[string]bool{}
-			for _, a := range args {
-				want[a] = true
-			}
-			for _, s := range cfg.Sources {
-				if len(want) > 0 && !want[s.Name] {
-					continue
-				}
-				if err := pullSource(projectRoot, s); err != nil {
-					fmt.Fprintf(cmd.ErrOrStderr(), "⚠ 数据源 %s 拉取失败: %v\n", s.Name, err)
-					continue
-				}
-				fmt.Fprintf(cmd.OutOrStdout(), "✔ 数据源 %s 已更新\n", s.Name)
-			}
-			return nil
-		},
-	}
-}
-
-// pullSource 克隆或更新单个外部数据源
-func pullSource(projectRoot string, s models.SourceConfig) error {
-	dir := vault.SourceCloneDir(projectRoot, s.Name)
-	branch := s.Branch
+// pullSource 检出/更新唯一数据源。
+// repo 为空（--same-repo）时用同仓库独立分支的 worktree；否则克隆到 .flavor-vault/source。
+func pullSource(cmd *cobra.Command, projectRoot string, cfg *models.Config) error {
+	repo := strings.TrimSpace(cfg.Source.Repo)
+	branch := strings.TrimSpace(cfg.Source.Branch)
 	if branch == "" {
 		branch = "recipes"
 	}
 	env := append(os.Environ(), "GIT_SSH_COMMAND=ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new")
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err := os.MkdirAll(vault.SourcesDir(projectRoot), 0o755); err != nil {
-			return err
+
+	// 同仓库独立分支：更新 worktree
+	if repo == "" {
+		wt := vault.RecipesWorktree(projectRoot)
+		if _, err := os.Stat(filepath.Join(wt, ".git")); os.IsNotExist(err) {
+			return fmt.Errorf("尚未初始化同仓库数据分支 worktree（%s），请用 fv init --maintain 或 fv source set <repo> 指定独立仓库", wt)
 		}
-		// 先试配置分支，失败则回退默认分支
-		if out, err := gitRunIn(projectRoot, env, "clone", "--branch", branch, "--depth", "1", s.Repo, dir); err != nil {
-			_ = os.RemoveAll(dir)
-			if out2, err2 := gitRunIn(projectRoot, env, "clone", "--depth", "1", s.Repo, dir); err2 != nil {
-				return fmt.Errorf("git clone 失败: %w\n%s\n%s", err2, out, out2)
-			}
+		if out, err := gitRun(wt, env, "pull", "--ff-only"); err != nil {
+			return fmt.Errorf("更新 worktree 失败: %w\n%s", err, out)
 		}
+		fmt.Fprintf(cmd.OutOrStdout(), "✔ 数据源已更新（worktree %s）\n", wt)
 		return nil
 	}
-	// 已有克隆 → 拉取更新
-	if out, err := gitRunIn(dir, env, "pull", "--ff-only"); err != nil {
-		return fmt.Errorf("git pull 失败: %w\n%s", err, out)
+
+	// 独立仓库：克隆/更新到 .flavor-vault/source
+	dir := vault.SourceDir(projectRoot)
+	if _, err := os.Stat(filepath.Join(dir, ".git")); os.IsNotExist(err) {
+		if err := os.MkdirAll(vault.VaultRoot(projectRoot), 0o755); err != nil {
+			return err
+		}
+		if out, err := gitRun(projectRoot, env, "clone", "--branch", branch, "--depth", "1", repo, dir); err != nil {
+			_ = os.RemoveAll(dir)
+			return fmt.Errorf("git clone %s 失败: %w\n%s", repo, err, out)
+		}
+		fmt.Fprintf(cmd.OutOrStdout(), "✔ 已检出数据源 %s -> %s\n", repo, dir)
+		return nil
 	}
+	if out, err := gitRun(dir, env, "checkout", branch); err != nil {
+		return fmt.Errorf("切换分支 %s 失败: %w\n%s", branch, err, out)
+	}
+	if out, err := gitRun(dir, env, "pull", "--ff-only", "origin", branch); err != nil {
+		return fmt.Errorf("更新数据源失败: %w\n%s", err, out)
+	}
+	fmt.Fprintf(cmd.OutOrStdout(), "✔ 数据源已更新 %s（%s）\n", repo, branch)
 	return nil
 }
 
+// gitRunIn 在指定目录执行 git 命令
 func gitRunIn(dir string, env []string, args ...string) (string, error) {
 	c := exec.Command("git", args...)
 	c.Dir = dir
 	c.Env = env
 	out, err := c.CombinedOutput()
 	return string(out), err
-}
-
-// projectRootForRemove 仅用于 remove 命令打印克隆目录（避免多余解析）
-func projectRootForRemove(cmd *cobra.Command) string {
-	root, _, err := resolveProject(cmd)
-	if err != nil {
-		return filepath.Join(".", ".flavor-vault")
-	}
-	return root
 }

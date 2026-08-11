@@ -20,11 +20,14 @@ func newBuildCmd() *cobra.Command {
 		force      bool
 		incremental bool
 		output     string
+		endpoint   string
 	)
 	cmd := &cobra.Command{
 		Use:   "build",
 		Short: "执行 ETL 流水线，生成静态站点",
 		Args:  cobra.NoArgs,
+		Example: `  fv build --force
+  fv build --endpoint https://owner.github.io/repo/data   # 注入默认 endpoint 到 meta.json（也可用 FV_ENDPOINT）`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			start := time.Now()
 
@@ -48,6 +51,7 @@ func newBuildCmd() *cobra.Command {
 
 			ctx := pipeline.NewBuildContext(res.Recipes, cfg, outDir, vault.CacheRoot(projectRoot), cfgPath, force)
 			ctx.AssetDir = vault.ResolveAssetDir(projectRoot, cfg)
+			ctx.Options["endpoint"] = endpoint
 
 			// 注册插件（按依赖顺序）
 			scheduler := pipeline.NewScheduler(cmd.ErrOrStderr())
@@ -82,6 +86,7 @@ func newBuildCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&force, "force", false, "强制重建（忽略缓存）")
 	cmd.Flags().BoolVar(&incremental, "incremental", false, "增量构建（基于缓存自动判断，默认开启）")
 	cmd.Flags().StringVar(&output, "output", "", "覆盖输出目录")
+	cmd.Flags().StringVar(&endpoint, "endpoint", "", "注入默认数据 endpoint 到 meta.json（也可用 FV_ENDPOINT 环境变量）")
 	return cmd
 }
 

@@ -118,20 +118,15 @@ func CacheRoot(projectRoot string) string {
 	return filepath.Join(projectRoot, DirName, CacheDirName)
 }
 
-// SourcesDir 返回外部数据源目录（.flavor-vault/sources）
-func SourcesDir(projectRoot string) string {
-	return filepath.Join(projectRoot, DirName, "sources")
+// SourceDir 返回唯一菜谱数据源的本地检出目录（.flavor-vault/source）
+func SourceDir(projectRoot string) string {
+	return filepath.Join(projectRoot, DirName, "source")
 }
 
-// SourceCloneDir 返回某外部数据源的克隆目录
-func SourceCloneDir(projectRoot, name string) string {
-	return filepath.Join(SourcesDir(projectRoot), name)
-}
-
-// SourceRecipesDir 返回某外部数据源的菜谱目录。
+// SourceRecipesDir 返回数据源检出中的菜谱目录。
 // 兼容两种布局：数据仓库式 .flavor-vault/recipes 或根目录 recipes/。
-func SourceRecipesDir(projectRoot, name string) string {
-	base := SourceCloneDir(projectRoot, name)
+func SourceRecipesDir(projectRoot string) string {
+	base := SourceDir(projectRoot)
 	standard := filepath.Join(base, DirName, RecipesDirName)
 	if info, err := os.Stat(standard); err == nil && info.IsDir() {
 		return standard
@@ -143,37 +138,54 @@ func SourceRecipesDir(projectRoot, name string) string {
 	return standard // 不存在时返回标准路径（加载时会跳过）
 }
 
-// RecipesWorktree 返回菜谱独立分支的本地 worktree 目录（<root>/.recipes）
+// SourceAssetDir 返回数据源检出中的资源目录（默认 .flavor-vault/assets）
+func SourceAssetDir(projectRoot string, cfg *models.Config) string {
+	base := ".flavor-vault/assets"
+	if cfg != nil && strings.TrimSpace(cfg.AssetDir) != "" {
+		base = cfg.AssetDir
+	}
+	return filepath.Join(SourceDir(projectRoot), filepath.FromSlash(base))
+}
+
+// RecipesWorktree 返回同仓库菜谱独立分支的本地 worktree 目录（<root>/.recipes）
 func RecipesWorktree(projectRoot string) string {
 	return filepath.Join(projectRoot, ".recipes")
 }
 
-// ResolveRecipesDir 解析菜谱源目录：
-// 配置了独立菜谱分支且本地 worktree 存在时，返回 worktree 下的菜谱目录；
-// 否则返回默认的 <root>/.flavor-vault/recipes。
+// ResolveRecipesDir 解析菜谱源目录（维护者数据源检出优先）：
+// 1) 同仓库独立分支 worktree（<root>/.recipes）
+// 2) 独立仓库数据源检出（<root>/.flavor-vault/source）
+// 3) 默认 <root>/.flavor-vault/recipes
 func ResolveRecipesDir(projectRoot string, cfg *models.Config) string {
-	if cfg != nil && cfg.GitHub.RecipesBranch != "" {
-		wt := RecipesWorktree(projectRoot)
-		dir := filepath.Join(wt, DirName, RecipesDirName)
-		if info, err := os.Stat(dir); err == nil && info.IsDir() {
-			return dir
+	if cfg != nil && cfg.Maintainer() {
+		wt := filepath.Join(RecipesWorktree(projectRoot), DirName, RecipesDirName)
+		if info, err := os.Stat(wt); err == nil && info.IsDir() {
+			return wt
+		}
+		src := SourceRecipesDir(projectRoot)
+		if info, err := os.Stat(src); err == nil && info.IsDir() {
+			return src
 		}
 	}
 	return RecipesDir(projectRoot)
 }
 
 // ResolveAssetDir 解析图片等资源目录（配置 asset_dir，默认 .flavor-vault/assets）。
-// 独立菜谱分支模式下优先使用 worktree 内的资源目录。
+// 维护者数据源检出优先使用 worktree / source 检出内的资源目录。
 func ResolveAssetDir(projectRoot string, cfg *models.Config) string {
 	base := ".flavor-vault/assets"
 	if cfg != nil && strings.TrimSpace(cfg.AssetDir) != "" {
 		base = cfg.AssetDir
 	}
 	dir := filepath.Join(projectRoot, filepath.FromSlash(base))
-	if cfg != nil && cfg.GitHub.RecipesBranch != "" {
+	if cfg != nil && cfg.Maintainer() {
 		wtDir := filepath.Join(RecipesWorktree(projectRoot), filepath.FromSlash(base))
 		if info, err := os.Stat(wtDir); err == nil && info.IsDir() {
 			return wtDir
+		}
+		srcDir := SourceAssetDir(projectRoot, cfg)
+		if info, err := os.Stat(srcDir); err == nil && info.IsDir() {
+			return srcDir
 		}
 	}
 	return dir

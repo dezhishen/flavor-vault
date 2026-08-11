@@ -119,20 +119,20 @@ func TestResolveRecipesDir(t *testing.T) {
 	// 无独立分支配置 → 默认目录
 	cfg := models.DefaultConfig()
 	if got := ResolveRecipesDir(dir, cfg); got != RecipesDir(dir) {
-		t.Errorf("no recipes_branch: got %s, want %s", got, RecipesDir(dir))
+		t.Errorf("no source: got %s, want %s", got, RecipesDir(dir))
 	}
 	// cfg 为 nil 时同样默认
 	if got := ResolveRecipesDir(dir, nil); got != RecipesDir(dir) {
 		t.Errorf("nil cfg: got %s", got)
 	}
 
-	// 配置了独立分支但 worktree 不存在 → 回退默认
-	cfg.GitHub.RecipesBranch = "recipes"
+	// 配置了数据源但 worktree 不存在 → 回退默认
+	cfg.Source.Branch = "recipes"
 	if got := ResolveRecipesDir(dir, cfg); got != RecipesDir(dir) {
 		t.Errorf("worktree missing: got %s, want %s", got, RecipesDir(dir))
 	}
 
-	// 配置了独立分支且 worktree 存在 → worktree 下的菜谱目录
+	// 配置了数据源且 worktree 存在 → worktree 下的菜谱目录
 	wt := RecipesWorktree(dir)
 	if err := os.MkdirAll(filepath.Join(wt, DirName, RecipesDirName), 0o755); err != nil {
 		t.Fatal(err)

@@ -40,9 +40,9 @@ func newListCmd() *cobra.Command {
 
 			var filtered []*listItem
 
-			// 使用者模式：配置了 endpoint，直接读取部署好的 all.json（与 pages 同一套数据）
-			if data.RemoteEndpoint(cfg) != "" {
-				locator, remote := data.Locator(cfg, projectRoot, "all.json")
+			// 使用者模式：endpoint（或构建时写入 meta 的默认 endpoint）非空 → 读取部署好的 all.json
+			locator, remote := data.Locator(cfg, projectRoot, "all.json")
+			if remote {
 				raw, err := data.ReadJSON(locator, remote)
 				if err != nil {
 					return err
@@ -62,7 +62,7 @@ func newListCmd() *cobra.Command {
 					})
 				}
 			} else {
-				// 维护者模式：读取本地（自有 + 外部数据源）菜谱
+				// 维护者模式：读取本地菜谱数据源
 				res, err := store.LoadAllMulti(allRecipeDirs(cfg, projectRoot), store.LoadOptions{SkipInvalid: true})
 				if err != nil {
 					return err

@@ -92,9 +92,9 @@ func newGhPushCmd() *cobra.Command {
 			ctx := context.Background()
 
 			branch := branchFlag
-			// 单菜谱模式：默认推送到配置的菜谱独立分支
-			if branch == "" && recipeFlag != "" && cfg.GitHub.RecipesBranch != "" {
-				branch = cfg.GitHub.RecipesBranch
+			// 单菜谱模式：默认推送到数据源分支
+			if branch == "" && recipeFlag != "" && strings.TrimSpace(cfg.Source.Branch) != "" {
+				branch = cfg.Source.Branch
 			}
 			if branch == "" {
 				branch = ghc.DefaultBranch(cfg.GitHub.DefaultBranch)

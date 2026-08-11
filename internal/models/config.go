@@ -1,5 +1,7 @@
 package models
 
+import "strings"
+
 // Config 全局配置结构，对应 .flavor-vault/config.yaml
 // 同时标注 yaml 与 mapstructure 标签，确保 Viper 能正确映射 snake_case 键
 type Config struct {
@@ -13,19 +15,26 @@ type Config struct {
 	Plugins map[string]PluginConfig `yaml:"plugins" mapstructure:"plugins"`
 	// 图片等资源目录（相对项目根，默认 .flavor-vault/assets）
 	AssetDir string `yaml:"asset_dir" mapstructure:"asset_dir"`
-	// 外部菜谱数据源（可引用的外部仓库，供维护者聚合 / 使用者浏览）
-	Sources []SourceConfig `yaml:"sources" mapstructure:"sources"`
-	// 远程数据 endpoint（与 pages 部署同一套 data/ 数据）。
-	// 设置后 list/filter/show/ask/stats 改为从该 URL 读取，适合"只查找"的使用者。
+
+	// 菜谱数据源（GitHub，唯一）。仅维护者配置：
+	// CLI 的增删改/推送只作用于该数据源，绝不写入程序代码所在分支。
+	// 留空 = 未配置（只读/使用者模式，通过 Endpoint 读取数据）。
+	Source SourceConfig `yaml:"source" mapstructure:"source"`
+
+	// 远程数据 endpoint（使用者模式）。
+	// 未配置时使用默认值；默认值可在构建时替换（fv build --endpoint / FV_ENDPOINT 写入产物 meta）。
 	Endpoint string `yaml:"endpoint" mapstructure:"endpoint"`
+
 	// GitHub 集成（fv gh / fv push）
 	GitHub GitHubConfig `yaml:"github" mapstructure:"github"`
 }
 
-// SourceConfig 外部菜谱数据源：引用本项目外部的菜谱仓库
+// SourceConfig 唯一菜谱数据源（GitHub 仓库，与代码隔离）
 type SourceConfig struct {
-	Name   string `yaml:"name" mapstructure:"name"`
-	Repo   string `yaml:"repo" mapstructure:"repo"`
+	// 仓库标识："owner/repo" 或完整 git/HTTPS URL。
+	// 留空且设置了 Branch 时表示"当前仓库的独立数据分支"。
+	Repo string `yaml:"repo" mapstructure:"repo"`
+	// 数据源分支（默认 recipes）
 	Branch string `yaml:"branch" mapstructure:"branch"`
 }
 
@@ -33,15 +42,12 @@ type SourceConfig struct {
 type GitHubConfig struct {
 	// 访问令牌（也可用环境变量 GITHUB_TOKEN）
 	Token string `yaml:"token" mapstructure:"token"`
-	// 仓库属主（默认从 git remote 推断）
+	// 代码仓库属主（默认从 git remote 推断；gh status/pr/release/workflow 用）
 	Owner string `yaml:"owner" mapstructure:"owner"`
-	// 仓库名（默认从 git remote 推断）
+	// 代码仓库名（默认从 git remote 推断）
 	Repo string `yaml:"repo" mapstructure:"repo"`
 	// 默认分支（默认 main）
 	DefaultBranch string `yaml:"default_branch" mapstructure:"default_branch"`
-	// 菜谱独立分支（如 "recipes"）：为空表示菜谱与代码同在默认分支。
-	// 非空时，菜谱数据提交到该分支，构建/CRUD 从该分支的本地 worktree 读取。
-	RecipesBranch string `yaml:"recipes_branch" mapstructure:"recipes_branch"`
 	// 推送前是否自动 fetch + rebase（fv push 防非快进冲突，默认 true）
 	AutoRebase bool `yaml:"auto_rebase" mapstructure:"auto_rebase"`
 }
@@ -76,6 +82,15 @@ func DefaultConfig() *Config {
 			AutoRebase:    true,
 		},
 	}
+}
+
+// Maintainer 是否为维护者模式（配置了菜谱数据源）。
+// 维护者模式以本地数据源为准，不使用远程 endpoint 读取。
+func (c *Config) Maintainer() bool {
+	if c == nil {
+		return false
+	}
+	return strings.TrimSpace(c.Source.Repo) != "" || strings.TrimSpace(c.Source.Branch) != ""
 }
 
 // PluginTTL 返回某插件的 TTL（秒），优先插件级配置，其次全局

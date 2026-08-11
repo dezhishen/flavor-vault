@@ -3,7 +3,9 @@ package plugins
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -26,6 +28,8 @@ type Meta struct {
 	AvgTotalTime int            `json:"avg_total_time"`
 	// 全部轻量列表（all.json 与 meta.json 分开存储）
 	AllCount int `json:"all_count"`
+	// 默认数据 endpoint（构建时注入，消费端未配置时使用；构建时可替换）
+	Endpoint string `json:"endpoint,omitempty"`
 }
 
 // StatsCollector 统计总数、常用厨具、难度分布等
@@ -78,8 +82,21 @@ func (p *StatsCollector) RegisterCommands(root *cobra.Command) error {
 // Build 生成 meta.json 与 all.json
 func (p *StatsCollector) Build(ctx *pipeline.BuildContext) error {
 	outDir := ctx.DataDir
+	// 构建时可注入默认 endpoint（--endpoint / FV_ENDPOINT），写入 meta.json 供消费端未配置时使用
+	injected := ""
+	if v, ok := ctx.Options["endpoint"]; ok {
+		if s, ok := v.(string); ok {
+			injected = strings.TrimSpace(s)
+		}
+	}
+	if injected == "" {
+		injected = strings.TrimSpace(os.Getenv("FV_ENDPOINT"))
+	}
 	return cachedWriteFiles(ctx, p.Name(), outDir, func() (map[string][]byte, error) {
 		meta := buildMeta(ctx.Recipes)
+		if injected != "" {
+			meta.Endpoint = injected
+		}
 		metaData, err := json.MarshalIndent(meta, "", "  ")
 		if err != nil {
 			return nil, err

@@ -22,9 +22,9 @@ func newShowCmd() *cobra.Command {
 				return err
 			}
 
-			// 使用者模式：配置了 endpoint，直接读取部署好的 details/<id>.json
-			if data.RemoteEndpoint(cfg) != "" {
-				locator, remote := data.Locator(cfg, projectRoot, "details/"+args[0]+".json")
+			// 使用者模式：endpoint（或默认）非空 → 读取部署好的 details/<id>.json
+			locator, remote := data.Locator(cfg, projectRoot, "details/"+args[0]+".json")
+			if remote {
 				rawData, err := data.ReadJSON(locator, remote)
 				if err != nil {
 					return err

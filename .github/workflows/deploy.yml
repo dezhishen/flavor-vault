@@ -81,8 +81,12 @@ jobs:
           fi
 
       - name: Run ETL pipeline
-        # fv build 读取 .flavor-vault/config.yaml，并将前端产物合并到 dist
-        run: ./fv build --force
+        # fv build 读取 .flavor-vault/config.yaml，并将前端产物合并到 dist。
+        # 注入默认 endpoint（构建时替换）：写入实际 GitHub Pages 地址到 meta.json，
+        # 供未配置 endpoint 的消费端 CLI 作为默认值读取。
+        run: |
+          PAGES_BASE="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          ./fv build --force --endpoint "$PAGES_BASE/data"
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v3
