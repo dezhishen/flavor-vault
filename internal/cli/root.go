@@ -51,6 +51,7 @@ func NewRootCommand() *cobra.Command {
 		newGhCmd(),
 		newConfigCmd(),
 		newActionCmd(),
+		newUpdateCmd(),
 	)
 
 	// 注册插件子命令（filter / stats）

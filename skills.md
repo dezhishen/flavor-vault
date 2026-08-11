@@ -86,6 +86,7 @@ fv rm <id> --repo <owner>/<repo> --branch recipes -y
 | `fv init [--endpoint <url>]` | 生成 `config.example.yaml` 与 `.flavor-vault/`（可选） |
 | `fv config get / set <key> <val>` | 查看/修改可选配置（endpoint / asset_dir / github.repo / github.branch） |
 | `fv action list/show/clear` | 管理 `--action-id` 操作缓存（草稿续写） |
+| `fv update [--check] [--version vX] [--repo owner/repo]` | 自更新到 GitHub Releases 最新版（公开仓库免 token；Windows 自动延迟替换） |
 | `fv gh status/pr/release/workflow` | GitHub API 操作（只读/追加式，防冲突） |
 
 ## 菜谱 JSON 结构

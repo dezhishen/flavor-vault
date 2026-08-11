@@ -20,6 +20,17 @@ type Client struct {
 	Repo  string
 }
 
+// Release 发布摘要（自更新/查询用）
+type Release struct {
+	Tag    string
+	Assets []*github.ReleaseAsset
+}
+
+// NewPublicClient 创建匿名客户端（公开仓库只读，无需 token；自更新等场景用）
+func NewPublicClient(owner, repo string) *Client {
+	return &Client{gh: github.NewClient(nil), Owner: owner, Repo: repo}
+}
+
 // NewClient 使用 token 创建客户端
 func NewClient(token, owner, repo string) (*Client, error) {
 	if strings.TrimSpace(token) == "" {

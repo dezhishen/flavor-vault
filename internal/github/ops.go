@@ -141,6 +141,37 @@ func (c *Client) CreateRelease(ctx context.Context, tag, name, notes string, pre
 	return rel, nil
 }
 
+// LatestRelease 返回最新正式 Release（GET /releases/latest；不含预发布）
+func (c *Client) LatestRelease(ctx context.Context) (*Release, error) {
+	rel, _, err := c.gh.Repositories.GetLatestRelease(ctx, c.Owner, c.Repo)
+	if err != nil {
+		return nil, err
+	}
+	return &Release{Tag: rel.GetTagName(), Assets: rel.Assets}, nil
+}
+
+// ReleaseByTag 返回指定 tag 的 Release
+func (c *Client) ReleaseByTag(ctx context.Context, tag string) (*Release, error) {
+	rel, _, err := c.gh.Repositories.GetReleaseByTag(ctx, c.Owner, c.Repo, tag)
+	if err != nil {
+		return nil, err
+	}
+	return &Release{Tag: rel.GetTagName(), Assets: rel.Assets}, nil
+}
+
+// ReleaseAssetURL 在 Release 资源中查找指定名称的下载地址
+func ReleaseAssetURL(rel *Release, name string) string {
+	if rel == nil {
+		return ""
+	}
+	for _, a := range rel.Assets {
+		if a.GetName() == name {
+			return a.GetBrowserDownloadURL()
+		}
+	}
+	return ""
+}
+
 // DispatchWorkflow 触发 workflow_dispatch（追加式，不写分支 ref）
 func (c *Client) DispatchWorkflow(ctx context.Context, workflow, ref string, inputs map[string]any) error {
 	_, err := c.gh.Actions.CreateWorkflowDispatchEventByFileName(ctx, c.Owner, c.Repo, workflow,
