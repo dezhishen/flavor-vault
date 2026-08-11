@@ -72,8 +72,7 @@
       "steps": [
         {
           "order": 1,
-          "description": "备菜：虾去头、去脚，用剪刀剪成小段；姜蒜切末，小米辣切圈，紫苏取叶切沫",
-          "image_ref": "images/超绝紫苏虾-1-1.svg"
+          "description": "备菜：虾去头、去脚，用剪刀剪成小段；姜蒜切末，小米辣切圈，紫苏取叶切沫"
         },
         {
           "order": 2,
@@ -93,7 +92,7 @@
         }
       ],
       "media": {
-        "cover": "images/超绝紫苏虾-封面.svg",
+        "cover": "",
         "images": []
       },
       "stats": {
