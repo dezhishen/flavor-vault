@@ -2,16 +2,16 @@ name: Deploy to GitHub Pages & Release
 
 on:
   push:
-    # 代码分支或菜谱数据分支有变动都触发部署
-    branches: [main, master, recipes]
-    # 发版：推送 v* tag（如 v1.0.0）时基于该 tag 创建 Release
+    # 菜谱数据分支（recipes）有变动时触发部署（仅更新 pages）
+    branches: [recipes]
+    # 发版：推送 v* tag（如 v1.0.0）时创建 Release 并更新 pages
     tags: ['v*']
   workflow_dispatch:
 
 permissions:
   contents: write
 
-# 串行化 gh-pages 部署，避免 main 与 recipes 同时变动时部署冲突
+# 串行化 gh-pages 部署，避免 recipes 与 v* tag 同时触发时部署冲突
 concurrency:
   group: pages-deploy
   cancel-in-progress: false
