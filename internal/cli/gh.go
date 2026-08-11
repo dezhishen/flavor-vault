@@ -2,12 +2,18 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
 
 	ghc "flavor-vault/internal/github"
+	"flavor-vault/internal/models"
+	"flavor-vault/internal/plugins"
+	"flavor-vault/internal/vault"
 )
 
 // newGhCmd 基于 go-github 的 GitHub 客户端命令组。
@@ -62,12 +68,16 @@ func newGhPushCmd() *cobra.Command {
 		dirFlag    string
 		authorFlag string
 		ignoreFlag string
+		recipeFlag string
+		jsonFlag   string
 	)
 	cmd := &cobra.Command{
 		Use:   "push <message>",
 		Short: "通过 GitHub API 推送文件（快进守卫，避免覆盖冲突）",
-		Example: `  fv gh push "添加红烧肉"                      # 推送整个仓库（忽略缓存/构建产物）
-  fv gh push "发布站点" --dir dist --branch gh-pages  # 推送构建产物到 gh-pages`,
+		Example: `  fv gh push "添加红烧肉"                                   # 推送整个仓库（忽略缓存/构建产物）
+  fv gh push "发布站点" --dir dist --branch gh-pages           # 推送构建产物到 gh-pages
+  fv gh push "新增红烧肉" --recipe hong-shao-rou --json @r.json  # 仅提交/更新单个菜谱文件
+  fv gh push "更新红烧肉" --recipe hong-shao-rou                # 用本地 recipes/<id>.json 更新`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, _, _, err := loadProjectConfig(cmd)
@@ -78,21 +88,67 @@ func newGhPushCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			ctx := context.Background()
 
 			branch := ghBranch(cfg.GitHub.DefaultBranch, branchFlag)
 			message := strings.Join(args, " ")
 
-			// 收集要推送的文件
-			src := dirFlag
-			if src == "" {
-				src = projectRoot
-			}
-			files, err := ghc.CollectFiles(src, splitCSV(ignoreFlag))
-			if err != nil {
-				return err
-			}
-			if len(files) == 0 {
-				return fmt.Errorf("没有可推送的文件（目录 %s 为空或全部被忽略）", src)
+			// 收集要推送的文件：单菜谱模式 或 目录/仓库模式
+			var files map[string][]byte
+			var mode string // 用于输出：add/update
+
+			if recipeFlag != "" {
+				// 按"文件思路"提交/更新单个菜谱 recipes/<id>.json
+				path := "recipes/" + recipeFlag + ".json"
+				var content []byte
+				if jsonFlag != "" {
+					content, err = readJSONInput(jsonFlag)
+					if err != nil {
+						return err
+					}
+				} else {
+					local := filepath.Join(vault.RecipesDir(projectRoot), recipeFlag+".json")
+					content, err = os.ReadFile(local)
+					if err != nil {
+						return fmt.Errorf("未找到本地菜谱 %s，请用 --json 提供内容（或先在本机 fv add）", local)
+					}
+				}
+
+				// 校验为合法菜谱（复用本地校验逻辑，避免坏数据入库）
+				var r models.Recipe
+				if err := json.Unmarshal(content, &r); err != nil {
+					return fmt.Errorf("菜谱 JSON 解析失败: %w", err)
+				}
+				if err := plugins.ValidateRecipe(&r, cfg); err != nil {
+					return fmt.Errorf("菜谱校验失败: %w", err)
+				}
+				if r.ID != "" && r.ID != recipeFlag {
+					fmt.Fprintf(cmd.ErrOrStderr(), "⚠ 菜谱内容 id=%q 与文件 id=%q 不一致，将以文件名 %q 为准\n", r.ID, recipeFlag, recipeFlag)
+				}
+
+				exists, err := cl.FileExists(ctx, branch, path)
+				if err != nil {
+					return err
+				}
+				mode = "新增"
+				if exists {
+					mode = "更新"
+				}
+				files = map[string][]byte{path: content}
+				fmt.Fprintf(cmd.OutOrStdout(), "▶ %s菜谱 %s/%s@%s ...\n", mode, cl.Owner, cl.Repo, branch)
+			} else {
+				src := dirFlag
+				if src == "" {
+					src = projectRoot
+				}
+				files, err = ghc.CollectFiles(src, splitCSV(ignoreFlag))
+				if err != nil {
+					return err
+				}
+				if len(files) == 0 {
+					return fmt.Errorf("没有可推送的文件（目录 %s 为空或全部被忽略）", src)
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "▶ 推送 %d 个文件到 %s/%s@%s ...\n", len(files), cl.Owner, cl.Repo, branch)
 			}
 
 			// 推送锁（避免并发推送）
@@ -108,12 +164,15 @@ func newGhPushCmd() *cobra.Command {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "▶ 推送 %d 个文件到 %s/%s@%s ...\n", len(files), cl.Owner, cl.Repo, branch)
-			res, err := cl.FastForwardPush(context.Background(), branch, message, files, author)
+			res, err := cl.FastForwardPush(ctx, branch, message, files, author)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "✔ 已推送 commit %s（父 %s）: %s\n", res.CommitSHA, shortSHA(res.BaseSHA), res.Message)
+			if mode != "" {
+				fmt.Fprintf(cmd.OutOrStdout(), "✔ 已%s commit %s（父 %s）: %s\n", mode, shortSHA(res.CommitSHA), shortSHA(res.BaseSHA), res.Message)
+			} else {
+				fmt.Fprintf(cmd.OutOrStdout(), "✔ 已推送 commit %s（父 %s）: %s\n", shortSHA(res.CommitSHA), shortSHA(res.BaseSHA), res.Message)
+			}
 			return nil
 		},
 	}
@@ -121,6 +180,8 @@ func newGhPushCmd() *cobra.Command {
 	cmd.Flags().StringVar(&dirFlag, "dir", "", "仅推送指定目录（如 dist）")
 	cmd.Flags().StringVar(&authorFlag, "author", "", "作者 \"Name <email>\"（默认取 git config）")
 	cmd.Flags().StringVar(&ignoreFlag, "ignore", "", "额外忽略的路径（逗号分隔）")
+	cmd.Flags().StringVar(&recipeFlag, "recipe", "", "仅提交/更新单个菜谱文件 recipes/<id>.json（文件思路）")
+	cmd.Flags().StringVar(&jsonFlag, "json", "", "菜谱内容（配合 --recipe，支持 @文件路径）")
 	return cmd
 }
 

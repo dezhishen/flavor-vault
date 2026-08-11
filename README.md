@@ -207,6 +207,20 @@ fv gh release --tag v1.0 --name "v1.0"           # 创建 Release（追加）
 fv gh workflow --workflow deploy.yml             # 触发 CI（追加）
 ```
 
+### 按"文件思路"用 gh 提交/更新菜谱
+
+`fv gh push --recipe <id>` 只提交**单个菜谱文件** `recipes/<id>.json`（快进守卫，不碰其他文件），内容可来自 `--json` 或本地文件，提交前自动做与本地 `fv add` 相同的校验：
+
+```bash
+# 新增：提供菜谱内容（内联 JSON 或 @文件）
+fv gh push "新增红烧肉" --recipe hong-shao-rou --json @recipe.json
+
+# 更新：复用本地 recipes/<id>.json（远端已存在则自动识别为"更新"）
+fv gh push "调整难度" --recipe hong-shao-rou
+```
+
+每次 `--recipe` 推送都只产生一个文件的 commit，`fv build` 在 CI 上自动重建派生数据，与本地维护完全同构。
+
 ---
 
 ## 🔌 插件系统

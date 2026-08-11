@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/google/go-github/v63/github"
 )
@@ -36,6 +37,19 @@ func (c *Client) CombinedStatus(ctx context.Context, ref string) (string, error)
 		return "", err
 	}
 	return st.GetState(), nil
+}
+
+// FileExists 判断某分支上指定路径的文件是否存在（只读）
+func (c *Client) FileExists(ctx context.Context, branch, path string) (bool, error) {
+	_, _, resp, err := c.gh.Repositories.GetContents(ctx, c.Owner, c.Repo, path,
+		&github.RepositoryContentGetOptions{Ref: branch})
+	if err != nil {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }
 
 // CreatePR 创建 Pull Request（追加式，不写分支，天然无 ref 冲突）
