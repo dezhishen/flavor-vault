@@ -17,10 +17,10 @@ import (
 
 func newBuildCmd() *cobra.Command {
 	var (
-		force      bool
+		force       bool
 		incremental bool
-		output     string
-		endpoint   string
+		output      string
+		endpoint    string
 	)
 	cmd := &cobra.Command{
 		Use:   "build",

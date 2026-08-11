@@ -25,7 +25,7 @@ type listItem struct {
 
 func newListCmd() *cobra.Command {
 	var (
-		tag    string
+		tag     string
 		jsonOut bool
 	)
 	cmd := &cobra.Command{

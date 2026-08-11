@@ -20,9 +20,9 @@ import (
 type Meta struct {
 	Total        int            `json:"total"`
 	GeneratedAt  time.Time      `json:"generated_at"`
-	Tags         map[string]int `json:"tags"`         // 标签分布
-	Kitchenware  map[string]int `json:"kitchenware"`  // 常用厨具
-	Difficulty   map[string]int `json:"difficulty"`   // 难度分布
+	Tags         map[string]int `json:"tags"`        // 标签分布
+	Kitchenware  map[string]int `json:"kitchenware"` // 常用厨具
+	Difficulty   map[string]int `json:"difficulty"`  // 难度分布
 	AvgPrepTime  int            `json:"avg_prep_time"`
 	AvgCookTime  int            `json:"avg_cook_time"`
 	AvgTotalTime int            `json:"avg_total_time"`
