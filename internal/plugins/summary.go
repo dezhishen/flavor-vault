@@ -16,8 +16,9 @@ type RecipeSummary struct {
 	Difficulty  int      `json:"difficulty"`
 }
 
-// ToSummary 从完整菜谱生成轻量摘要
+// ToSummary 从完整菜谱生成轻量摘要（内容取有效版本：versions[0] 或顶层默认版本）
 func ToSummary(r *models.Recipe) RecipeSummary {
+	v := r.VersionsEffective()[0]
 	return RecipeSummary{
 		ID:          r.ID,
 		Name:        r.Name,
@@ -25,10 +26,10 @@ func ToSummary(r *models.Recipe) RecipeSummary {
 		Tags:        r.Tags,
 		Kitchenware: r.Kitchenware,
 		Ingredients: r.MainIngredientNames(),
-		Cover:       r.Media.Cover,
-		PrepTime:    r.Stats.PrepTime,
-		CookTime:    r.Stats.CookTime,
-		Difficulty:  r.Stats.Difficulty,
+		Cover:       v.Media.Cover,
+		PrepTime:    v.Stats.PrepTime,
+		CookTime:    v.Stats.CookTime,
+		Difficulty:  v.Stats.Difficulty,
 	}
 }
 
