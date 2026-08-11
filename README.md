@@ -62,15 +62,16 @@ fv build                # 增量构建（使用缓存）
 fv build --force        # 强制全量重建
 ```
 
-### 5. 本地预览
+### 5. 本地预览（润 dev）
 
 ```bash
+fv build                # 先生成数据（dist/data）与图片（dist/assets）
 cd web
 npm install
-npm run dev            # 开发服务器（默认 5173 端口）
+npm run dev             # 开发服务器（默认 5173 端口）
 ```
 
-> 开发服务器已内置 `/data` 代理，会自动读取项目根 `dist/data` 下的构建产物。
+> 开发服务器已内置 `/data`（数据）与 `/assets`（图片）代理，自动读取 `dist/` 下的构建产物，本地即可看到完整卡片与封面。
 > 使用 pnpm 亦可（`pnpm install && pnpm dev`）。
 
 ---
@@ -157,34 +158,50 @@ fv init --separate-recipes --recipes-branch data   # 自定义分支名
 
 ---
 
-## 🌿 独立菜谱分支（`--separate-recipes`）
+## 🌿 独立菜谱数据仓库分支（`--separate-recipes`）
 
-默认菜谱与代码同在 `main`。若希望**菜谱数据独立成一个分支**（只含 `recipes/*.json` 与 `config.yaml`，不含代码），初始化时一条命令即可完成全部配置：
+默认菜谱与代码同在 `main`。若希望**菜谱数据独立成一个分支**（相当于一个**可独立 fork / 私有化的数据仓库**），初始化时一条命令完成全部配置：
 
 ```bash
 fv init --separate-recipes
+fv init --separate-recipes --recipes-branch data   # 自定义分支名
 ```
 
-初始化会：
-1. 写入配置 `github.recipes_branch: recipes`；
-2. 用 git 创建**只含菜谱与配置**的孤立 `recipes` 分支（不打扰当前分支）；
-3. 建立本地 worktree `<root>/.recipes`（该分支的检出）；
-4. 让 `main` 忽略 `.flavor-vault/recipes/` 与 `.recipes/`（菜谱只在独立分支维护）。
+`recipes` 分支是一个**自包含的数据仓库**，包含：
+
+```
+.gitignore                     # 忽略缓存/推送锁
+README.md                      # 数据仓库说明（fork/私有化指引）
+.flavor-vault/
+  config.yaml                  # 数据侧配置（标签白名单、资源目录等）
+  recipes/*.json               # 菜谱源文件（含图片引用与外部链接）
+  assets/                      # 图片等资源（封面/过程图/步骤图）
+```
+
+初始化会：写入 `github.recipes_branch` → 创建孤立 `recipes` 数据仓库分支（不打扰当前分支）→ 建立本地 worktree `<root>/.recipes` → 让 `main` 忽略数据目录。
 
 **之后的维护完全透明**（CLI 自动从 worktree 读写）：
 
 ```bash
 fv add / fv edit / fv rm          # 直接操作 .recipes 里的菜谱文件
 fv list / fv show / fv build      # 从 worktree 读取，行为不变
-fv gh push --recipe hong-shao-rou # 自动提交/更新到 recipes 分支（默认分支已切换）
+fv gh push --recipe hong-shao-rou # 自动提交/更新到 recipes 分支（含图片资源）
 ```
 
 **发布流程**：
-- 首次：`git push -u origin recipes`（把菜谱分支推上去）
+- 首次：`git push -u origin recipes`（推送数据仓库分支）
 - 之后：`fv gh push --recipe <id>` 直接改远端 recipes 分支；代码仍走 `main`
-- CI 构建时会把 `recipes` 分支合并进工作区再 `fv build`，代码与数据互不干扰、各自独立演进
+- CI 部署时把数据仓库的 `config.yaml + recipes + assets` 合并进工作区再 `fv build`，**以数据侧 config 为准**；`main` 只含代码
 
-> 取舍：独立分支带来数据/代码关注点分离，代价是本地多一个 worktree、CI 多一次分支合并。单用户也可继续用默认"同分支"模式，两种方式 CLI 行为一致。
+> 取舍：独立分支带来数据/代码关注点分离、可 fork/私有化复用，代价是本地多一个 worktree、CI 多一次分支合并。单用户也可继续用默认"同分支"模式，两种方式 CLI 行为一致。
+
+### 🖼 图片与外部链接
+
+菜谱的 `media` 支持：
+- `cover` / `images` / `step.image_ref` — 封面、过程图、步骤图（本地相对路径存于 `assets/`，或直接填外部 URL `https://...`）；
+- `video_url` — 外部视频/链接（详情页展示"查看视频"）。
+
+`asset_collector` 插件在 `fv build` 时把菜谱引用的**本地图片**复制到 `dist/assets/`；外部 URL 原样透传。`fv gh push --recipe` 会把菜谱连同其本地图片一起提交到数据仓库分支，保证数据完整。
 
 **配置项**（`config.yaml`）：
 
