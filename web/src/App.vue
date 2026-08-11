@@ -69,4 +69,29 @@
   font-size: 13px;
   line-height: 60px;
 }
+
+/* H5 自适应 */
+@media (max-width: 768px) {
+  .app-header {
+    height: 52px;
+    padding: 0 12px;
+    gap: 4px;
+  }
+  .brand {
+    font-size: 17px;
+  }
+  .logo {
+    font-size: 22px;
+  }
+  .subtitle {
+    display: none;
+  }
+  .app-main {
+    padding: 12px;
+  }
+  .app-footer {
+    font-size: 11px;
+    line-height: 48px;
+  }
+}
 </style>

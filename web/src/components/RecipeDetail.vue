@@ -14,7 +14,7 @@
       <div v-if="detail.description" class="detail-desc">{{ detail.description }}</div>
     </div>
 
-    <el-descriptions :column="4" border class="detail-stats" size="small">
+    <el-descriptions :column="isMobile ? 2 : 4" border class="detail-stats" size="small">
       <el-descriptions-item label="准备时间">{{ detail.stats.prep_time }} 分钟</el-descriptions-item>
       <el-descriptions-item label="烹饪时间">{{ detail.stats.cook_time }} 分钟</el-descriptions-item>
       <el-descriptions-item label="难度">
@@ -28,16 +28,16 @@
     <!-- 食材 -->
     <el-divider content-position="left">食材</el-divider>
     <div class="ingredients">
-      <div v-if="detail.ingredients.main.length" class="ing-group">
+      <div v-if="(detail.ingredients.main || []).length" class="ing-group">
         <div class="ing-group-title">主要食材</div>
-        <el-table :data="detail.ingredients.main" size="small" border>
+        <el-table :data="detail.ingredients.main || []" size="small" border>
           <el-table-column prop="name" label="食材" min-width="120" />
           <el-table-column prop="amount" label="用量" min-width="120" />
         </el-table>
       </div>
-      <div v-if="detail.ingredients.side.length" class="ing-group">
+      <div v-if="(detail.ingredients.side || []).length" class="ing-group">
         <div class="ing-group-title">配菜 / 辅料</div>
-        <el-table :data="detail.ingredients.side" size="small" border>
+        <el-table :data="detail.ingredients.side || []" size="small" border>
           <el-table-column prop="name" label="食材" min-width="120" />
           <el-table-column prop="amount" label="用量" min-width="120" />
         </el-table>
@@ -46,8 +46,8 @@
 
     <!-- 步骤（第一步/第二步…自然语言，步骤内可插配图） -->
     <el-divider content-position="left">步骤</el-divider>
-    <el-steps direction="vertical" :active="detail.steps.length">
-      <el-step v-for="s in detail.steps" :key="s.order" :title="`第 ${s.order} 步`">
+    <el-steps direction="vertical" :active="(detail.steps || []).length">
+      <el-step v-for="s in detail.steps || []" :key="s.order" :title="`第 ${s.order} 步`">
         <template #description>
           <div class="step-desc">{{ s.description }}</div>
           <el-image
@@ -85,9 +85,13 @@
 </template>
 
 <script setup lang="ts">
+import { useViewport } from '../composables/useViewport'
 import type { RecipeDetail } from '../types'
 
 defineProps<{ detail: RecipeDetail }>()
+
+// 移动端描述列数减少，避免挤压
+const { isMobile } = useViewport()
 
 function resolveAsset(p: string): string {
   if (/^(https?:)?\/\//.test(p)) return p
@@ -158,5 +162,32 @@ function resolveAsset(p: string): string {
 
 .video {
   margin-top: 12px;
+}
+
+/* H5 自适应 */
+@media (max-width: 768px) {
+  .recipe-detail :deep(.el-card__body) {
+    padding: 14px !important;
+  }
+  .detail-title {
+    font-size: 21px;
+  }
+  .detail-desc {
+    font-size: 13px;
+  }
+  .el-step .step-img,
+  .step-img {
+    width: 120px;
+    height: 90px;
+  }
+  .step-desc {
+    font-size: 13px;
+  }
+  /* 表格横向可滚动，避免溢出 */
+  .ingredients :deep(.el-table) {
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+  }
 }
 </style>

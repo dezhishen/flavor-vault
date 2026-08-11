@@ -98,4 +98,25 @@ const { options } = useFilter()
 .filter-select {
   width: 100%;
 }
+
+/* H5 自适应：移动端纵向堆叠、全宽 */
+@media (max-width: 768px) {
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .filter-item {
+    flex: none;
+    min-width: 0;
+    width: 100%;
+  }
+  .filter-label {
+    width: 3.2em;
+    flex: none;
+  }
+  .filter-select {
+    min-width: 0;
+  }
+}
 </style>

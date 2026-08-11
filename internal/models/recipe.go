@@ -1,7 +1,10 @@
 package models
 
-import "strings"
-import "time"
+import (
+	"encoding/json"
+	"strings"
+	"time"
+)
 
 // Recipe 菜谱模型
 type Recipe struct {
@@ -61,6 +64,57 @@ func (r *Recipe) MainIngredientNames() []string {
 		names = append(names, ing.Name)
 	}
 	return names
+}
+
+// MarshalJSON 空切片统一序列化为 []，避免输出 null（前端消费更安全）
+func (r Recipe) MarshalJSON() ([]byte, error) {
+	type Alias Recipe
+	return json.Marshal(&struct {
+		*Alias
+		Tags        []string     `json:"tags"`
+		Kitchenware []string     `json:"kitchenware"`
+		Ingredients Ingredients  `json:"ingredients"`
+		Steps       []Step       `json:"steps"`
+		Media       Media        `json:"media"`
+	}{
+		Alias:       (*Alias)(&r),
+		Tags:        nonNilStrings(r.Tags),
+		Kitchenware: nonNilStrings(r.Kitchenware),
+		Ingredients: r.Ingredients.normalized(),
+		Steps:       nonNilSteps(r.Steps),
+		Media:       r.Media.normalized(),
+	})
+}
+
+func nonNilStrings(s []string) []string {
+	if s == nil {
+		return []string{}
+	}
+	return s
+}
+
+func nonNilSteps(s []Step) []Step {
+	if s == nil {
+		return []Step{}
+	}
+	return s
+}
+
+func (in Ingredients) normalized() Ingredients {
+	if in.Main == nil {
+		in.Main = []Ingredient{}
+	}
+	if in.Side == nil {
+		in.Side = []Ingredient{}
+	}
+	return in
+}
+
+func (m Media) normalized() Media {
+	if m.Images == nil {
+		m.Images = []string{}
+	}
+	return m
 }
 
 // TotalTime 总耗时（分钟）

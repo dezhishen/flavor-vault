@@ -25,7 +25,7 @@
       <div class="card-desc">{{ recipe.description || '暂无简介' }}</div>
       <div class="card-tags">
         <el-tag
-          v-for="t in recipe.tags.slice(0, 3)"
+          v-for="t in (recipe.tags || []).slice(0, 3)"
           :key="t"
           size="small"
           type="warning"
@@ -36,8 +36,8 @@
         </el-tag>
       </div>
       <div class="card-meta">
-        <span class="meta-item">⏱ {{ recipe.prep_time + recipe.cook_time }} 分钟</span>
-        <span v-if="recipe.kitchenware.length" class="meta-item">
+        <span class="meta-item">⏱ {{ (recipe.prep_time || 0) + (recipe.cook_time || 0) }} 分钟</span>
+        <span v-if="(recipe.kitchenware || []).length" class="meta-item">
           🔧 {{ recipe.kitchenware.join('、') }}
         </span>
       </div>
@@ -138,5 +138,33 @@ function resolveImage(cover: string): string {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+/* H5 自适应：小屏卡片更紧凑 */
+@media (max-width: 700px) {
+  .card-cover {
+    height: 100px;
+  }
+  .cover-fallback {
+    font-size: 38px;
+  }
+  .card-body {
+    padding: 10px 10px 12px;
+  }
+  .card-title {
+    font-size: 14px;
+  }
+  .card-desc {
+    -webkit-line-clamp: 1;
+    min-height: 0;
+    font-size: 12px;
+  }
+  .card-meta {
+    font-size: 11px;
+    gap: 8px;
+  }
+  .difficulty-badge {
+    font-size: 10px;
+  }
 }
 </style>
