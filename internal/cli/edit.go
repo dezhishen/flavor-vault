@@ -113,6 +113,13 @@ func newEditCmd() *cobra.Command {
 				return failAndCache(cmd, st, "edit", id, base, err)
 			}
 
+			// 暂存本地图片资源（编辑新增的本地图片复制到资源目录并随单文件上传）
+			if n, err := stageLocalAssets(cfg, projectRoot, base); err != nil {
+				return failAndCache(cmd, st, "edit", id, base, err)
+			} else if n > 0 {
+				fmt.Fprintf(cmd.OutOrStdout(), "ℹ 已暂存 %d 个本地图片\n", n)
+			}
+
 			// 7. 经 GitHub API 提交更新（单文件）
 			assetBase := cfg.AssetDir
 			if assetBase == "" {

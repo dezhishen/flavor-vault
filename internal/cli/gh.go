@@ -134,6 +134,17 @@ func newGhPushCmd() *cobra.Command {
 					fmt.Fprintf(cmd.ErrOrStderr(), "⚠ 菜谱内容 id=%q 与文件 id=%q 不一致，将以文件名 %q 为准\n", r.ID, recipeFlag, recipeFlag)
 				}
 
+				// 暂存本地图片并规范化引用（images/ 相对 assetBase；本地文件复制到资源目录）
+				if n, err := stageLocalAssets(cfg, projectRoot, &r); err != nil {
+					return err
+				} else if n > 0 {
+					fmt.Fprintf(cmd.OutOrStdout(), "  ↳ 已暂存 %d 个本地图片\n", n)
+				}
+				// 引用可能被规范化/更新，重新序列化后提交
+				if content, err = json.MarshalIndent(&r, "", "  "); err != nil {
+					return err
+				}
+
 				exists, err := cl.FileExists(ctx, branch, path)
 				if err != nil {
 					return err
@@ -158,8 +169,11 @@ func newGhPushCmd() *cobra.Command {
 					src := filepath.Join(assetDir, filepath.FromSlash(ref))
 					data, err := os.ReadFile(src)
 					if err != nil {
-						fmt.Fprintf(cmd.ErrOrStderr(), "⚠ 资源缺失（已跳过）: %s\n", src)
-						continue
+						// 分支已有资产（images/ 前缀，本地无原文件）不重复上传；其余缺失报错
+						if strings.HasPrefix(ref, "images/") {
+							continue
+						}
+						return fmt.Errorf("本地资源缺失，无法提交: %s", ref)
 					}
 					files[filepath.ToSlash(filepath.Join(assetBase, ref))] = data
 					assetCount++

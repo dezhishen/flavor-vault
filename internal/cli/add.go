@@ -89,6 +89,12 @@ func newAddCmd() *cobra.Command {
 			if exists {
 				return failAndCache(cmd, st, "add", r.ID, r, fmt.Errorf("菜谱 %q 已存在", r.ID))
 			}
+			// 暂存本地图片资源（交互式已复制过的原样保留；--json 路径在此统一处理）
+			if n, err := stageLocalAssets(cfg, projectRoot, r); err != nil {
+				return failAndCache(cmd, st, "add", r.ID, r, err)
+			} else if n > 0 {
+				fmt.Fprintf(cmd.OutOrStdout(), "ℹ 已暂存 %d 个本地图片\n", n)
+			}
 			assetBase := cfg.AssetDir
 			if assetBase == "" {
 				assetBase = ".flavor-vault/assets"

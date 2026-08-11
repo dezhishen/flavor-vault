@@ -129,7 +129,11 @@ func apiSaveRecipe(ctx context.Context, cl *ghc.Client, branch string, r *models
 		src := filepath.Join(assetDir, filepath.FromSlash(ref))
 		b, err := os.ReadFile(src)
 		if err != nil {
-			continue // 资源缺失（如远程 URL 引用）跳过
+			// 分支已有资产（images/ 前缀，本地无原文件）保持原样不重复上传；其余本地资源缺失则报错
+			if strings.HasPrefix(ref, "images/") {
+				continue
+			}
+			return fmt.Errorf("本地资源缺失，无法提交: %s（请将图片复制到 %s 或以相对路径引用）", ref, assetDir)
 		}
 		files[filepath.ToSlash(filepath.Join(assetBase, ref))] = b
 		assetCount++
@@ -146,6 +150,113 @@ func apiSaveRecipe(ctx context.Context, cl *ghc.Client, branch string, r *models
 	fmt.Printf("✔ 已提交 %s/%s@%s（commit %s，作者 %s，附 %d 个资源）\n",
 		cl.Owner, cl.Repo, res.Branch, res.CommitSHA[:min(8, len(res.CommitSHA))], author.Name, assetCount)
 	return nil
+}
+
+// stageLocalAssets 把菜谱引用的本地图片复制到资源目录（assetDir）并就地更新引用，
+// 供 add --json / edit / gh push --recipe 等路径复用（交互式 add 已复制过则原样保留）。
+// 规则：
+//   - 远程 URL（http/https/data:）原样保留；
+//   - 引用规范化：去掉 assetBase 前缀（.flavor-vault/assets/）→ 相对引用；
+//   - 已在资源目录内，或为分支已有资产（images/ 前缀，本地无文件）：原样保留；
+//   - 其余按本地文件复制（cwd 相对或 assetBase 相对），步骤图命名 <菜谱名>-<步骤>-<序号>，封面/过程图 <菜谱名>-cover/img-N。
+//
+// 返回暂存的图片数；任一本地图片缺失则返回错误。
+func stageLocalAssets(cfg *models.Config, projectRoot string, r *models.Recipe) (int, error) {
+	dir := assetDirFor(cfg, projectRoot)
+	imagesDir := filepath.Join(dir, "images")
+	assetBase := ".flavor-vault/assets"
+	if cfg != nil && strings.TrimSpace(cfg.AssetDir) != "" {
+		assetBase = strings.TrimSpace(cfg.AssetDir)
+	}
+	base := sanitizeName(r.Name)
+	if base == "" {
+		base = "recipe"
+	}
+	staged := 0
+
+	stage := func(ref, hint string) (string, error) {
+		ref = strings.TrimSpace(ref)
+		if ref == "" || utils.IsRemoteURL(ref) {
+			return ref, nil
+		}
+		// 规范化：去掉 assetBase 前缀（.flavor-vault/assets/）得到 asset 相对引用
+		norm := strings.TrimPrefix(strings.TrimPrefix(ref, assetBase+"/"), "./"+assetBase+"/")
+		// 1) 已在资源目录内（含已暂存/用户放置）→ 原样（规范化后）
+		if !filepath.IsAbs(norm) {
+			if _, err := os.Stat(filepath.Join(dir, filepath.FromSlash(norm))); err == nil {
+				return norm, nil
+			}
+		}
+		// 2) 分支已有资产（images/ 前缀，本地无原文件）→ 原样，不重复上传
+		if strings.HasPrefix(norm, "images/") && !filepath.IsAbs(norm) {
+			return norm, nil
+		}
+		// 3) 本地源文件：cwd 相对，或 assetBase 相对
+		candidates := []string{ref}
+		if !filepath.IsAbs(ref) {
+			candidates = append(candidates, filepath.ToSlash(filepath.Join(assetBase, norm)))
+		}
+		var src string
+		for _, cand := range candidates {
+			if info, err := os.Stat(cand); err == nil && !info.IsDir() {
+				src = cand
+				break
+			}
+		}
+		if src == "" {
+			return "", fmt.Errorf("本地图片不存在: %s（请将图片放到 %s 或以相对路径引用）", ref, dir)
+		}
+		// 复制到 images/ 并更新引用（命名 <菜谱名>-<hint>[-<序号>]）
+		ext := filepath.Ext(src)
+		if ext == "" {
+			ext = ".img"
+		}
+		if err := os.MkdirAll(imagesDir, 0o755); err != nil {
+			return "", err
+		}
+		name := fmt.Sprintf("%s-%s%s", base, hint, ext)
+		dst := filepath.Join(imagesDir, name)
+		for i := 2; ; i++ {
+			if _, err := os.Stat(dst); os.IsNotExist(err) {
+				break
+			}
+			name = fmt.Sprintf("%s-%s-%d%s", base, hint, i, ext)
+			dst = filepath.Join(imagesDir, name)
+		}
+		data, err := os.ReadFile(src)
+		if err != nil {
+			return "", err
+		}
+		if err := os.WriteFile(dst, data, 0o644); err != nil {
+			return "", err
+		}
+		return "images/" + name, nil
+	}
+
+	if v, err := stage(r.Media.Cover, "cover"); err != nil {
+		return staged, err
+	} else if v != r.Media.Cover {
+		staged++
+		r.Media.Cover = v
+	}
+	for i := range r.Media.Images {
+		if v, err := stage(r.Media.Images[i], fmt.Sprintf("img-%d", i+1)); err != nil {
+			return staged, err
+		} else if v != r.Media.Images[i] {
+			staged++
+			r.Media.Images[i] = v
+		}
+	}
+	for i := range r.Steps {
+		hint := fmt.Sprintf("%d-1", r.Steps[i].Order)
+		if v, err := stage(r.Steps[i].ImageRef, hint); err != nil {
+			return staged, err
+		} else if v != r.Steps[i].ImageRef {
+			staged++
+			r.Steps[i].ImageRef = v
+		}
+	}
+	return staged, nil
 }
 
 // apiDeleteRecipe 删除数据源分支上的单个菜谱
