@@ -1,0 +1,82 @@
+{
+  "id": "hong-shao-rou",
+  "name": "红烧肉",
+  "description": "经典家常红烧肉，肥而不腻、入口即化。",
+  "tags": [
+    "热菜",
+    "家常",
+    "下饭菜",
+    "宴客"
+  ],
+  "kitchenware": [
+    "炒锅",
+    "砂锅"
+  ],
+  "ingredients": {
+    "main": [
+      {
+        "name": "五花肉",
+        "amount": "500g"
+      },
+      {
+        "name": "冰糖",
+        "amount": "30g"
+      }
+    ],
+    "side": [
+      {
+        "name": "生姜",
+        "amount": "4片"
+      },
+      {
+        "name": "八角",
+        "amount": "2颗"
+      },
+      {
+        "name": "生抽",
+        "amount": "2勺"
+      },
+      {
+        "name": "老抽",
+        "amount": "1勺"
+      },
+      {
+        "name": "料酒",
+        "amount": "2勺"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "order": 1,
+      "description": "五花肉切块，冷水下锅焯水，捞出洗净。"
+    },
+    {
+      "order": 2,
+      "description": "炒锅放少许油，下冰糖小火炒出糖色。"
+    },
+    {
+      "order": 3,
+      "description": "下五花肉翻炒上色，加入姜片、八角、料酒、生抽、老抽。"
+    },
+    {
+      "order": 4,
+      "description": "转入砂锅，加热水没过肉块，小火炖 1 小时。"
+    },
+    {
+      "order": 5,
+      "description": "大火收汁，出锅装盘。"
+    }
+  ],
+  "media": {
+    "cover": "images/hong-shao-rou.svg",
+    "images": null
+  },
+  "stats": {
+    "prep_time": 20,
+    "cook_time": 70,
+    "difficulty": 3
+  },
+  "created_at": "2026-08-10T20:26:16.689547303+08:00",
+  "updated_at": "2026-08-10T20:26:16.689565462+08:00"
+}

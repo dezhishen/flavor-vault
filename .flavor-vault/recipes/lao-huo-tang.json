@@ -1,0 +1,68 @@
+{
+  "id": "lao-huo-tang",
+  "name": "玉米胡萝卜排骨汤",
+  "description": "清甜滋润的老火汤，营养又暖胃。",
+  "tags": [
+    "汤羹",
+    "家常",
+    "宴客"
+  ],
+  "kitchenware": [
+    "砂锅"
+  ],
+  "ingredients": {
+    "main": [
+      {
+        "name": "排骨",
+        "amount": "500g"
+      },
+      {
+        "name": "甜玉米",
+        "amount": "2根"
+      },
+      {
+        "name": "胡萝卜",
+        "amount": "1根"
+      }
+    ],
+    "side": [
+      {
+        "name": "生姜",
+        "amount": "3片"
+      },
+      {
+        "name": "盐",
+        "amount": "适量"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "order": 1,
+      "description": "排骨冷水下锅焯水，捞出洗净。"
+    },
+    {
+      "order": 2,
+      "description": "玉米、胡萝卜切段。"
+    },
+    {
+      "order": 3,
+      "description": "所有材料放入砂锅，加足量水大火烧开。"
+    },
+    {
+      "order": 4,
+      "description": "转小火炖 1.5 小时，加盐调味。"
+    }
+  ],
+  "media": {
+    "cover": "images/lao-huo-tang.svg",
+    "images": null
+  },
+  "stats": {
+    "prep_time": 15,
+    "cook_time": 90,
+    "difficulty": 2
+  },
+  "created_at": "2026-08-10T20:26:16.689547303+08:00",
+  "updated_at": "2026-08-10T20:26:16.690434011+08:00"
+}

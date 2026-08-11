@@ -1,0 +1,68 @@
+{
+  "id": "kong-qi-zha-ji-chi",
+  "name": "空气炸锅鸡翅",
+  "description": "不用一滴油，外酥里嫩的烤鸡翅。",
+  "tags": [
+    "热菜",
+    "快手",
+    "家常"
+  ],
+  "kitchenware": [
+    "空气炸锅"
+  ],
+  "ingredients": {
+    "main": [
+      {
+        "name": "鸡翅中",
+        "amount": "8个"
+      }
+    ],
+    "side": [
+      {
+        "name": "生抽",
+        "amount": "2勺"
+      },
+      {
+        "name": "蚝油",
+        "amount": "1勺"
+      },
+      {
+        "name": "蜂蜜",
+        "amount": "1勺"
+      },
+      {
+        "name": "黑胡椒",
+        "amount": "适量"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "order": 1,
+      "description": "鸡翅两面划刀，加入调料腌制 30 分钟。"
+    },
+    {
+      "order": 2,
+      "description": "空气炸锅 200℃ 预热 3 分钟。"
+    },
+    {
+      "order": 3,
+      "description": "放入鸡翅，200℃ 烤 15 分钟，中途翻面。"
+    },
+    {
+      "order": 4,
+      "description": "出炉撒黑胡椒即可。"
+    }
+  ],
+  "media": {
+    "cover": "images/kong-qi-zha-ji-chi.svg",
+    "images": null
+  },
+  "stats": {
+    "prep_time": 35,
+    "cook_time": 15,
+    "difficulty": 1
+  },
+  "created_at": "2026-08-10T20:26:16.689547303+08:00",
+  "updated_at": "2026-08-10T20:26:16.690182582+08:00"
+}
