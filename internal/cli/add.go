@@ -4,15 +4,18 @@ import (
 	"bufio"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 
+	"flavor-vault/internal/data"
 	"flavor-vault/internal/models"
 	"flavor-vault/internal/plugins"
 	"flavor-vault/internal/store"
@@ -110,7 +113,10 @@ func promptAddRecipe(reader *bufio.Reader, cfg *models.Config, projectRoot strin
 	desc, _ := prompt(reader, "简介", r.Description)
 	r.Description = desc
 
-	fmt.Println("\n可用标签:", strings.Join(cfg.Tags, ", "))
+	// 可选标签/厨具来自已有数据（本地 dist/data 或远程 endpoint 的 filters.json），仅作提示
+	availTags, availKw := availableFacets(cfg, projectRoot)
+
+	fmt.Println("\n可用标签（来自已有数据）:", strings.Join(availTags, ", "))
 	tags, err := promptCSV(reader, "标签", "")
 	if err != nil {
 		return nil, err
@@ -118,20 +124,8 @@ func promptAddRecipe(reader *bufio.Reader, cfg *models.Config, projectRoot strin
 	if len(tags) > 0 {
 		r.Tags = tags
 	}
-	// 校验标签白名单（仅警告）
-	whitelist := make(map[string]bool)
-	for _, t := range cfg.Tags {
-		whitelist[t] = true
-	}
-	if len(cfg.Tags) > 0 {
-		for _, t := range r.Tags {
-			if !whitelist[t] {
-				fmt.Fprintf(os.Stderr, "⚠ 警告: 标签 %q 不在白名单中（fv build 时会校验）\n", t)
-			}
-		}
-	}
 
-	fmt.Println("\n可用厨具:", strings.Join(cfg.Kitchenware, ", "))
+	fmt.Println("\n可用厨具（来自已有数据）:", strings.Join(availKw, ", "))
 	kw, err := promptCSV(reader, "厨具", "")
 	if err != nil {
 		return nil, err
@@ -304,4 +298,31 @@ func randomHex(n int) string {
 	b := make([]byte, n)
 	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)[:n*2]
+}
+
+// availableFacets 从 facet 索引读取已有标签与厨具（本地 dist/data 或远程 endpoint 的
+// filters.json），用于交互式添加菜谱时的提示。数据不存在时返回空，不报错。
+func availableFacets(cfg *models.Config, projectRoot string) (tags, kitchenware []string) {
+	locator, remote := data.Locator(cfg, projectRoot, "filters.json")
+	raw, err := data.ReadJSON(locator, remote)
+	if err != nil {
+		return nil, nil
+	}
+	var idx struct {
+		Tags        map[string][]string `json:"tags"`
+		Kitchenware map[string][]string `json:"kitchenware"`
+	}
+	if err := json.Unmarshal(raw, &idx); err != nil {
+		return nil, nil
+	}
+	return sortedMapKeys(idx.Tags), sortedMapKeys(idx.Kitchenware)
+}
+
+func sortedMapKeys(m map[string][]string) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	sort.Strings(out)
+	return out
 }

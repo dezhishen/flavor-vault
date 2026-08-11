@@ -3,10 +3,6 @@ package models
 // Config 全局配置结构，对应 .flavor-vault/config.yaml
 // 同时标注 yaml 与 mapstructure 标签，确保 Viper 能正确映射 snake_case 键
 type Config struct {
-	// 标签白名单（fv add 时校验）
-	Tags []string `yaml:"tags" mapstructure:"tags"`
-	// 厨具建议列表（用于交互式提示）
-	Kitchenware []string `yaml:"kitchenware" mapstructure:"kitchenware"`
 	// 缓存配置
 	Cache CacheConfig `yaml:"cache" mapstructure:"cache"`
 	// 构建输出目录（默认为 ./dist）
@@ -65,13 +61,6 @@ type PluginConfig struct {
 // DefaultConfig 返回默认配置
 func DefaultConfig() *Config {
 	return &Config{
-		Tags: []string{
-			"凉菜", "热菜", "川菜", "粤菜", "家常",
-			"下饭菜", "快手", "宴客", "汤羹", "甜点",
-		},
-		Kitchenware: []string{
-			"炒锅", "砂锅", "蒸箱", "烤箱", "平底锅", "空气炸锅",
-		},
 		Cache: CacheConfig{
 			Enabled:    true,
 			TTLSeconds: 86400,

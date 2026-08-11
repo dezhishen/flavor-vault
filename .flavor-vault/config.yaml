@@ -1,21 +1,3 @@
-tags:
-    - 凉菜
-    - 热菜
-    - 川菜
-    - 粤菜
-    - 家常
-    - 下饭菜
-    - 快手
-    - 宴客
-    - 汤羹
-    - 甜点
-kitchenware:
-    - 炒锅
-    - 砂锅
-    - 蒸箱
-    - 烤箱
-    - 平底锅
-    - 空气炸锅
 cache:
     enabled: true
     ttl_seconds: 86400

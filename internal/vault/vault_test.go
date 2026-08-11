@@ -45,7 +45,7 @@ func TestSaveAndLoadConfigAt(t *testing.T) {
 	path := filepath.Join(dir, "conf", "config.yaml")
 
 	cfg := models.DefaultConfig()
-	cfg.Tags = append(cfg.Tags, "测试标签")
+	cfg.Endpoint = "https://example.com/data"
 	cfg.OutputDir = "/custom/dist"
 
 	if err := SaveConfigAt(path, cfg); err != nil {
@@ -56,8 +56,8 @@ func TestSaveAndLoadConfigAt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !contains(loaded.Tags, "测试标签") {
-		t.Errorf("tags = %v, want to contain 测试标签", loaded.Tags)
+	if loaded.Endpoint != "https://example.com/data" {
+		t.Errorf("endpoint = %s, want https://example.com/data", loaded.Endpoint)
 	}
 	if loaded.OutputDir != "/custom/dist" {
 		t.Errorf("output_dir = %s, want /custom/dist", loaded.OutputDir)
@@ -141,13 +141,4 @@ func TestResolveRecipesDir(t *testing.T) {
 	if got := ResolveRecipesDir(dir, cfg); got != want {
 		t.Errorf("worktree present: got %s, want %s", got, want)
 	}
-}
-
-func contains(items []string, target string) bool {
-	for _, s := range items {
-		if s == target {
-			return true
-		}
-	}
-	return false
 }

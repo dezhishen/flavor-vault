@@ -24,14 +24,9 @@ func (v *Validator) RegisterCommands(_ *cobra.Command) error { return nil }
 // Build 校验所有菜谱，不合法则中断构建
 func (v *Validator) Build(ctx *pipeline.BuildContext) error {
 	var errs []string
-	whitelist := make(map[string]bool)
-	for _, t := range ctx.Config.Tags {
-		whitelist[t] = true
-	}
-	strictTags := len(ctx.Config.Tags) > 0
 
 	for _, r := range ctx.Recipes {
-		if err := validateRecipe(r, whitelist, strictTags); err != nil {
+		if err := validateRecipe(r); err != nil {
 			errs = append(errs, fmt.Sprintf("%s: %v", r.ID, err))
 		}
 	}
@@ -46,15 +41,11 @@ func (v *Validator) Build(ctx *pipeline.BuildContext) error {
 }
 
 // ValidateRecipe 校验单个菜谱（供 CLI 的 add/edit 命令复用）
-func ValidateRecipe(r *models.Recipe, cfg *models.Config) error {
-	whitelist := make(map[string]bool)
-	for _, t := range cfg.Tags {
-		whitelist[t] = true
-	}
-	return validateRecipe(r, whitelist, len(cfg.Tags) > 0)
+func ValidateRecipe(r *models.Recipe, _ *models.Config) error {
+	return validateRecipe(r)
 }
 
-func validateRecipe(r *models.Recipe, whitelist map[string]bool, strictTags bool) error {
+func validateRecipe(r *models.Recipe) error {
 	var problems []string
 	if strings.TrimSpace(r.Name) == "" {
 		problems = append(problems, "缺少 name（菜名）")
@@ -67,13 +58,6 @@ func validateRecipe(r *models.Recipe, whitelist map[string]bool, strictTags bool
 	}
 	if r.Stats.Difficulty < 1 || r.Stats.Difficulty > 5 {
 		problems = append(problems, "difficulty 必须在 1-5 之间")
-	}
-	if strictTags {
-		for _, t := range r.Tags {
-			if !whitelist[t] {
-				problems = append(problems, fmt.Sprintf("标签 %q 不在白名单中", t))
-			}
-		}
 	}
 	if len(problems) == 0 {
 		return nil
