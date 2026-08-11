@@ -53,9 +53,9 @@ func newEditCmd() *cobra.Command {
 				fmt.Fprintf(cmd.ErrOrStderr(), "ℹ 已从缓存恢复编辑草稿（action-id=%s）\n", st.ID)
 			}
 
-			// 3. 应用 --json 补丁（未提供的字段保持原值）
+			// 3. 应用 --json 补丁（未提供的字段保持原值；多版本菜谱默认编辑第一个版本）
 			if jsonInput != "" {
-				if err := parseRecipeJSON(jsonInput, base); err != nil {
+				if err := applyEditPatch(jsonInput, base); err != nil {
 					return err
 				}
 			} else if !restored {
@@ -136,4 +136,87 @@ func newEditCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&jsonInput, "json", "", "以 JSON 补丁方式更新字段（支持 @文件路径），未提供的字段保持不变")
 	return cmd
+}
+
+// applyEditPatch 应用 --json 编辑补丁：
+//   - 补丁含 versions → 整体替换版本列表；
+//   - 否则按版本字段（ingredients/seasonings/steps/media/stats）合并进第一个版本，顶层 name/description/tags/kitchenware 亦支持；
+//   - 旧结构（无 versions）自动转为单版本结构，使编辑后也走多版本模型。
+func applyEditPatch(raw string, r *models.Recipe) error {
+	data, err := readJSONInput(raw)
+	if err != nil {
+		return err
+	}
+	// 旧结构（无版本）→ 先转为单版本
+	if len(r.Versions) == 0 {
+		r.Versions = []models.Version{{
+			Ingredients: r.Ingredients,
+			Seasonings:  r.Seasonings,
+			Steps:       r.Steps,
+			Media:       r.Media,
+			Stats:       r.Stats,
+		}}
+		r.Ingredients = models.Ingredients{}
+		r.Seasonings = nil
+		r.Steps = nil
+		r.Media = models.Media{}
+		r.Stats = models.Stats{}
+	}
+
+	var m map[string]json.RawMessage
+	if err := json.Unmarshal(data, &m); err != nil {
+		return fmt.Errorf("解析菜谱 JSON 失败: %w", err)
+	}
+	if rawVersions, ok := m["versions"]; ok {
+		var vs []models.Version
+		if err := json.Unmarshal(rawVersions, &vs); err != nil {
+			return err
+		}
+		r.Versions = vs
+		return nil
+	}
+
+	// 顶层字段
+	if rawName, ok := m["name"]; ok {
+		json.Unmarshal(rawName, &r.Name)
+	}
+	if rawDesc, ok := m["description"]; ok {
+		json.Unmarshal(rawDesc, &r.Description)
+	}
+	if rawTags, ok := m["tags"]; ok {
+		json.Unmarshal(rawTags, &r.Tags)
+	}
+	if rawKw, ok := m["kitchenware"]; ok {
+		json.Unmarshal(rawKw, &r.Kitchenware)
+	}
+
+	// 版本内容字段 → 合并进第一个版本
+	v := &r.Versions[0]
+	apply := func(key string, dst interface{}) error {
+		if rawVal, ok := m[key]; ok {
+			if err := json.Unmarshal(rawVal, dst); err != nil {
+				return fmt.Errorf("字段 %s 解析失败: %w", key, err)
+			}
+		}
+		return nil
+	}
+	if err := apply("ingredients", &v.Ingredients); err != nil {
+		return err
+	}
+	if err := apply("seasonings", &v.Seasonings); err != nil {
+		return err
+	}
+	if err := apply("steps", &v.Steps); err != nil {
+		return err
+	}
+	if err := apply("media", &v.Media); err != nil {
+		return err
+	}
+	if err := apply("stats", &v.Stats); err != nil {
+		return err
+	}
+	if rawVName, ok := m["version"]; ok { // 可选：设置版本名
+		json.Unmarshal(rawVName, &v.Name)
+	}
+	return nil
 }
