@@ -118,6 +118,31 @@ func CacheRoot(projectRoot string) string {
 	return filepath.Join(projectRoot, DirName, CacheDirName)
 }
 
+// SourcesDir 返回外部数据源目录（.flavor-vault/sources）
+func SourcesDir(projectRoot string) string {
+	return filepath.Join(projectRoot, DirName, "sources")
+}
+
+// SourceCloneDir 返回某外部数据源的克隆目录
+func SourceCloneDir(projectRoot, name string) string {
+	return filepath.Join(SourcesDir(projectRoot), name)
+}
+
+// SourceRecipesDir 返回某外部数据源的菜谱目录。
+// 兼容两种布局：数据仓库式 .flavor-vault/recipes 或根目录 recipes/。
+func SourceRecipesDir(projectRoot, name string) string {
+	base := SourceCloneDir(projectRoot, name)
+	standard := filepath.Join(base, DirName, RecipesDirName)
+	if info, err := os.Stat(standard); err == nil && info.IsDir() {
+		return standard
+	}
+	root := filepath.Join(base, RecipesDirName)
+	if info, err := os.Stat(root); err == nil && info.IsDir() {
+		return root
+	}
+	return standard // 不存在时返回标准路径（加载时会跳过）
+}
+
 // RecipesWorktree 返回菜谱独立分支的本地 worktree 目录（<root>/.recipes）
 func RecipesWorktree(projectRoot string) string {
 	return filepath.Join(projectRoot, ".recipes")

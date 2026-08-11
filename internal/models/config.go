@@ -17,8 +17,20 @@ type Config struct {
 	Plugins map[string]PluginConfig `yaml:"plugins" mapstructure:"plugins"`
 	// 图片等资源目录（相对项目根，默认 .flavor-vault/assets）
 	AssetDir string `yaml:"asset_dir" mapstructure:"asset_dir"`
+	// 外部菜谱数据源（可引用的外部仓库，供维护者聚合 / 使用者浏览）
+	Sources []SourceConfig `yaml:"sources" mapstructure:"sources"`
+	// 远程数据 endpoint（与 pages 部署同一套 data/ 数据）。
+	// 设置后 list/filter/show/ask/stats 改为从该 URL 读取，适合"只查找"的使用者。
+	Endpoint string `yaml:"endpoint" mapstructure:"endpoint"`
 	// GitHub 集成（fv gh / fv push）
 	GitHub GitHubConfig `yaml:"github" mapstructure:"github"`
+}
+
+// SourceConfig 外部菜谱数据源：引用本项目外部的菜谱仓库
+type SourceConfig struct {
+	Name   string `yaml:"name" mapstructure:"name"`
+	Repo   string `yaml:"repo" mapstructure:"repo"`
+	Branch string `yaml:"branch" mapstructure:"branch"`
 }
 
 // GitHubConfig GitHub 客户端配置

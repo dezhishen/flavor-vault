@@ -277,7 +277,50 @@ fv gh push "调整难度" --recipe hong-shao-rou
 
 ---
 
-## 🔌 插件系统
+## � 两种用户：维护者与使用者
+
+Flavor Vault 面向两类用户：
+
+### ① 维护者 —— 维护自己的菜谱（可引用外部仓库）
+
+本地维护 + 构建 + 推送到 GitHub：
+
+```bash
+fv add / fv edit / fv rm          # 维护自己的菜谱
+fv gh push --recipe <id>          # 按文件提交单个菜谱（含图片）到数据分支
+fv build                          # 构建站点数据
+fv push / fv gh push              # 推送代码或数据
+```
+
+**引用外部菜谱仓库**（聚合他人/社区菜谱）：
+
+```bash
+fv source add community git@github.com:someone/recipes.git --branch recipes
+fv source pull                    # 克隆/更新外部源到本地
+fv source list / fv source remove <name>
+fv build                          # 构建时自动合并本地 + 外部源菜谱
+fv list / fv filter / fv ask      # 查找范围包含外部源
+```
+
+### ② 使用者 —— 只查找菜谱
+
+无需维护任何数据，**只改一个 `endpoint`**（就是 Pages 部署的那套 `data/` 数据）即可查询：
+
+```bash
+fv init --no-samples
+fv config set endpoint https://user.github.io/flavor-vault/data
+fv list                 # 从远端拉取菜谱列表
+fv filter --标签 凉菜      # 倒排索引交集（远端 filters.json）
+fv show hong-shao-rou   # 详情（远端 details/<id>.json）
+fv ask "不用炒锅的凉菜"    # AI 检索（远端 ai-corpus.json）
+fv stats                # 统计（远端 meta.json）
+```
+
+> `list/filter/show/ask/stats` 会自动判断：配置了 `endpoint` 就走远端（与页面同一套数据）；否则读本地 `dist/data`。前端页面本身也是这套数据的消费者。
+
+---
+
+## �🔌 插件系统
 
 每个插件实现统一接口，在 `fv build` 时顺序执行：
 

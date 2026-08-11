@@ -3,12 +3,12 @@ package plugins
 import (
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"sort"
 	"time"
 
 	"github.com/spf13/cobra"
 
+	"flavor-vault/internal/data"
 	"flavor-vault/internal/models"
 	"flavor-vault/internal/pipeline"
 	"flavor-vault/internal/vault"
@@ -41,7 +41,7 @@ func (p *StatsCollector) RegisterCommands(root *cobra.Command) error {
 		Use:   "stats",
 		Short: "显示菜谱统计信息",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// 从 dist 加载 meta.json
+			// 从 dist 或远程 endpoint 加载 meta.json
 			configFlag, _ := cmd.Flags().GetString("config")
 			projectRoot, cfgPath, err := vault.ResolveContext(configFlag)
 			if err != nil {
@@ -51,11 +51,16 @@ func (p *StatsCollector) RegisterCommands(root *cobra.Command) error {
 			if err != nil {
 				return err
 			}
-			outDir := vault.ResolveOutputDir(projectRoot, cfg)
-			meta, err := loadMeta(filepath.Join(outDir, "data", "meta.json"))
+			locator, remote := data.Locator(cfg, projectRoot, "meta.json")
+			raw, err := data.ReadJSON(locator, remote)
 			if err != nil {
 				return err
 			}
+			var m Meta
+			if err := json.Unmarshal(raw, &m); err != nil {
+				return err
+			}
+			meta := &m
 			if jsonOut {
 				data, _ := json.MarshalIndent(meta, "", "  ")
 				fmt.Fprintln(cmd.OutOrStdout(), string(data))

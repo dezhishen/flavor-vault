@@ -4,15 +4,13 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
 
+	"flavor-vault/internal/data"
 	"flavor-vault/internal/plugins"
-	"flavor-vault/internal/vault"
 )
 
 func newAskCmd() *cobra.Command {
@@ -32,15 +30,18 @@ func newAskCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			outDir := vault.ResolveOutputDir(projectRoot, cfg)
-			corpusPath := filepath.Join(outDir, "data", "ai-corpus.json")
-
-			entries, err := loadCorpus(corpusPath)
+			// 支持远程 endpoint（与 pages 同一套数据）或本地 dist/data
+			locator, remote := data.Locator(cfg, projectRoot, "ai-corpus.json")
+			raw, err := data.ReadJSON(locator, remote)
+			if err != nil {
+				return err
+			}
+			entries, err := parseCorpus(raw)
 			if err != nil {
 				return err
 			}
 			if len(entries) == 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), "(AI 语料为空，请先运行 fv build)")
+				fmt.Fprintln(cmd.OutOrStdout(), "(AI 语料为空，请先 fv build 或检查 endpoint)")
 				return nil
 			}
 
@@ -87,16 +88,10 @@ type AskResult struct {
 	Score int `json:"score"`
 }
 
-// loadCorpus 读取 JSON Lines 格式的 AI 语料
-func loadCorpus(path string) ([]plugins.AICorpusEntry, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("加载 AI 语料失败（请先运行 fv build）: %w", err)
-	}
-	defer f.Close()
-
+// parseCorpus 解析 JSON Lines 格式的 AI 语料（来自本地文件或远程 endpoint）
+func parseCorpus(raw []byte) ([]plugins.AICorpusEntry, error) {
 	var entries []plugins.AICorpusEntry
-	sc := bufio.NewScanner(f)
+	sc := bufio.NewScanner(strings.NewReader(string(raw)))
 	for sc.Scan() {
 		line := strings.TrimSpace(sc.Text())
 		if line == "" {

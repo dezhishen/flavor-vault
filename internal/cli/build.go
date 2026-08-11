@@ -37,8 +37,8 @@ func newBuildCmd() *cobra.Command {
 			}
 			outDir := vault.ResolveOutputDir(projectRoot, cfg)
 
-			// 加载所有菜谱（格式错误文件跳过并警告，validator 强制校验）
-			res, err := store.LoadAll(recipesDir(cfg, projectRoot), store.LoadOptions{SkipInvalid: true})
+			// 加载所有菜谱（本地 + 外部数据源；格式错误文件跳过并警告，validator 强制校验）
+			res, err := store.LoadAllMulti(allRecipeDirs(cfg, projectRoot), store.LoadOptions{SkipInvalid: true})
 			if err != nil {
 				return err
 			}

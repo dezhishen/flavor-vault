@@ -66,6 +66,34 @@ func LoadAll(recipesDir string, opts LoadOptions) (*LoadResult, error) {
 	return res, nil
 }
 
+// LoadAllMulti 从多个菜谱目录加载（本地 + 外部数据源），跳过不存在的目录。
+// 用于维护者聚合自有菜谱与引用的外部仓库菜谱。
+func LoadAllMulti(dirs []string, opts LoadOptions) (*LoadResult, error) {
+	res := &LoadResult{
+		Recipes:   make([]*models.Recipe, 0),
+		Warnings:  make([]string, 0),
+		RawHashes: make(map[string]string),
+	}
+	for _, d := range dirs {
+		if _, err := os.Stat(d); err != nil {
+			continue // 目录不存在（如尚未 pull 的外部源）直接跳过
+		}
+		r, err := LoadAll(d, opts)
+		if err != nil {
+			return nil, err
+		}
+		res.Recipes = append(res.Recipes, r.Recipes...)
+		res.Warnings = append(res.Warnings, r.Warnings...)
+		for k, v := range r.RawHashes {
+			res.RawHashes[k] = v
+		}
+	}
+	sort.Slice(res.Recipes, func(i, j int) bool {
+		return res.Recipes[i].ID < res.Recipes[j].ID
+	})
+	return res, nil
+}
+
 // LoadOne 加载单个菜谱文件，返回 (recipe, warning, error)
 func LoadOne(path string) (*models.Recipe, string, error) {
 	data, err := os.ReadFile(path)

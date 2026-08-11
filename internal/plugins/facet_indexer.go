@@ -3,13 +3,13 @@ package plugins
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
 
+	"flavor-vault/internal/data"
 	"flavor-vault/internal/models"
 	"flavor-vault/internal/pipeline"
 	"flavor-vault/internal/utils"
@@ -61,12 +61,17 @@ func (p *FacetIndexer) RegisterCommands(root *cobra.Command) error {
 			if err != nil {
 				return err
 			}
-			outDir := vault.ResolveOutputDir(projectRoot, cfg)
-			idx, err := loadFacetIndex(filepath.Join(outDir, "data", "filters.json"))
+			// 支持远程 endpoint（与 pages 同一套数据）或本地 dist/data
+			locator, remote := data.Locator(cfg, projectRoot, "filters.json")
+			raw, err := data.ReadJSON(locator, remote)
 			if err != nil {
 				return err
 			}
-			return runFilter(idx, kitchenware, tags, ingredients, jsonOut, cmd)
+			var idx FacetIndex
+			if err := json.Unmarshal(raw, &idx); err != nil {
+				return err
+			}
+			return runFilter(&idx, kitchenware, tags, ingredients, jsonOut, cmd)
 		},
 	}
 	cmd.Flags().StringSliceVar(&kitchenware, "厨具", nil, "厨具过滤（可多次指定或逗号分隔）")
@@ -111,19 +116,6 @@ func buildFacetIndex(recipes []*models.Recipe) *FacetIndex {
 		sort.Strings(idx.Tags[k])
 	}
 	return idx
-}
-
-// loadFacetIndex 从文件加载索引
-func loadFacetIndex(path string) (*FacetIndex, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("加载索引失败（请先运行 fv build）: %w", err)
-	}
-	var idx FacetIndex
-	if err := json.Unmarshal(data, &idx); err != nil {
-		return nil, err
-	}
-	return &idx, nil
 }
 
 // runFilter 求交集并输出
