@@ -1,0 +1,11 @@
+{
+  "id": "_test-upload",
+  "name": "测试图片上传",
+  "description": "端到端验证图片上传→Actions→引用",
+  "tags": [],
+  "kitchenware": [],
+  "ingredients": { "main": [{"name": "材料", "amount": "1"}], "side": [] },
+  "steps": [{"order": 1, "description": "第一步", "image_ref": "images/_test-upload-1-1.png"}],
+  "media": { "cover": "", "images": [] },
+  "stats": { "prep_time": 1, "cook_time": 1, "difficulty": 1 }
+}
