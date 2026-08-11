@@ -1,12 +1,13 @@
-# Flavor Vault CLI 配置示例（可选，main 分支）
+# Flavor Vault CLI 配置示例（可选）
+#
+# 本文件是 CLI 配置的示例（供复制到 .flavor-vault/config.yaml 或按需修改）。
+# 实际上可以不写任何配置文件，直接用参数 / 环境变量：
+#   读取 → fv list --endpoint <url>             （或 FV_ENDPOINT）
+#   编辑 → fv add --repo owner/repo --branch recipes + GITHUB_TOKEN
 #
 # 两种使用模式：
 #   1) 只读（查询菜谱）：只需配置 endpoint
 #   2) 读写（编辑菜谱）：配置 github（菜谱仓库 + 权限）
-#
-# 也可以不写本文件，直接使用参数 / 环境变量：
-#   读取 → fv list --endpoint <url>             （或 FV_ENDPOINT）
-#   编辑 → fv add --repo owner/repo --branch recipes + GITHUB_TOKEN
 
 endpoint: ""
 # github:

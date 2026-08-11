@@ -22,9 +22,9 @@ func newInitCmd() *cobra.Command {
 		Use:   "init",
 		Short: "初始化本地开发目录（可选）：.flavor-vault + CLI 配置示例",
 		Args:  cobra.NoArgs,
-		Example: `  fv init                                              # 创建 .flavor-vault 与 CLI 配置示例
-  fv init -c /path/to/config.yaml                       # 在指定位置初始化
-  fv init --endpoint https://owner.github.io/repo/data  # 记录默认读取地址
+		Example: `  fv init                                              # 生成 config.example.yaml 与 .flavor-vault/
+  fv init -c /path/to/config.yaml                       # 在指定位置生成示例配置
+  fv init --endpoint https://owner.github.io/repo/data  # 示例中记录默认读取地址
   # 之后无需配置文件：
   #   读取  → fv list --endpoint <url>  /  fv search 词 --endpoint <url>
   #   编辑  → fv add --repo owner/repo --branch recipes（需 GITHUB_TOKEN）`,
@@ -44,7 +44,8 @@ func newInitCmd() *cobra.Command {
 					return err
 				}
 				dir = d
-				cfgPath = vault.ConfigPath(d)
+				// 示例配置放项目根目录；真正使用的配置仍可放 .flavor-vault/config.yaml
+				cfgPath = filepath.Join(d, "config.example.yaml")
 			}
 			return initVault(cmd, dir, cfgPath, force, endpoint)
 		},
