@@ -126,13 +126,13 @@ func TestResolveRecipesDir(t *testing.T) {
 		t.Errorf("nil cfg: got %s", got)
 	}
 
-	// 配置了数据源但 worktree 不存在 → 回退默认
-	cfg.Source.Branch = "recipes"
+	// 配置了读写（数据仓库）但 worktree 不存在 → 回退默认
+	cfg.GitHub.Branch = "recipes"
 	if got := ResolveRecipesDir(dir, cfg); got != RecipesDir(dir) {
 		t.Errorf("worktree missing: got %s, want %s", got, RecipesDir(dir))
 	}
 
-	// 配置了数据源且 worktree 存在 → worktree 下的菜谱目录
+	// 配置了读写（数据仓库）且 worktree 存在 → worktree 下的菜谱目录
 	wt := RecipesWorktree(dir)
 	if err := os.MkdirAll(filepath.Join(wt, DirName, RecipesDirName), 0o755); err != nil {
 		t.Fatal(err)

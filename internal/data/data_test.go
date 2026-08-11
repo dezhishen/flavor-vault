@@ -19,7 +19,7 @@ func TestRemoteEndpoint(t *testing.T) {
 		t.Errorf("empty endpoint = %q, want empty", got)
 	}
 	// 读取只依赖 endpoint（即使维护者配置了 source 也照常返回）
-	m := &models.Config{Endpoint: "https://example.com/data", Source: models.SourceConfig{Branch: "recipes"}}
+	m := &models.Config{Endpoint: "https://example.com/data", GitHub: models.GitHubConfig{Branch: "recipes"}}
 	if got := RemoteEndpoint(m); got != "https://example.com/data" {
 		t.Errorf("maintainer endpoint = %q, want set", got)
 	}

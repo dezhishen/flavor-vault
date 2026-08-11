@@ -8,11 +8,11 @@ import (
 
 // Recipe 菜谱模型
 type Recipe struct {
-	ID          string      `json:"id"`           // 唯一标识（建议拼音或 UUID）
-	Name        string      `json:"name"`         // 菜名
-	Description string      `json:"description"`  // 简介
-	Tags        []string    `json:"tags"`         // 标签（如 "凉菜","川菜"）
-	Kitchenware []string    `json:"kitchenware"`  // 厨具（如 "炒锅","砂锅"）
+	ID          string      `json:"id"`          // 唯一标识（建议拼音或 UUID）
+	Name        string      `json:"name"`        // 菜名
+	Description string      `json:"description"` // 简介
+	Tags        []string    `json:"tags"`        // 标签（如 "凉菜","川菜"）
+	Kitchenware []string    `json:"kitchenware"` // 厨具（如 "炒锅","砂锅"）
 	Ingredients Ingredients `json:"ingredients"`
 	Steps       []Step      `json:"steps"`
 	Media       Media       `json:"media"`
@@ -52,9 +52,9 @@ type Media struct {
 
 // Stats 统计信息
 type Stats struct {
-	PrepTime   int `json:"prep_time"`   // 准备分钟
-	CookTime   int `json:"cook_time"`   // 烹饪分钟
-	Difficulty int `json:"difficulty"`  // 1-5
+	PrepTime   int `json:"prep_time"`  // 准备分钟
+	CookTime   int `json:"cook_time"`  // 烹饪分钟
+	Difficulty int `json:"difficulty"` // 1-5
 }
 
 // MainIngredientNames 返回主要食材名称列表（用于索引）
@@ -71,11 +71,11 @@ func (r Recipe) MarshalJSON() ([]byte, error) {
 	type Alias Recipe
 	return json.Marshal(&struct {
 		*Alias
-		Tags        []string     `json:"tags"`
-		Kitchenware []string     `json:"kitchenware"`
-		Ingredients Ingredients  `json:"ingredients"`
-		Steps       []Step       `json:"steps"`
-		Media       Media        `json:"media"`
+		Tags        []string    `json:"tags"`
+		Kitchenware []string    `json:"kitchenware"`
+		Ingredients Ingredients `json:"ingredients"`
+		Steps       []Step      `json:"steps"`
+		Media       Media       `json:"media"`
 	}{
 		Alias:       (*Alias)(&r),
 		Tags:        nonNilStrings(r.Tags),

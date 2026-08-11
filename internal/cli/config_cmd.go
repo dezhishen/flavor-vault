@@ -29,23 +29,26 @@ func newConfigGetCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			mode := "使用者"
+			mode := "只读"
 			if cfg.Maintainer() {
-				mode = "维护者"
+				mode = "读写"
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "配置文件: %s\n", cfgPath)
 			fmt.Fprintf(cmd.OutOrStdout(), "模式: %s\n", mode)
-			if cfg.Maintainer() {
-				repo := orDash(cfg.Source.Repo)
-				if strings.TrimSpace(cfg.Source.Repo) == "" {
-					repo = "（当前仓库）"
-				}
-				fmt.Fprintf(cmd.OutOrStdout(), "数据源: %s（分支 %s）\n", repo, orDash(cfg.Source.Branch))
-			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), "数据源: 未配置（通过 endpoint 读取）")
-			}
 			fmt.Fprintf(cmd.OutOrStdout(), "endpoint: %s\n", orDash(cfg.Endpoint))
 			fmt.Fprintf(cmd.OutOrStdout(), "asset_dir: %s\n", orDash(cfg.AssetDir))
+			if cfg.Maintainer() {
+				repo := orDash(cfg.GitHub.Repo)
+				if strings.TrimSpace(cfg.GitHub.Repo) == "" {
+					repo = "（当前仓库）"
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "菜谱仓库: %s（分支 %s）\n", repo, orDash(cfg.GitHub.Branch))
+				if cfg.GitHub.Token != "" {
+					fmt.Fprintln(cmd.OutOrStdout(), "gh token: 已配置")
+				} else {
+					fmt.Fprintln(cmd.OutOrStdout(), "gh token: 未配置（可用 GITHUB_TOKEN）")
+				}
+			}
 			return nil
 		},
 	}
@@ -57,8 +60,8 @@ func newConfigSetCmd() *cobra.Command {
 		Short: "修改配置项（endpoint / asset_dir / source.repo / source.branch）",
 		Example: `  fv config set endpoint https://user.github.io/flavor-vault/data
   fv config set asset_dir custom/assets
-  fv config set source.repo owner/recipes
-  fv config set source.branch recipes`,
+  fv config set github.repo owner/recipes
+  fv config set github.branch recipes`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cfg, _, cfgPath, err := loadProjectConfig(cmd)
@@ -70,12 +73,12 @@ func newConfigSetCmd() *cobra.Command {
 				cfg.Endpoint = args[1]
 			case "asset_dir":
 				cfg.AssetDir = args[1]
-			case "source.repo":
-				cfg.Source.Repo = args[1]
-			case "source.branch":
-				cfg.Source.Branch = args[1]
+			case "github.repo":
+				cfg.GitHub.Repo = args[1]
+			case "github.branch":
+				cfg.GitHub.Branch = args[1]
 			default:
-				return fmt.Errorf("暂不支持配置项 %q（支持 endpoint / asset_dir / source.repo / source.branch）", args[0])
+				return fmt.Errorf("暂不支持配置项 %q（支持 endpoint / asset_dir / github.repo / github.branch）", args[0])
 			}
 			if err := vault.SaveConfigAt(cfgPath, cfg); err != nil {
 				return err

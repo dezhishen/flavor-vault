@@ -2,8 +2,12 @@ package models
 
 import "strings"
 
-// Config 全局配置结构，对应 .flavor-vault/config.yaml
-// 同时标注 yaml 与 mapstructure 标签，确保 Viper 能正确映射 snake_case 键
+// Config 全局配置结构，对应 .flavor-vault/config.yaml（可选）
+// 同时标注 yaml 与 mapstructure 标签，确保 Viper 能正确映射 snake_case 键。
+//
+// 两种使用模式：
+//   - 只读：只需 endpoint（+ cache/构建字段）
+//   - 读写（编辑）：配置 github（菜谱仓库 + 权限），add/edit/rm 经 GitHub API 操作
 type Config struct {
 	// 缓存配置
 	Cache CacheConfig `yaml:"cache" mapstructure:"cache"`
@@ -16,33 +20,24 @@ type Config struct {
 	// 图片等资源目录（相对项目根，默认 .flavor-vault/assets）
 	AssetDir string `yaml:"asset_dir" mapstructure:"asset_dir"`
 
-	// 菜谱数据源（GitHub，唯一）。仅维护者配置：
-	// CLI 的增删改/推送只作用于该数据源，绝不写入程序代码所在分支。
-	// 留空 = 未配置（只读/使用者模式，通过 Endpoint 读取数据）。
-	Source SourceConfig `yaml:"source" mapstructure:"source"`
-
-	// 远程数据 endpoint（使用者模式）。
-	// 未配置时使用默认值；默认值可在构建时替换（fv build --endpoint / FV_ENDPOINT 写入产物 meta）。
+	// 远程数据 endpoint（只读模式）。未配置时使用默认值；
+	// 默认值可在构建时替换（fv build --endpoint / FV_ENDPOINT 写入产物 meta）。
 	Endpoint string `yaml:"endpoint" mapstructure:"endpoint"`
 
-	// GitHub 集成（fv gh / fv push）
+	// GitHub（读写模式）：菜谱数据仓库 + 权限。add/edit/rm 经 GitHub API
+	// 直接操作该仓库/分支上的单文件，无需本地 clone。留空 = 只读。
 	GitHub GitHubConfig `yaml:"github" mapstructure:"github"`
 }
 
-// SourceConfig 唯一菜谱数据源（GitHub 仓库，与代码隔离）
-type SourceConfig struct {
-	// 仓库标识："owner/repo" 或完整 git/HTTPS URL。
-	// 留空且设置了 Branch 时表示"当前仓库的独立数据分支"。
-	Repo string `yaml:"repo" mapstructure:"repo"`
-	// 数据源分支（默认 recipes）
-	Branch string `yaml:"branch" mapstructure:"branch"`
-}
-
-// GitHubConfig GitHub 客户端配置
+// GitHubConfig 读写模式配置：菜谱数据仓库 + GitHub 权限
 type GitHubConfig struct {
 	// 访问令牌（也可用环境变量 GITHUB_TOKEN）
 	Token string `yaml:"token" mapstructure:"token"`
-	// 默认分支（默认 main）
+	// 菜谱数据仓库："owner/repo" 或完整 git/HTTPS URL；留空 = 当前仓库（git remote）的独立分支
+	Repo string `yaml:"repo" mapstructure:"repo"`
+	// 菜谱数据分支（默认 recipes）
+	Branch string `yaml:"branch" mapstructure:"branch"`
+	// gh 操作默认分支（默认 main）
 	DefaultBranch string `yaml:"default_branch" mapstructure:"default_branch"`
 	// 推送前是否自动 fetch + rebase（fv push 防非快进冲突，默认 true）
 	AutoRebase bool `yaml:"auto_rebase" mapstructure:"auto_rebase"`
@@ -80,13 +75,12 @@ func DefaultConfig() *Config {
 	}
 }
 
-// Maintainer 是否为维护者模式（配置了菜谱数据源）。
-// 维护者模式以本地数据源为准，不使用远程 endpoint 读取。
+// Maintainer 是否为读写（编辑）模式：配置了菜谱数据仓库或分支
 func (c *Config) Maintainer() bool {
 	if c == nil {
 		return false
 	}
-	return strings.TrimSpace(c.Source.Repo) != "" || strings.TrimSpace(c.Source.Branch) != ""
+	return strings.TrimSpace(c.GitHub.Repo) != "" || strings.TrimSpace(c.GitHub.Branch) != ""
 }
 
 // PluginTTL 返回某插件的 TTL（秒），优先插件级配置，其次全局

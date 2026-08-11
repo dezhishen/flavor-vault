@@ -17,8 +17,8 @@ import (
 
 // recipeAPIClient 解析编辑目标（GitHub 仓库 + 分支）并构造 API 客户端。
 // 编辑模式：add/edit/rm 经 GitHub API 直接操作数据源分支上的单文件，无需本地 clone/worktree。
-// repo 来源：--repo / FV_REPO / config.source.repo 优先，其次 git remote（代码仓库）；
-// 分支：--branch / FV_BRANCH / config.source.branch，默认 recipes；token 用 GITHUB_TOKEN 或 config.github.token。
+// repo 来源：--repo / FV_REPO / config.github.repo 优先，其次 git remote（代码仓库）；
+// 分支：--branch / FV_BRANCH / config.github.branch，默认 recipes；token 用 GITHUB_TOKEN 或 config.github.token。
 func recipeAPIClient(cmd *cobra.Command) (*ghc.Client, string, string, error) {
 	cfg, projectRoot, _, err := loadProjectConfig(cmd)
 	if err != nil {
@@ -28,7 +28,7 @@ func recipeAPIClient(cmd *cobra.Command) (*ghc.Client, string, string, error) {
 	if err != nil {
 		return nil, "", "", err
 	}
-	repo := strings.TrimSpace(cfg.Source.Repo)
+	repo := strings.TrimSpace(cfg.GitHub.Repo)
 	if repo == "" {
 		owner, r, err := ghc.ResolveRepo(projectRoot)
 		if err != nil {
@@ -42,7 +42,7 @@ func recipeAPIClient(cmd *cobra.Command) (*ghc.Client, string, string, error) {
 		}
 		cl.Owner, cl.Repo = owner, r
 	}
-	branch := strings.TrimSpace(cfg.Source.Branch)
+	branch := strings.TrimSpace(cfg.GitHub.Branch)
 	if branch == "" {
 		branch = "recipes"
 	}

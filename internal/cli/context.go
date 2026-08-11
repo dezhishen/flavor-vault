@@ -54,14 +54,14 @@ func loadProjectConfig(cmd *cobra.Command) (*models.Config, string, string, erro
 		cfg.Endpoint = strings.TrimSpace(e)
 	}
 	if v, _ := cmd.Flags().GetString("repo"); strings.TrimSpace(v) != "" {
-		cfg.Source.Repo = strings.TrimSpace(v)
+		cfg.GitHub.Repo = strings.TrimSpace(v)
 	} else if e := os.Getenv("FV_REPO"); strings.TrimSpace(e) != "" {
-		cfg.Source.Repo = strings.TrimSpace(e)
+		cfg.GitHub.Repo = strings.TrimSpace(e)
 	}
 	if v, _ := cmd.Flags().GetString("branch"); strings.TrimSpace(v) != "" {
-		cfg.Source.Branch = strings.TrimSpace(v)
+		cfg.GitHub.Branch = strings.TrimSpace(v)
 	} else if e := os.Getenv("FV_BRANCH"); strings.TrimSpace(e) != "" {
-		cfg.Source.Branch = strings.TrimSpace(e)
+		cfg.GitHub.Branch = strings.TrimSpace(e)
 	}
 
 	return cfg, projectRoot, configPath, nil
