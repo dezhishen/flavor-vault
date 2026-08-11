@@ -2,7 +2,8 @@ name: Deploy to GitHub Pages & Release
 
 on:
   push:
-    branches: [main, master]
+    # 代码分支或菜谱数据分支有变动都触发部署
+    branches: [main, master, recipes]
     # 发版：推送 v* tag（如 v1.0.0）时基于该 tag 创建 Release
     tags: ['v*']
   workflow_dispatch:
@@ -10,11 +11,19 @@ on:
 permissions:
   contents: write
 
+# 串行化 gh-pages 部署，避免 main 与 recipes 同时变动时部署冲突
+concurrency:
+  group: pages-deploy
+  cancel-in-progress: false
+
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
     steps:
+      # 显式检出代码分支（main）；即便本次由 recipes 数据分支触发，代码始终来自 main
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Setup Go
         uses: actions/setup-go@v5
