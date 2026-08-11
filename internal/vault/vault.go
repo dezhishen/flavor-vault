@@ -229,6 +229,20 @@ func ConfigPath(projectRoot string) string {
 	return filepath.Join(projectRoot, DirName, ConfigName)
 }
 
+// HomeRoot 返回用户主目录（AI/安装方式各异时的稳定根目录）
+func HomeRoot() string {
+	d, err := os.UserHomeDir()
+	if err != nil || d == "" {
+		return "."
+	}
+	return d
+}
+
+// HomeConfigPath 返回用户主目录下的默认配置（~/.flavor-vault/config.yaml）
+func HomeConfigPath() string {
+	return filepath.Join(HomeRoot(), DirName, ConfigName)
+}
+
 // SaveConfig 将配置写回文件（原子写入，YAML 格式）
 func SaveConfig(projectRoot string, cfg *models.Config) error {
 	return SaveConfigAt(ConfigPath(projectRoot), cfg)

@@ -13,6 +13,8 @@ Flavor Vault 是一个基于 **GitHub + 纯静态托管** 的菜谱管理系统�
 
 ## 快速开始（如何开始）
 
+> **AI 助手（OpenClaw 等）注意：所有 `fv` 命令都必须显式加 `-c <配置路径>`**，配置文件默认初始化在用户主目录 `~/.flavor-vault/config.yaml`（`fv init` 生成）。不要依赖当前工作目录的自动查找。
+
 ### 1. 安装 CLI
 
 ```bash
@@ -21,28 +23,30 @@ go build -o fv ./cmd/fv
 ./fv --help
 ```
 
-### 2. 初始化（可选）
+### 2. 初始化（必做一次）
 
 ```bash
-# 生成 config.example.yaml 与 .flavor-vault/（可选；不初始化也能直接用）
+# 初始化配置到用户主目录 ~/.flavor-vault/config.yaml（AI/安装方式各异时主目录最稳定）
 fv init
-# 或在示例中记录默认读取地址
-fv init --endpoint https://fv.sdniu.top/data
+# 可带 --endpoint / --author-name / --author-email 写入默认值
+# 用 -c 可指定其他位置：fv init -c /path/to/config.yaml
 ```
 
-### 3. 开始使用
+### 3. 开始使用（务必带 `-c ~/.flavor-vault/config.yaml`）
 
 ```bash
-# 只读：立即查询（无需配置，默认端点 https://fv.sdniu.top/data）
-fv list
-fv search 红烧
-fv show <id>
+CONFIG=~/.flavor-vault/config.yaml
+
+# 只读：查询菜谱
+fv list -c "$CONFIG"
+fv search 红烧 -c "$CONFIG"
+fv show <id> -c "$CONFIG"
 
 # 读写（编辑菜谱）：需 GitHub 权限（GITHUB_TOKEN + 数据仓库）
 export GITHUB_TOKEN=ghp_xxx
-fv add --repo <owner>/<repo> --branch recipes                          # 交互式新增
-fv edit <id> --repo <owner>/<repo> --branch recipes --json '{"stats":{"difficulty":4}}'
-fv rm <id> --repo <owner>/<repo> --branch recipes -y
+fv add -c "$CONFIG" --repo <owner>/<repo> --branch recipes                          # 交互式新增
+fv edit -c "$CONFIG" --repo <owner>/<repo> --branch recipes --json '{"stats":{"difficulty":4}}'
+fv rm -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y
 ```
 
 ## 使用模式（两种）
@@ -127,21 +131,28 @@ fv rm <id> --repo <owner>/<repo> --branch recipes -y
 
 ## AI 助手常用任务示例
 
+> 全部命令都带 `-c ~/.flavor-vault/config.yaml`（配置在用户主目录；`fv init` 已生成）。
+
 ```bash
+CONFIG=~/.flavor-vault/config.yaml
+
 # 1. 查菜谱
-fv list --endpoint <url>
-fv search 红烧 --endpoint <url>
-fv show <id> --endpoint <url>
+fv list -c "$CONFIG"
+fv search 红烧 -c "$CONFIG"
+fv show <id> -c "$CONFIG"
 
 # 2. 新增菜谱（先构造合法 JSON：name/ingredients.main/steps/stats.difficulty 1-5 必填）
 export GITHUB_TOKEN=ghp_xxx
-fv add --repo <owner>/<repo> --branch recipes --json '{"name":"...", ...}'
+fv add -c "$CONFIG" --repo <owner>/<repo> --branch recipes --json '{"name":"...", ...}'
 
 # 3. 编辑（补丁式）
-fv edit <id> --repo <owner>/<repo> --branch recipes --json '{"stats":{"difficulty":4}}'
+fv edit -c "$CONFIG" <id> --repo <owner>/<repo> --branch recipes --json '{"stats":{"difficulty":4}}'
 
 # 4. 删除
-fv rm <id> --repo <owner>/<repo> --branch recipes -y
+fv rm -c "$CONFIG" <id> --repo <owner>/<repo> --branch recipes -y
+
+# 5. 自更新
+fv update --check
 
 # 5. 本地构建预览
 fv build --force --output ./dist --asset-dir .flavor-vault/assets --ai-snapshot --endpoint <url>

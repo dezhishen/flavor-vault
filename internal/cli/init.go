@@ -23,13 +23,14 @@ func newInitCmd() *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:   "init",
-		Short: "初始化本地开发目录：.flavor-vault + 配置（作者可选覆盖）",
+		Short: "初始化配置到用户主目录（~/.flavor-vault/config.yaml；可用 -c 指定位置）",
 		Args:  cobra.NoArgs,
-		Example: `  fv init                                                        # 交互式（可选采集作者/endpoint）
+		Example: `  fv init                                                        # 交互式初始化到 ~/.flavor-vault/config.yaml
   fv init --author-name "张三" --author-email "zhang@example.com"   # 显式作者覆盖（可选）
   fv init -c /path/to/config.yaml                                  # 在指定位置生成配置
-  # 之后：
-  #   读取  → fv list / fv search（默认端点 https://fv.sdniu.top/data）
+  # 之后（AI 助手请显式 -c 指定配置）：
+  #   读取  → fv list -c ~/.flavor-vault/config.yaml
+  #   编辑  → fv add -c ~/.flavor-vault/config.yaml --repo owner/repo --branch recipes + GITHUB_TOKEN
   #   编辑  → fv add --repo owner/repo --branch recipes + GITHUB_TOKEN
   #           提交作者默认取自你的 GITHUB_TOKEN 对应 GitHub 账户`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -43,12 +44,10 @@ func newInitCmd() *cobra.Command {
 				dir = root
 				cfgPath = cp
 			} else {
-				d, err := os.Getwd()
-				if err != nil {
-					return err
-				}
-				dir = d
-				cfgPath = vault.ConfigPath(d) // 活动配置：.flavor-vault/config.yaml
+				// 默认写入用户主目录（~/.flavor-vault/config.yaml）：
+				// AI 助手（OpenClaw 等）安装/调用方式各异，主目录是最稳定的位置
+				dir = vault.HomeRoot()
+				cfgPath = vault.HomeConfigPath()
 			}
 
 			// 作者可选（交互式：默认取 git config，回车跳过；非交互：无 flag 则跳过）

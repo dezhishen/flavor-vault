@@ -11,7 +11,8 @@ import (
 )
 
 // resolveProject 解析项目上下文（项目根 + 配置文件路径）。
-// 配置可选：--config 优先；否则若有 .flavor-vault 则使用；都没有则用当前目录（返回默认配置）。
+// 配置可选：--config 优先；否则若有 .flavor-vault 则使用；再否则用户主目录 ~/.flavor-vault/config.yaml；
+// 都没有则用当前目录（返回默认配置）。
 func resolveProject(cmd *cobra.Command) (projectRoot, configPath string, found bool) {
 	configFlag, _ := cmd.Flags().GetString("config")
 	if strings.TrimSpace(configFlag) != "" {
@@ -23,6 +24,10 @@ func resolveProject(cmd *cobra.Command) (projectRoot, configPath string, found b
 	}
 	if root, err := vault.FindRoot(); err == nil {
 		return root, vault.ConfigPath(root), true
+	}
+	// 用户主目录配置（AI 助手等安装方式各异，主目录最稳定）
+	if _, err := os.Stat(vault.HomeConfigPath()); err == nil {
+		return vault.HomeRoot(), vault.HomeConfigPath(), true
 	}
 	d, _ := os.Getwd()
 	return d, "", false
