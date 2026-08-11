@@ -7,13 +7,3 @@ output_dir: ./dist
 ai_snapshot: true
 plugins: {}
 asset_dir: .flavor-vault/assets
-source:
-    repo: ""
-    branch: ""
-endpoint: ""
-github:
-    token: ""
-    owner: ""
-    repo: ""
-    default_branch: main
-    auto_rebase: true
