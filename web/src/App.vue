@@ -13,7 +13,7 @@
     </el-main>
 
     <el-footer class="app-footer">
-      Flavor Vault · 纯静态菜谱管理 · 数据由 <code>fv build</code> 生成
+      Flavor Vault · 菜谱库
     </el-footer>
   </el-container>
 </template>

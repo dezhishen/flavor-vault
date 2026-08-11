@@ -10,10 +10,7 @@
       <el-skeleton :rows="6" animated />
     </div>
 
-    <el-empty
-      v-else-if="!detail"
-      description="未找到该菜谱，或尚未运行 fv build"
-    >
+    <el-empty v-else-if="!detail" description="未找到该菜谱">
       <el-button type="primary" @click="router.push('/')">返回首页</el-button>
     </el-empty>
 

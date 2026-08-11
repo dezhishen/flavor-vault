@@ -30,7 +30,7 @@ export const useRecipeStore = defineStore('recipe', () => {
         fetch(`${DATA_BASE}/filters.json`),
       ])
       if (!metaRes.ok || !allRes.ok || !facetRes.ok) {
-        throw new Error('数据文件加载失败，请确认已运行 fv build')
+        throw new Error('数据加载失败，请稍后再试')
       }
       meta.value = await metaRes.json()
       summaries.value = await allRes.json()
