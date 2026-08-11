@@ -67,15 +67,25 @@ jobs:
 
       - name: Merge data repo into workspace
         run: |
-          if [ -d data-src/.flavor-vault ]; then
+          if [ -d data-src ]; then
             mkdir -p .flavor-vault
+            # 菜谱：兼容根目录 recipes/（fv add 现用）与 .flavor-vault/recipes/（旧布局）
+            if [ -d data-src/recipes ]; then
+              mkdir -p .flavor-vault/recipes
+              cp -r data-src/recipes/. .flavor-vault/recipes/
+            fi
             if [ -d data-src/.flavor-vault/recipes ]; then
               mkdir -p .flavor-vault/recipes
               cp -r data-src/.flavor-vault/recipes/. .flavor-vault/recipes/
             fi
+            # 图片资源：兼容 .flavor-vault/assets（fv add 默认）与根 assets/
             if [ -d data-src/.flavor-vault/assets ]; then
               mkdir -p .flavor-vault/assets
               cp -r data-src/.flavor-vault/assets/. .flavor-vault/assets/
+            fi
+            if [ -d data-src/assets ]; then
+              mkdir -p .flavor-vault/assets
+              cp -r data-src/assets/. .flavor-vault/assets/
             fi
             echo "已合并数据仓库（recipes+assets）"
           else

@@ -176,7 +176,7 @@ func RecipesWorktree(projectRoot string) string {
 // ResolveRecipesDir 解析菜谱源目录（维护者数据源检出优先）：
 // 1) 同仓库独立分支 worktree（<root>/.recipes）
 // 2) 独立仓库数据源检出（<root>/.flavor-vault/source）
-// 3) 默认 <root>/.flavor-vault/recipes
+// 3) 默认 <root>/.flavor-vault/recipes，其次根目录 <root>/recipes/（fv add 现用布局）
 func ResolveRecipesDir(projectRoot string, cfg *models.Config) string {
 	if cfg != nil && cfg.Maintainer() {
 		wt := filepath.Join(RecipesWorktree(projectRoot), DirName, RecipesDirName)
@@ -188,7 +188,19 @@ func ResolveRecipesDir(projectRoot string, cfg *models.Config) string {
 			return src
 		}
 	}
+	if d := RecipesDir(projectRoot); dirExists(d) {
+		return d
+	}
+	if d := filepath.Join(projectRoot, RecipesDirName); dirExists(d) {
+		return d
+	}
 	return RecipesDir(projectRoot)
+}
+
+// dirExists 判断路径是否为存在的目录
+func dirExists(p string) bool {
+	info, err := os.Stat(p)
+	return err == nil && info.IsDir()
 }
 
 // ResolveAssetDir 解析图片等资源目录（配置 asset_dir，默认 .flavor-vault/assets）。
