@@ -65,28 +65,31 @@
         </div>
       </div>
 
-      <!-- 调料（含备选方案） -->
+      <!-- 调料（含备选方案，表格与食材一致） -->
       <template v-if="(activeVersion.seasonings || []).length">
         <el-divider content-position="left">调料</el-divider>
-        <div class="seasonings">
-          <div v-for="(s, i) in activeVersion.seasonings || []" :key="i" class="seasoning-item">
-            <span class="seasoning-name">方案一：{{ s.name }}</span>
-            <span v-if="s.amount" class="seasoning-amount">{{ s.amount }}</span>
-            <span v-if="s.note" class="seasoning-note">{{ s.note }}</span>
-            <div v-if="(s.alternatives || []).length" class="seasoning-alts">
-              <el-tag
-                v-for="(a, j) in s.alternatives || []"
-                :key="j"
-                size="small"
-                type="success"
-                effect="plain"
-                class="alt-tag"
-              >
-                方案{{ j + 2 }}：{{ a.name }}{{ a.amount ? ` ${a.amount}` : '' }}{{ a.note ? `（${a.note}）` : '' }}
-              </el-tag>
-            </div>
-          </div>
-        </div>
+        <el-table :data="activeVersion.seasonings || []" size="small" border>
+          <el-table-column prop="name" label="调料" min-width="120" />
+          <el-table-column prop="amount" label="用量" min-width="100" />
+          <el-table-column prop="note" label="备注" min-width="120" />
+          <el-table-column label="备选方案" min-width="180">
+            <template #default="{ row }">
+              <template v-if="(row.alternatives || []).length">
+                <el-tag
+                  v-for="(a, j) in row.alternatives || []"
+                  :key="j"
+                  size="small"
+                  type="success"
+                  effect="plain"
+                  class="alt-tag"
+                >
+                  {{ a.name }}{{ a.amount ? ` ${a.amount}` : '' }}{{ a.note ? `（${a.note}）` : '' }}
+                </el-tag>
+              </template>
+              <span v-else class="muted">—</span>
+            </template>
+          </el-table-column>
+        </el-table>
       </template>
 
       <!-- 步骤 -->
@@ -235,28 +238,13 @@ function resolveAsset(p: string): string {
   margin-top: 4px;
 }
 
-.seasoning-item {
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
+.alt-tag {
+  margin-right: 6px;
+  margin-bottom: 2px;
 }
 
-.seasoning-name {
-  font-weight: 600;
-}
-
-.seasoning-amount,
-.seasoning-note {
-  color: var(--el-text-color-secondary);
-  font-size: 13px;
-}
-
-.seasoning-alts {
-  display: inline-flex;
-  gap: 6px;
-  flex-wrap: wrap;
+.muted {
+  color: var(--el-text-color-placeholder);
 }
 
 /* H5 自适应 */
