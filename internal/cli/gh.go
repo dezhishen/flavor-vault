@@ -13,7 +13,6 @@ import (
 	ghc "flavor-vault/internal/github"
 	"flavor-vault/internal/models"
 	"flavor-vault/internal/plugins"
-	"flavor-vault/internal/vault"
 )
 
 // newGhCmd 基于 go-github 的 GitHub 客户端命令组。
@@ -90,7 +89,14 @@ func newGhPushCmd() *cobra.Command {
 			}
 			ctx := context.Background()
 
-			branch := ghBranch(cfg.GitHub.DefaultBranch, branchFlag)
+			branch := branchFlag
+			// 单菜谱模式：默认推送到配置的菜谱独立分支
+			if branch == "" && recipeFlag != "" && cfg.GitHub.RecipesBranch != "" {
+				branch = cfg.GitHub.RecipesBranch
+			}
+			if branch == "" {
+				branch = ghc.DefaultBranch(cfg.GitHub.DefaultBranch)
+			}
 			message := strings.Join(args, " ")
 
 			// 收集要推送的文件：单菜谱模式 或 目录/仓库模式
@@ -107,7 +113,7 @@ func newGhPushCmd() *cobra.Command {
 						return err
 					}
 				} else {
-					local := filepath.Join(vault.RecipesDir(projectRoot), recipeFlag+".json")
+					local := filepath.Join(recipesDir(cfg, projectRoot), recipeFlag+".json")
 					content, err = os.ReadFile(local)
 					if err != nil {
 						return fmt.Errorf("未找到本地菜谱 %s，请用 --json 提供内容（或先在本机 fv add）", local)

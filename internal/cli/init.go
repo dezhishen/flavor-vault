@@ -13,13 +13,19 @@ import (
 )
 
 func newInitCmd() *cobra.Command {
-	var force bool
+	var (
+		force           bool
+		separateRecipes bool
+		recipesBranch   string
+	)
 	cmd := &cobra.Command{
 		Use:   "init",
-		Short: "初始化 .flavor-vault/ 及默认 config（支持 -c 指定配置文件位置）",
+		Short: "初始化 .flavor-vault/ 及默认 config（支持 -c 配置位置、--separate-recipes 独立菜谱分支）",
 		Args:  cobra.NoArgs,
-		Example: `  fv init                          # 在当前目录初始化
-  fv init -c /path/to/config.yaml   # 在指定位置初始化配置`,
+		Example: `  fv init                                          # 在当前目录初始化
+  fv init -c /path/to/config.yaml                   # 在指定位置初始化配置
+  fv init --separate-recipes                        # 菜谱数据放到独立 recipes 分支
+  fv init --separate-recipes --recipes-branch data  # 自定义菜谱分支名`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// 目标目录与配置路径：优先 --config 指定的配置文件位置
 			configFlag, _ := cmd.Flags().GetString("config")
@@ -39,15 +45,17 @@ func newInitCmd() *cobra.Command {
 				dir = d
 				cfgPath = vault.ConfigPath(d)
 			}
-			return initVault(cmd, dir, cfgPath, force)
+			return initVault(cmd, dir, cfgPath, force, separateRecipes, recipesBranch)
 		},
 	}
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "覆盖已存在的配置文件")
+	cmd.Flags().BoolVar(&separateRecipes, "separate-recipes", false, "菜谱数据放到独立分支（默认 recipes）")
+	cmd.Flags().StringVar(&recipesBranch, "recipes-branch", "recipes", "菜谱独立分支名（配合 --separate-recipes）")
 	return cmd
 }
 
 // initVault 在指定项目根目录初始化 vault 结构，配置写入 cfgPath
-func initVault(cmd *cobra.Command, dir, cfgPath string, force bool) error {
+func initVault(cmd *cobra.Command, dir, cfgPath string, force, separateRecipes bool, recipesBranch string) error {
 	vaultDir := vault.VaultRoot(dir)
 
 	// 创建目录
@@ -62,8 +70,12 @@ func initVault(cmd *cobra.Command, dir, cfgPath string, force bool) error {
 	}
 
 	// 写入默认配置（若不存在或 --force）
+	cfg := models.DefaultConfig()
+	if separateRecipes {
+		cfg.GitHub.RecipesBranch = recipesBranch
+	}
 	if _, err := os.Stat(cfgPath); os.IsNotExist(err) || force {
-		if err := vault.SaveConfigAt(cfgPath, models.DefaultConfig()); err != nil {
+		if err := vault.SaveConfigAt(cfgPath, cfg); err != nil {
 			return err
 		}
 		fmt.Fprintf(cmd.OutOrStdout(), "✔ 已生成配置 %s\n", cfgPath)
@@ -84,7 +96,7 @@ func initVault(cmd *cobra.Command, dir, cfgPath string, force bool) error {
 		}
 	}
 
-	// 生成示例菜谱（若 recipes 为空）
+	// 生成示例菜谱（若 recipes 为空），作为独立分支的种子
 	recipesDir := vault.RecipesDir(dir)
 	if countJSON(recipesDir) == 0 {
 		if err := writeSampleRecipe(recipesDir); err != nil {
@@ -92,9 +104,18 @@ func initVault(cmd *cobra.Command, dir, cfgPath string, force bool) error {
 		}
 	}
 
+	// 独立菜谱分支：创建分支 + worktree + 忽略配置
+	if separateRecipes {
+		if err := setupRecipesBranch(cmd, dir, recipesBranch); err != nil {
+			return err
+		}
+	}
+
 	fmt.Fprintf(cmd.OutOrStdout(), "✔ Flavor Vault 初始化完成：%s\n", vaultDir)
 	fmt.Fprintf(cmd.OutOrStdout(), "  配置: %s\n", cfgPath)
-	fmt.Fprintln(cmd.OutOrStdout(), "运行 fv add 添加菜谱，fv build 构建站点。")
+	if !separateRecipes {
+		fmt.Fprintln(cmd.OutOrStdout(), "运行 fv add 添加菜谱，fv build 构建站点。")
+	}
 	return nil
 }
 

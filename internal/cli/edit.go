@@ -9,9 +9,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"flavor-vault/internal/models"
 	"flavor-vault/internal/plugins"
 	"flavor-vault/internal/store"
-	"flavor-vault/internal/vault"
 )
 
 func newEditCmd() *cobra.Command {
@@ -29,7 +29,7 @@ func newEditCmd() *cobra.Command {
 				return err
 			}
 			id := args[0]
-			fs := store.NewRecipeFileStore(vault.RecipesDir(projectRoot))
+			fs := store.NewRecipeFileStore(recipesDir(cfg, projectRoot))
 
 			st := actionStoreFor(cmd)
 
@@ -54,7 +54,7 @@ func newEditCmd() *cobra.Command {
 				}
 			} else if !restored {
 				// 4. 无补丁且无缓存 → $EDITOR 交互编辑
-				path := recipePath(projectRoot, id)
+				path := recipePath(cfg, projectRoot, id)
 				editor := os.Getenv("EDITOR")
 				if editor == "" {
 					editor = "vi"
@@ -104,6 +104,6 @@ func newEditCmd() *cobra.Command {
 	return cmd
 }
 
-func recipePath(projectRoot, id string) string {
-	return filepath.Join(vault.RecipesDir(projectRoot), id+".json")
+func recipePath(cfg *models.Config, projectRoot, id string) string {
+	return filepath.Join(recipesDir(cfg, projectRoot), id+".json")
 }

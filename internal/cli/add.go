@@ -15,7 +15,6 @@ import (
 	"flavor-vault/internal/models"
 	"flavor-vault/internal/plugins"
 	"flavor-vault/internal/store"
-	"flavor-vault/internal/vault"
 )
 
 func newAddCmd() *cobra.Command {
@@ -72,7 +71,7 @@ func newAddCmd() *cobra.Command {
 				return failAndCache(cmd, st, "add", r.ID, r, err)
 			}
 
-			fs := store.NewRecipeFileStore(vault.RecipesDir(projectRoot))
+			fs := store.NewRecipeFileStore(recipesDir(cfg, projectRoot))
 			if fs.Exists(r.ID) {
 				return failAndCache(cmd, st, "add", r.ID, r, fmt.Errorf("菜谱 %q 已存在", r.ID))
 			}

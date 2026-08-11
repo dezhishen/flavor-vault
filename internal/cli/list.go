@@ -9,7 +9,6 @@ import (
 
 	"flavor-vault/internal/store"
 	"flavor-vault/internal/utils"
-	"flavor-vault/internal/vault"
 )
 
 func newListCmd() *cobra.Command {
@@ -22,11 +21,11 @@ func newListCmd() *cobra.Command {
 		Short: "列出所有菜谱，支持按标签过滤",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			projectRoot, _, err := resolveProject(cmd)
+			cfg, projectRoot, _, err := loadProjectConfig(cmd)
 			if err != nil {
 				return err
 			}
-			res, err := store.LoadAll(vault.RecipesDir(projectRoot), store.LoadOptions{SkipInvalid: true})
+			res, err := store.LoadAll(recipesDir(cfg, projectRoot), store.LoadOptions{SkipInvalid: true})
 			if err != nil {
 				return err
 			}

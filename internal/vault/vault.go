@@ -118,6 +118,25 @@ func CacheRoot(projectRoot string) string {
 	return filepath.Join(projectRoot, DirName, CacheDirName)
 }
 
+// RecipesWorktree 返回菜谱独立分支的本地 worktree 目录（<root>/.recipes）
+func RecipesWorktree(projectRoot string) string {
+	return filepath.Join(projectRoot, ".recipes")
+}
+
+// ResolveRecipesDir 解析菜谱源目录：
+// 配置了独立菜谱分支且本地 worktree 存在时，返回 worktree 下的菜谱目录；
+// 否则返回默认的 <root>/.flavor-vault/recipes。
+func ResolveRecipesDir(projectRoot string, cfg *models.Config) string {
+	if cfg != nil && cfg.GitHub.RecipesBranch != "" {
+		wt := RecipesWorktree(projectRoot)
+		dir := filepath.Join(wt, DirName, RecipesDirName)
+		if info, err := os.Stat(dir); err == nil && info.IsDir() {
+			return dir
+		}
+	}
+	return RecipesDir(projectRoot)
+}
+
 // ConfigPath 返回配置文件路径
 func ConfigPath(projectRoot string) string {
 	return filepath.Join(projectRoot, DirName, ConfigName)

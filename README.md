@@ -151,7 +151,40 @@ fv --config .flavor-vault/config.yaml build
 fv init                          # 在当前目录初始化 .flavor-vault/ + 默认配置 + 示例菜谱
 fv init -c /path/to/config.yaml  # 在指定位置初始化配置
 fv init -f                       # 覆盖已存在的配置文件
+fv init --separate-recipes       # 菜谱数据放到独立 recipes 分支（见下文）
+fv init --separate-recipes --recipes-branch data   # 自定义分支名
 ```
+
+---
+
+## 🌿 独立菜谱分支（`--separate-recipes`）
+
+默认菜谱与代码同在 `main`。若希望**菜谱数据独立成一个分支**（只含 `recipes/*.json` 与 `config.yaml`，不含代码），初始化时一条命令即可完成全部配置：
+
+```bash
+fv init --separate-recipes
+```
+
+初始化会：
+1. 写入配置 `github.recipes_branch: recipes`；
+2. 用 git 创建**只含菜谱与配置**的孤立 `recipes` 分支（不打扰当前分支）；
+3. 建立本地 worktree `<root>/.recipes`（该分支的检出）；
+4. 让 `main` 忽略 `.flavor-vault/recipes/` 与 `.recipes/`（菜谱只在独立分支维护）。
+
+**之后的维护完全透明**（CLI 自动从 worktree 读写）：
+
+```bash
+fv add / fv edit / fv rm          # 直接操作 .recipes 里的菜谱文件
+fv list / fv show / fv build      # 从 worktree 读取，行为不变
+fv gh push --recipe hong-shao-rou # 自动提交/更新到 recipes 分支（默认分支已切换）
+```
+
+**发布流程**：
+- 首次：`git push -u origin recipes`（把菜谱分支推上去）
+- 之后：`fv gh push --recipe <id>` 直接改远端 recipes 分支；代码仍走 `main`
+- CI 构建时会把 `recipes` 分支合并进工作区再 `fv build`，代码与数据互不干扰、各自独立演进
+
+> 取舍：独立分支带来数据/代码关注点分离，代价是本地多一个 worktree、CI 多一次分支合并。单用户也可继续用默认"同分支"模式，两种方式 CLI 行为一致。
 
 **配置项**（`config.yaml`）：
 

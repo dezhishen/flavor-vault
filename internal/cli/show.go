@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"flavor-vault/internal/store"
-	"flavor-vault/internal/vault"
 )
 
 func newShowCmd() *cobra.Command {
@@ -17,11 +16,11 @@ func newShowCmd() *cobra.Command {
 		Short: "打印完整菜谱（格式化 JSON）",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			projectRoot, _, err := resolveProject(cmd)
+			cfg, projectRoot, _, err := loadProjectConfig(cmd)
 			if err != nil {
 				return err
 			}
-			fs := store.NewRecipeFileStore(vault.RecipesDir(projectRoot))
+			fs := store.NewRecipeFileStore(recipesDir(cfg, projectRoot))
 			r, err := fs.Load(args[0])
 			if err != nil {
 				return err

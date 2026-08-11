@@ -29,6 +29,9 @@ type GitHubConfig struct {
 	Repo string `yaml:"repo" mapstructure:"repo"`
 	// 默认分支（默认 main）
 	DefaultBranch string `yaml:"default_branch" mapstructure:"default_branch"`
+	// 菜谱独立分支（如 "recipes"）：为空表示菜谱与代码同在默认分支。
+	// 非空时，菜谱数据提交到该分支，构建/CRUD 从该分支的本地 worktree 读取。
+	RecipesBranch string `yaml:"recipes_branch" mapstructure:"recipes_branch"`
 	// 推送前是否自动 fetch + rebase（fv push 防非快进冲突，默认 true）
 	AutoRebase bool `yaml:"auto_rebase" mapstructure:"auto_rebase"`
 }

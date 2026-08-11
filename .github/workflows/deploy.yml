@@ -43,6 +43,25 @@ jobs:
           cd web
           npm run build
 
+      # 独立菜谱分支：把 recipes 分支的菜谱合并进工作区再构建
+      # （未使用独立分支时该分支不存在，自动跳过）
+      - name: Checkout recipes branch
+        uses: actions/checkout@v4
+        with:
+          ref: recipes
+          path: recipes-src
+        continue-on-error: true
+
+      - name: Merge recipes into workspace
+        run: |
+          if [ -d recipes-src/.flavor-vault/recipes ] && [ -n "$(ls -A recipes-src/.flavor-vault/recipes 2>/dev/null)" ]; then
+            mkdir -p .flavor-vault/recipes
+            cp -r recipes-src/.flavor-vault/recipes/* .flavor-vault/recipes/
+            echo "已合并 $(ls .flavor-vault/recipes | wc -l) 个菜谱"
+          else
+            echo "无 recipes 分支或为空，跳过（菜谱与代码同分支）"
+          fi
+
       - name: Run ETL pipeline
         # fv build 会将 web/dist 前端产物合并到根 dist
         run: ./fv build --force

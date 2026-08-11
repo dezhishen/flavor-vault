@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"flavor-vault/internal/store"
-	"flavor-vault/internal/vault"
 )
 
 func newRmCmd() *cobra.Command {
@@ -16,12 +15,12 @@ func newRmCmd() *cobra.Command {
 		Short: "删除菜谱 JSON（支持 --action-id 缓存删除意图）",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			projectRoot, _, err := resolveProject(cmd)
+			cfg, projectRoot, _, err := loadProjectConfig(cmd)
 			if err != nil {
 				return err
 			}
 			id := args[0]
-			fs := store.NewRecipeFileStore(vault.RecipesDir(projectRoot))
+			fs := store.NewRecipeFileStore(recipesDir(cfg, projectRoot))
 			if !fs.Exists(id) {
 				return fmt.Errorf("菜谱 %q 不存在", id)
 			}

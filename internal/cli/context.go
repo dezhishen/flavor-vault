@@ -27,3 +27,8 @@ func loadProjectConfig(cmd *cobra.Command) (*models.Config, string, string, erro
 	}
 	return cfg, projectRoot, configPath, nil
 }
+
+// recipesDir 返回实际使用的菜谱目录（考虑独立菜谱分支的本地 worktree）
+func recipesDir(cfg *models.Config, projectRoot string) string {
+	return vault.ResolveRecipesDir(projectRoot, cfg)
+}
