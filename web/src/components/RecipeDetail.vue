@@ -44,15 +44,22 @@
       </div>
     </div>
 
-    <!-- 步骤 -->
+    <!-- 步骤（第一步/第二步…自然语言，步骤内可插配图） -->
     <el-divider content-position="left">步骤</el-divider>
     <el-steps direction="vertical" :active="detail.steps.length">
-      <el-step
-        v-for="s in detail.steps"
-        :key="s.order"
-        :title="`步骤 ${s.order}`"
-        :description="s.description"
-      />
+      <el-step v-for="s in detail.steps" :key="s.order" :title="`第 ${s.order} 步`">
+        <template #description>
+          <div class="step-desc">{{ s.description }}</div>
+          <el-image
+            v-if="s.image_ref"
+            :src="resolveAsset(s.image_ref)"
+            fit="cover"
+            class="step-img"
+            :preview-src-list="[resolveAsset(s.image_ref)]"
+            :preview-teleported="true"
+          />
+        </template>
+      </el-step>
     </el-steps>
 
     <!-- 图片 / 视频 -->
@@ -128,6 +135,19 @@ function resolveAsset(p: string): string {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.step-desc {
+  line-height: 1.6;
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+}
+
+/* 步骤配图（略小于过程图） */
+.el-step .step-img {
+  width: 160px;
+  height: 110px;
+  border-radius: 8px;
 }
 
 .step-img {

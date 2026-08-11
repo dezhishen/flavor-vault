@@ -32,3 +32,8 @@ func loadProjectConfig(cmd *cobra.Command) (*models.Config, string, string, erro
 func recipesDir(cfg *models.Config, projectRoot string) string {
 	return vault.ResolveRecipesDir(projectRoot, cfg)
 }
+
+// assetDirFor 返回实际使用的图片资源目录（考虑独立菜谱分支的 worktree）
+func assetDirFor(cfg *models.Config, projectRoot string) string {
+	return vault.ResolveAssetDir(projectRoot, cfg)
+}

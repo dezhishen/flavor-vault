@@ -18,16 +18,14 @@ func newInitCmd() *cobra.Command {
 		separateRecipes bool
 		recipesBranch   string
 		assetDir        string
-		noSamples       bool
 	)
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "初始化 .flavor-vault/ 及默认 config（交互式咨询菜谱数据配置）",
 		Args:  cobra.NoArgs,
-		Example: `  fv init                                          # 交互式：咨询自定义数据/独立分支/示例菜谱
+		Example: `  fv init                                          # 交互式：咨询自定义数据/独立分支
   fv init --separate-recipes                        # 菜谱数据放到独立 recipes 分支
   fv init --asset-dir custom/assets                 # 自定义图片资源目录
-  fv init --no-samples                              # 不生成示例菜谱数据
   fv init -c /path/to/config.yaml                   # 在指定位置初始化配置`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// 目标目录与配置路径：优先 --config 指定的配置文件位置
@@ -50,7 +48,6 @@ func newInitCmd() *cobra.Command {
 			}
 
 			cfg := models.DefaultConfig()
-			seed := !noSamples
 
 			// 交互式咨询（仅终端；CI/管道自动跳过，使用参数默认值）
 			if isInteractive() {
@@ -75,12 +72,6 @@ func newInitCmd() *cobra.Command {
 						}
 					}
 				}
-
-				// 3. 是否更新（新增）示例菜谱数据
-				if !cmd.Flags().Changed("no-samples") {
-					ok, _ := promptBool(reader, "生成示例菜谱数据（便于演示）?", true)
-					seed = ok
-				}
 			}
 
 			// 参数显式覆盖
@@ -91,19 +82,18 @@ func newInitCmd() *cobra.Command {
 				cfg.GitHub.RecipesBranch = recipesBranch
 			}
 
-			return initVault(cmd, dir, cfgPath, force, cfg, separateRecipes, recipesBranch, seed)
+			return initVault(cmd, dir, cfgPath, force, cfg, separateRecipes, recipesBranch)
 		},
 	}
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "覆盖已存在的配置文件")
 	cmd.Flags().BoolVar(&separateRecipes, "separate-recipes", false, "菜谱数据放到独立分支（默认 recipes）")
 	cmd.Flags().StringVar(&recipesBranch, "recipes-branch", "recipes", "菜谱独立分支名（配合 --separate-recipes）")
 	cmd.Flags().StringVar(&assetDir, "asset-dir", ".flavor-vault/assets", "图片资源目录（相对项目根）")
-	cmd.Flags().BoolVar(&noSamples, "no-samples", false, "不生成示例菜谱数据")
 	return cmd
 }
 
 // initVault 在指定项目根目录初始化 vault 结构，配置写入 cfgPath
-func initVault(cmd *cobra.Command, dir, cfgPath string, force bool, cfg *models.Config, separateRecipes bool, recipesBranch string, seed bool) error {
+func initVault(cmd *cobra.Command, dir, cfgPath string, force bool, cfg *models.Config, separateRecipes bool, recipesBranch string) error {
 	vaultDir := vault.VaultRoot(dir)
 
 	// 创建目录
@@ -140,19 +130,6 @@ func initVault(cmd *cobra.Command, dir, cfgPath string, force bool, cfg *models.
 		}
 	}
 
-	// 是否新增（示例）菜谱数据：由交互咨询 / --no-samples 决定
-	if seed {
-		recipesDir := vault.RecipesDir(dir)
-		if countJSON(recipesDir) == 0 {
-			if err := writeSampleRecipe(recipesDir); err != nil {
-				return err
-			}
-		}
-		if err := writeSampleAssets(vault.ResolveAssetDir(dir, cfg)); err != nil {
-			return err
-		}
-	}
-
 	// 独立菜谱分支：创建"数据仓库"分支 + worktree + 忽略配置
 	if separateRecipes {
 		if err := setupRecipesBranch(cmd, dir, recipesBranch, cfg); err != nil {
@@ -175,18 +152,4 @@ func isInteractive() bool {
 		return false
 	}
 	return fi.Mode()&os.ModeCharDevice != 0
-}
-
-func countJSON(dir string) int {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return 0
-	}
-	n := 0
-	for _, e := range entries {
-		if !e.IsDir() && filepath.Ext(e.Name()) == ".json" {
-			n++
-		}
-	}
-	return n
 }

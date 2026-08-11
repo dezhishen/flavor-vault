@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"flavor-vault/internal/models"
 	"flavor-vault/internal/plugins"
 	"flavor-vault/internal/store"
+	"flavor-vault/internal/utils"
 )
 
 func newAddCmd() *cobra.Command {
@@ -50,7 +52,7 @@ func newAddCmd() *cobra.Command {
 			} else {
 				// 3. 交互式收集（以草稿为默认值，支持续写）
 				reader := bufio.NewReader(os.Stdin)
-				r, err = promptAddRecipe(reader, cfg, r)
+				r, err = promptAddRecipe(reader, cfg, projectRoot, r)
 				if err != nil {
 					return err
 				}
@@ -90,7 +92,7 @@ func newAddCmd() *cobra.Command {
 }
 
 // promptAddRecipe 交互式收集菜谱字段，使用 draft 中的值作为默认值
-func promptAddRecipe(reader *bufio.Reader, cfg *models.Config, draft *models.Recipe) (*models.Recipe, error) {
+func promptAddRecipe(reader *bufio.Reader, cfg *models.Config, projectRoot string, draft *models.Recipe) (*models.Recipe, error) {
 	r := &models.Recipe{}
 	if draft != nil {
 		*r = *draft
@@ -166,20 +168,28 @@ func promptAddRecipe(reader *bufio.Reader, cfg *models.Config, draft *models.Rec
 		moreSide, _ = promptBool(reader, "继续添加辅料?", false)
 	}
 
-	// 步骤
+	// 步骤（自然语言：第一步/第二步…，每步之间可插图片）
 	if len(r.Steps) == 0 {
 		for {
-			more, _ := promptBool(reader, fmt.Sprintf("添加步骤 %d?", len(r.Steps)+1), len(r.Steps) == 0)
-			if !more {
-				break
-			}
-			desc, err := prompt(reader, "步骤描述", "")
+			n := len(r.Steps) + 1
+			desc, err := prompt(reader, fmt.Sprintf("第 %d 步做什么？（直接回车结束步骤）", n), "")
 			if err != nil {
 				return nil, err
 			}
-			if desc != "" {
-				r.Steps = append(r.Steps, models.Step{Order: len(r.Steps) + 1, Description: desc})
+			if strings.TrimSpace(desc) == "" {
+				break
 			}
+			img, _ := prompt(reader, fmt.Sprintf("第 %d 步配图（本地路径将复制到 assets / 图片URL，回车跳过）", n), "")
+			imgRef := ""
+			if strings.TrimSpace(img) != "" {
+				ref, err := resolveStepImage(projectRoot, cfg, r.Name, n, strings.TrimSpace(img))
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "⚠ 配图失败（已跳过）: %v\n", err)
+				} else {
+					imgRef = ref
+				}
+			}
+			r.Steps = append(r.Steps, models.Step{Order: n, Description: desc, ImageRef: imgRef})
 		}
 	} else {
 		fmt.Fprintln(os.Stderr, "ℹ 步骤已存在（来自草稿），如需修改请用 --json 或 fv edit")
@@ -204,6 +214,46 @@ func defaultDifficulty(d int) int {
 		return d
 	}
 	return 2
+}
+
+// resolveStepImage 处理步骤配图：本地文件复制到 assets/images/ 并返回引用，外部 URL 原样返回。
+// 命名规范：<菜谱名>-<步骤>-<序号>，如 红烧肉-2-1.png
+func resolveStepImage(projectRoot string, cfg *models.Config, recipeName string, step int, src string) (string, error) {
+	if utils.IsRemoteURL(src) {
+		return src, nil
+	}
+	info, err := os.Stat(src)
+	if err != nil || info.IsDir() {
+		return "", fmt.Errorf("图片不存在: %s", src)
+	}
+	ext := filepath.Ext(src)
+	if ext == "" {
+		ext = ".img"
+	}
+	base := sanitizeName(recipeName)
+	if base == "" {
+		base = "recipe"
+	}
+	name := fmt.Sprintf("%s-%d-1%s", base, step, ext)
+	dst := filepath.Join(assetDirFor(cfg, projectRoot), "images", name)
+	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+		return "", err
+	}
+	data, err := os.ReadFile(src)
+	if err != nil {
+		return "", err
+	}
+	if err := os.WriteFile(dst, data, 0o644); err != nil {
+		return "", err
+	}
+	return "images/" + name, nil
+}
+
+// sanitizeName 清洗文件名字段：仅去除文件系统/URL 非法字符与空白，保留中文
+func sanitizeName(s string) string {
+	s = strings.TrimSpace(s)
+	re := regexp.MustCompile(`[\\/:*?"<>|\s]+`)
+	return strings.Trim(re.ReplaceAllString(s, "-"), "-")
 }
 
 // orDefault 值非零时返回 v，否则返回默认值（用于交互提示的默认值）
