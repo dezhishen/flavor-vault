@@ -17,3 +17,6 @@ web/dist/
 .recipes/
 .flavor-vault/recipes/
 .flavor-vault/assets/
+
+# config
+config.yaml

@@ -35,6 +35,7 @@ func newConfigGetCmd() *cobra.Command {
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "配置文件: %s\n", cfgPath)
 			fmt.Fprintf(cmd.OutOrStdout(), "模式: %s\n", mode)
+			fmt.Fprintf(cmd.OutOrStdout(), "作者: %s <%s>\n", orDash(cfg.Author.Name), orDash(cfg.Author.Email))
 			fmt.Fprintf(cmd.OutOrStdout(), "endpoint: %s\n", orDash(cfg.Endpoint))
 			fmt.Fprintf(cmd.OutOrStdout(), "asset_dir: %s\n", orDash(cfg.AssetDir))
 			if cfg.Maintainer() {
@@ -57,9 +58,11 @@ func newConfigGetCmd() *cobra.Command {
 func newConfigSetCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "set <key> <value>",
-		Short: "修改配置项（endpoint / asset_dir / source.repo / source.branch）",
+		Short: "修改配置项（endpoint / asset_dir / author.name / author.email / github.repo / github.branch）",
 		Example: `  fv config set endpoint https://user.github.io/flavor-vault/data
   fv config set asset_dir custom/assets
+  fv config set author.name "张三"
+  fv config set author.email zhang@example.com
   fv config set github.repo owner/recipes
   fv config set github.branch recipes`,
 		Args: cobra.ExactArgs(2),
@@ -73,6 +76,10 @@ func newConfigSetCmd() *cobra.Command {
 				cfg.Endpoint = args[1]
 			case "asset_dir":
 				cfg.AssetDir = args[1]
+			case "author.name":
+				cfg.Author.Name = args[1]
+			case "author.email":
+				cfg.Author.Email = args[1]
 			case "github.repo":
 				cfg.GitHub.Repo = args[1]
 			case "github.branch":

@@ -24,9 +24,19 @@ type Config struct {
 	// 默认值可在构建时替换（fv build --endpoint / FV_ENDPOINT 写入产物 meta）。
 	Endpoint string `yaml:"endpoint" mapstructure:"endpoint"`
 
+	// 作者信息（编辑提交时使用，fv init 强制采集）。
+	// AI 助手环境下 git config 可能缺失，故写入配置供 add/edit/rm 提交使用。
+	Author AuthorConfig `yaml:"author" mapstructure:"author"`
+
 	// GitHub（读写模式）：菜谱数据仓库 + 权限。add/edit/rm 经 GitHub API
 	// 直接操作该仓库/分支上的单文件，无需本地 clone。留空 = 只读。
 	GitHub GitHubConfig `yaml:"github" mapstructure:"github"`
+}
+
+// AuthorConfig 作者信息（菜谱提交作者）
+type AuthorConfig struct {
+	Name  string `yaml:"name" mapstructure:"name"`
+	Email string `yaml:"email" mapstructure:"email"`
 }
 
 // GitHubConfig 读写模式配置：菜谱数据仓库 + GitHub 权限

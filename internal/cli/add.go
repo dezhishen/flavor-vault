@@ -33,7 +33,7 @@ func newAddCmd() *cobra.Command {
   fv add --json @recipe.json                       # 从文件读取
   fv add --action-id abc123 --json @recipe.json    # 缓存草稿，失败可续写`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, projectRoot, _, err := loadProjectConfig(cmd)
+			cfg, projectRoot, cfgPath, err := loadProjectConfig(cmd)
 			if err != nil {
 				return err
 			}
@@ -93,7 +93,7 @@ func newAddCmd() *cobra.Command {
 			if assetBase == "" {
 				assetBase = ".flavor-vault/assets"
 			}
-			if err := apiSaveRecipe(ctx, cl, branch, r, assetBase, assetDirFor(cfg, projectRoot), projectRoot,
+			if err := apiSaveRecipe(ctx, cl, branch, r, assetBase, assetDirFor(cfg, projectRoot), cfg, cfgPath, projectRoot,
 				fmt.Sprintf("add: %s", r.Name)); err != nil {
 				return failAndCache(cmd, st, "add", r.ID, r, err)
 			}

@@ -8,6 +8,11 @@
 # 两种使用模式：
 #   1) 只读（查询菜谱）：只需配置 endpoint；未配置时用默认端点 https://fv.sdniu.top/data
 #   2) 读写（编辑菜谱）：配置 github（菜谱仓库 + 权限）
+#
+# 作者信息（可选）：提交菜谱时的作者。不配置则由 GitHub token 自动获取（或 git config）
+# author:
+#     name: "张三"
+#     email: "zhang@example.com"
 
 endpoint: ""
 # github:

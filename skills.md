@@ -52,6 +52,8 @@ fv rm <id> --repo <owner>/<repo> --branch recipes -y
 | **只读** | 查询菜谱 | `--endpoint <url>`（或 `FV_ENDPOINT`）；未配置时用默认端点 `https://fv.sdniu.top/data`；本地有 `dist/data` 时读本地 |
 | **读写** | 新增/编辑/删除菜谱 | `--repo <owner/repo>`（或 `FV_REPO`）+ `--branch <branch>`（默认 `recipes`，或 `FV_BRANCH`）+ `GITHUB_TOKEN` |
 
+> 提交作者：默认自动取**你的 `GITHUB_TOKEN` 对应 GitHub 账户**（`GET /user`，无公开邮箱时用 GitHub noreply 邮箱）。如需覆盖，在配置 `author.name` / `author.email`（`fv config set author.name ...`）。
+
 > 不需要任何配置文件。可选 `config.example.yaml`（项目根）供复制参考；也可放 `.flavor-vault/config.yaml`（endpoint / github 块）。
 
 ## 命令一览

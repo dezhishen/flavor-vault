@@ -16,6 +16,16 @@ type RepoInfo struct {
 	Description   string
 }
 
+// CurrentUser 返回基于 token 的认证用户信息（GET /user）。
+// 用于在无 git config / 配置作者时，自动从 GitHub 账户推导提交作者。
+func (c *Client) CurrentUser(ctx context.Context) (*github.User, error) {
+	u, _, err := c.gh.Users.Get(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
 // GetRepo 获取仓库信息（只读，无冲突风险）
 func (c *Client) GetRepo(ctx context.Context) (*RepoInfo, error) {
 	repo, _, err := c.gh.Repositories.Get(ctx, c.Owner, c.Repo)

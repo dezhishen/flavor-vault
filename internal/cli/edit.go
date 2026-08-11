@@ -24,7 +24,7 @@ func newEditCmd() *cobra.Command {
   fv edit hong-shao-rou --json '{"stats":{"difficulty":4}}'   # 局部更新
   fv edit hong-shao-rou --action-id e1 --json @patch.json     # 缓存补丁，失败可续写`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, projectRoot, _, err := loadProjectConfig(cmd)
+			cfg, projectRoot, cfgPath, err := loadProjectConfig(cmd)
 			if err != nil {
 				return err
 			}
@@ -118,7 +118,7 @@ func newEditCmd() *cobra.Command {
 			if assetBase == "" {
 				assetBase = ".flavor-vault/assets"
 			}
-			if err := apiSaveRecipe(ctx, cl, branch, base, assetBase, assetDirFor(cfg, projectRoot), projectRoot,
+			if err := apiSaveRecipe(ctx, cl, branch, base, assetBase, assetDirFor(cfg, projectRoot), cfg, cfgPath, projectRoot,
 				fmt.Sprintf("edit: %s", base.Name)); err != nil {
 				return failAndCache(cmd, st, "edit", id, base, err)
 			}

@@ -17,6 +17,10 @@ func newRmCmd() *cobra.Command {
 			id := args[0]
 
 			// 编辑目标：GitHub API（数据源分支）
+			cfg, _, cfgPath, err := loadProjectConfig(cmd)
+			if err != nil {
+				return err
+			}
 			cl, branch, projectRoot, err := recipeAPIClient(cmd)
 			if err != nil {
 				return err
@@ -54,7 +58,7 @@ func newRmCmd() *cobra.Command {
 				}
 			}
 
-			if err := apiDeleteRecipe(ctx, cl, branch, id, projectRoot, fmt.Sprintf("rm: %s", id)); err != nil {
+			if err := apiDeleteRecipe(ctx, cl, branch, id, cfg, cfgPath, projectRoot, fmt.Sprintf("rm: %s", id)); err != nil {
 				return err
 			}
 			completeAction(cmd, st)
