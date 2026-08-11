@@ -70,7 +70,8 @@
   ],
   "media": {
     "cover": "images/hong-shao-rou.svg",
-    "images": null
+    "images": null,
+    "video_url": "https://www.bilibili.com/video/BV1GJ411x7h7"
   },
   "stats": {
     "prep_time": 20,
