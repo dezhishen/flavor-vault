@@ -146,15 +146,19 @@ fv --config .flavor-vault/config.yaml build
 - 配置为标准布局 `<root>/.flavor-vault/config.yaml` → 项目根为 `.flavor-vault` 的上级目录；
 - 其他自定义路径（如 `/data/vault/config.yaml`）→ 项目根为配置文件所在目录，菜谱/缓存位于 `<root>/.flavor-vault/`。
 
-**初始化配置**：
+**初始化配置**（终端下交互式咨询，CI/管道自动跳过）：
 
 ```bash
-fv init                          # 在当前目录初始化 .flavor-vault/ + 默认配置 + 示例菜谱
+fv init                          # 交互式：咨询自定义资源目录 / 独立数据分支 / 是否新增示例菜谱
+fv init --no-samples             # 不生成示例菜谱数据
+fv init --asset-dir custom/assets # 自定义图片资源目录
+fv init --separate-recipes       # 菜谱数据放到独立分支（见下文）
+fv init --separate-recipes --recipes-branch data   # 自定义分支名
 fv init -c /path/to/config.yaml  # 在指定位置初始化配置
 fv init -f                       # 覆盖已存在的配置文件
-fv init --separate-recipes       # 菜谱数据放到独立 recipes 分支（见下文）
-fv init --separate-recipes --recipes-branch data   # 自定义分支名
 ```
+
+> `fv init` 在终端运行时会依次询问：**① 是否自定义菜谱数据（图片资源目录）② 是否将菜谱数据放到独立分支（可 fork/私有化）③ 是否生成示例菜谱数据**；按回车使用默认值，非交互环境（CI/管道）直接用参数或默认值。
 
 ---
 
