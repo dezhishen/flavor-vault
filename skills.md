@@ -27,13 +27,14 @@ mkdir -p ~/.local/bin && curl -fsSL "https://github.com/dezhishen/flavor-vault/r
 
 > 若 `~/.local/bin` 不在 PATH，请先 `export PATH="$HOME/.local/bin:$PATH"`。之后可用 `fv update` 自更新到最新版；源码构建为 `go build -o fv ./cmd/fv`。
 
-### 2. 初始化（必做一次）
+### 2. 初始化（对话式，回车即用默认）
 
 ```bash
-# 初始化配置到用户主目录 ~/.flavor-vault/config.yaml（AI/安装方式各异时主目录最稳定）
+# 对话式：回车即用默认配置（只读即可用），生成 ~/.flavor-vault/config.yaml
 fv init
-# 可带 --endpoint / --author-name / --author-email 写入默认值
-# 用 -c 可指定其他位置：fv init -c /path/to/config.yaml
+# 需要编辑菜谱时再配置 GitHub：
+fv init --github --repo <owner>/<repo> --branch recipes
+# 或直接运行 fv add/edit/rm，按提示补全 GitHub 信息（-c 可指定配置位置）
 ```
 
 ### 3. 开始使用（务必带 `-c ~/.flavor-vault/config.yaml`）
@@ -91,7 +92,7 @@ fv rm -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y
 | 命令 | 说明 |
 |---|---|
 | `fv build [--force] [--output ./dist] [--asset-dir .flavor-vault/assets] [--ai-snapshot] [--endpoint <url>]` | ETL 生成静态站点（build 配置由 CI/workflow 传入；本地用于预览） |
-| `fv init [-c <path>] [-f] [--endpoint <url>] [--author-name <n>] [--author-email <e>]` | 生成配置到用户主目录 `~/.flavor-vault/config.yaml`（`-c` 指定位置，`-f` 覆盖） |
+| `fv init [-c <path>] [-f] [--github] [--repo <owner/repo>] [--branch <b>]` | 对话式生成配置到 `~/.flavor-vault/config.yaml`（回车即用默认；`--github` 一并配置编辑仓库） |
 | `fv config get / set <key> <val>` | 查看/修改可选配置（endpoint / asset_dir / github.repo / github.branch） |
 | `fv action list/show/clear` | 管理 `--action-id` 操作缓存（草稿续写） |
 | `fv update [--check] [--version vX] [--repo owner/repo]` | 自更新到 GitHub Releases 最新版（公开仓库免 token；Windows 自动延迟替换） |

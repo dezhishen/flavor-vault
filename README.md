@@ -38,11 +38,14 @@ mkdir -p ~/.local/bin && curl -fsSL "https://github.com/dezhishen/flavor-vault/r
 
 > 自动识别系统与架构（`fv-linux-amd64` / `fv-darwin-arm64` / `fv-windows-amd64.exe` 等，见 Releases 页）。若 `~/.local/bin` 不在 PATH，先执行 `export PATH="$HOME/.local/bin:$PATH"`。之后用 `fv update` 自更新到最新版；源码构建为 `go build -o fv ./cmd/fv`。
 
-### 初始化（配置写到用户主目录）
+### 初始化（对话式，回车即用默认）
 
 ```bash
-fv init     # 生成 ~/.flavor-vault/config.yaml（-c 可指定其他位置，-f 覆盖）
+fv init                                    # 对话式：回车即用默认配置（只读即可用），生成 ~/.flavor-vault/config.yaml
+fv init --github --repo <owner>/<repo>     # 非交互：一并配置编辑仓库（-c 指定位置，-f 覆盖）
 ```
+
+> 只需只读时，`fv init` 回车到底即可；以后要新增/编辑/删除菜谱时，`fv add`/`fv edit`/`fv rm` 会按提示补全 GitHub 信息（或 `fv init --github` 一次性配置）。
 
 ### 两种使用模式
 

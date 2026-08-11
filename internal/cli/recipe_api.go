@@ -21,10 +21,37 @@ import (
 // repo 来源：--repo / FV_REPO / config.github.repo 优先，其次 git remote（代码仓库）；
 // 分支：--branch / FV_BRANCH / config.github.branch，默认 recipes；token 用 GITHUB_TOKEN 或 config.github.token。
 func recipeAPIClient(cmd *cobra.Command) (*ghc.Client, string, string, error) {
-	cfg, projectRoot, _, err := loadProjectConfig(cmd)
+	cfg, projectRoot, cfgPath, err := loadProjectConfig(cmd)
 	if err != nil {
 		return nil, "", "", err
 	}
+
+	// 按需补全编辑配置（降低门槛：只有真正编辑菜谱时才询问更多信息）。
+	// 交互式下缺 repo/token 时引导输入并写入配置，避免直接报错；非交互仍走参数/环境变量。
+	if isInteractive() {
+		changed := false
+		reader := newLineReader()
+		if strings.TrimSpace(cfg.GitHub.Repo) == "" && !cmd.Flags().Changed("repo") {
+			def := ""
+			if owner, r, err := ghc.ResolveRepo(projectRoot); err == nil {
+				def = owner + "/" + r
+			}
+			if v, err := prompt(reader, "GitHub 数据仓库（owner/repo，菜谱存放处）", def); err == nil {
+				cfg.GitHub.Repo = strings.TrimSpace(v)
+				changed = true
+			}
+		}
+		if strings.TrimSpace(cfg.GitHub.Token) == "" && strings.TrimSpace(os.Getenv("GITHUB_TOKEN")) == "" && !cmd.Flags().Changed("token") {
+			if v, err := prompt(reader, "GitHub Token（需该仓库写权限；也可用 GITHUB_TOKEN 环境变量）", ""); err == nil {
+				cfg.GitHub.Token = strings.TrimSpace(v)
+				changed = true
+			}
+		}
+		if changed {
+			_ = persistConfig(cfg, cfgPath, projectRoot)
+		}
+	}
+
 	cl, err := ghc.NewClientFromConfig(cfg)
 	if err != nil {
 		return nil, "", "", err
@@ -182,11 +209,16 @@ func ensureAuthor(ctx context.Context, cl *ghc.Client, cfg *models.Config, cfgPa
 	return ghc.Author{}, fmt.Errorf("无法确定提交作者：请运行 fv config set author.name <姓名> / fv config set author.email <邮箱>（维护模式需配置作者）")
 }
 
-// persistAuthor 将解析到的作者写入配置（未指定 cfgPath 时用默认 .flavor-vault/config.yaml）
-func persistAuthor(cfg *models.Config, cfgPath, projectRoot string) error {
+// persistConfig 将配置写回（未指定 cfgPath 时用默认 .flavor-vault/config.yaml）
+func persistConfig(cfg *models.Config, cfgPath, projectRoot string) error {
 	path := strings.TrimSpace(cfgPath)
 	if path == "" {
 		path = vault.ConfigPath(projectRoot)
 	}
 	return vault.SaveConfigAt(path, cfg)
+}
+
+// persistAuthor 将解析到的作者写入配置（未指定 cfgPath 时用默认 .flavor-vault/config.yaml）
+func persistAuthor(cfg *models.Config, cfgPath, projectRoot string) error {
+	return persistConfig(cfg, cfgPath, projectRoot)
 }
