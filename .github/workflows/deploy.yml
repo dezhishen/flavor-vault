@@ -11,6 +11,10 @@ on:
 permissions:
   contents: write
 
+# Node 20 action 弃用过渡期放行（GitHub 建议的临时方案；后续应升级到 Node 24 版 action）
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: "true"
+
 # 串行化 gh-pages 部署，避免 recipes 与 v* tag 同时触发时部署冲突
 concurrency:
   group: pages-deploy
@@ -139,6 +143,19 @@ jobs:
             git log --oneline --no-merges "$PREV..$CUR" >> CHANGELOG.md
           fi
 
+      # 附件列表：release/* 全部；ai-corpus.json 仅在非空时附带（空文件 GitHub 拒绝上传 size<1）
+      - name: Prepare release files
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: rfiles
+        run: |
+          LIST="release/*"
+          if [ -s dist/data/ai-corpus.json ]; then
+            LIST=$(printf '%s\n%s' "$LIST" "dist/data/ai-corpus.json")
+          fi
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$LIST" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
@@ -148,6 +165,4 @@ jobs:
           body_path: CHANGELOG.md
           # 预览版：tag 含 "-"（如 v1.1.0-beta.1）标记为 prerelease
           prerelease: ${{ contains(github.ref_name, '-') }}
-          files: |
-            release/*
-            dist/data/ai-corpus.json
+          files: ${{ steps.rfiles.outputs.files }}
