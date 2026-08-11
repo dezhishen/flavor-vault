@@ -157,13 +157,15 @@ dist/
 ├── index.html / assets/   # 前端产物
 └── data/                  # ETL 数据
     ├── meta.json          # 统计 + 默认 endpoint
-    ├── all.json           # 菜谱轻量清单
+    ├── all.json           # 菜谱轻量清单（含全部版本的主要食材）
     ├── filters.json       # 倒排索引
-    ├── search.json        # 全文搜索索引
+    ├── search.json        # 全文搜索索引（聚合所有版本食材/调料/步骤）
     ├── by-tag/*.json      # 标签分组
-    ├── details/*.json     # 菜谱详情（懒加载）
+    ├── details/*.json     # 菜谱详情（含多版本 versions/调料 seasonings）
     └── ai-corpus.json     # AI 快照（JSON Lines）
 ```
+
+> 菜谱数据模型：`versions`（多版本，为空则用顶层字段为默认版本）；食材分 `main`（必选）/`side`（配菜）/`optional`（非必须）；调料 `seasonings` 每项可带 `alternatives` 备选方案（如香菜代替香葱）。
 
 ---
 

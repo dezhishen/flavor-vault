@@ -50,17 +50,46 @@ func validateRecipe(r *models.Recipe) error {
 	if strings.TrimSpace(r.Name) == "" {
 		problems = append(problems, "缺少 name（菜名）")
 	}
-	if len(r.Ingredients.Main) == 0 {
-		problems = append(problems, "缺少 ingredients.main（主要食材）")
+	versions := r.VersionsEffective()
+	if len(versions) == 0 {
+		problems = append(problems, "缺少菜谱内容（versions 或默认版本字段）")
 	}
-	if len(r.Steps) == 0 {
-		problems = append(problems, "缺少 steps（步骤）")
-	}
-	if r.Stats.Difficulty < 1 || r.Stats.Difficulty > 5 {
-		problems = append(problems, "difficulty 必须在 1-5 之间")
+	for i, v := range versions {
+		label := fmt.Sprintf("版本[%d] ", i+1)
+		if v.Name != "" {
+			label = fmt.Sprintf("版本[%s] ", v.Name)
+		}
+		for _, p := range validateVersion(v) {
+			problems = append(problems, label+p)
+		}
 	}
 	if len(problems) == 0 {
 		return nil
 	}
 	return fmt.Errorf("校验失败: %s", strings.Join(problems, "; "))
+}
+
+// validateVersion 校验单个版本：主要食材/步骤/difficulty 必填；调料与备选方案需有名称。
+func validateVersion(v models.Version) []string {
+	var p []string
+	if len(v.Ingredients.Main) == 0 {
+		p = append(p, "缺少 ingredients.main（主要食材）")
+	}
+	if len(v.Steps) == 0 {
+		p = append(p, "缺少 steps（步骤）")
+	}
+	if v.Stats.Difficulty < 1 || v.Stats.Difficulty > 5 {
+		p = append(p, "difficulty 必须在 1-5 之间")
+	}
+	for _, s := range v.Seasonings {
+		if strings.TrimSpace(s.Name) == "" {
+			p = append(p, "调料缺少 name")
+		}
+		for _, alt := range s.Alternatives {
+			if strings.TrimSpace(alt.Name) == "" {
+				p = append(p, "调料备选方案缺少 name")
+			}
+		}
+	}
+	return p
 }

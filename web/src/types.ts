@@ -17,6 +17,34 @@ export interface RecipeSummary {
 export interface Ingredient {
   name: string
   amount: string
+  note?: string
+}
+
+export interface SeasoningOption {
+  name: string
+  amount?: string
+  note?: string
+}
+
+export interface Seasoning {
+  name: string
+  amount?: string
+  note?: string
+  alternatives?: SeasoningOption[]
+}
+
+export interface Version {
+  name: string
+  description?: string
+  ingredients: {
+    main: Ingredient[]
+    side: Ingredient[]
+    optional: Ingredient[]
+  }
+  seasonings?: Seasoning[]
+  steps: Step[]
+  media: Media
+  stats: Stats
 }
 
 export interface Step {
@@ -47,10 +75,13 @@ export interface RecipeDetail {
   ingredients: {
     main: Ingredient[]
     side: Ingredient[]
+    optional: Ingredient[]
   }
+  seasonings?: Seasoning[]
   steps: Step[]
   media: Media
   stats: Stats
+  versions?: Version[]
   created_at: string
   updated_at: string
 }

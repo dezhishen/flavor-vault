@@ -107,14 +107,34 @@ fv rm -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y
   "description": "",
   "tags": ["热菜", "家常"],
   "kitchenware": ["炒锅"],
-  "ingredients": { "main": [{"name": "五花肉", "amount": "500g"}], "side": [{"name": "冰糖"}] },
+  "ingredients": {
+    "main": [{"name": "五花肉", "amount": "500g"}],
+    "side": [{"name": "冰糖", "amount": "20g"}],
+    "optional": [{"name": "鹌鹑蛋", "amount": "10个", "note": "没有可省略"}]
+  },
+  "seasonings": [
+    {"name": "香葱", "amount": "2根", "alternatives": [{"name": "香菜", "amount": "1把", "note": "代替香葱"}]}
+  ],
   "steps": [{"order": 1, "description": "焯水", "image_ref": "images/红烧肉-1-1.png"}],
   "media": { "cover": "", "images": [] },
-  "stats": { "prep_time": 20, "cook_time": 70, "difficulty": 3 }
+  "stats": { "prep_time": 20, "cook_time": 70, "difficulty": 3 },
+  "versions": [
+    {
+      "name": "少油版",
+      "ingredients": { "main": [{"name": "白萝卜", "amount": "1根"}], "side": [], "optional": [] },
+      "seasonings": [],
+      "steps": [{"order": 1, "description": "先煎出油"}],
+      "media": { "cover": "", "images": [] },
+      "stats": { "prep_time": 15, "cook_time": 45, "difficulty": 2 }
+    }
+  ]
 }
 ```
-- 图片：`image_ref`/`cover`/`images` 可为本地路径（随单文件经 API 提交）或外部 URL
-- 步骤图命名：`<菜谱名>-<步骤>-<序号>`（如 `红烧肉-1-1.png`）
+
+- **多版本**：`versions`（数组，每项含 `ingredients/seasonings/steps/media/stats`）——同一道菜多个做法/口味；为空时用顶层字段作为默认版本，前端按 tab 展示
+- **食材**：`ingredients.main` 必选主料 / `side` 配菜辅料 / `optional` 非必须（可选）；每项可带 `note` 备注
+- **调料**：`seasonings` 每项 `name` 为方案一，`alternatives` 为备选方案（方案二/三，如用香菜代替香葱）
+- **图片**：`image_ref`/`cover`/`images` 可为本地路径（随单文件经 API 提交）或外部 URL；步骤图命名 `<菜谱名>-<步骤>-<序号>`（如 `红烧肉-1-1.png`）
 
 ## 构建（`fv build`）
 

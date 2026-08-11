@@ -180,6 +180,40 @@ func promptAddRecipe(reader *bufio.Reader, cfg *models.Config, projectRoot strin
 		moreSide, _ = promptBool(reader, "继续添加辅料?", false)
 	}
 
+	// 非必须（可选）食材
+	moreOpt, _ := promptBool(reader, "添加非必须（可选）食材?", len(r.Ingredients.Optional) > 0)
+	for moreOpt {
+		ing, err := promptIngredient(reader, "可选")
+		if err != nil {
+			return nil, err
+		}
+		r.Ingredients.Optional = append(r.Ingredients.Optional, ing)
+		moreOpt, _ = promptBool(reader, "继续添加可选食材?", false)
+	}
+
+	// 调料（方案一 + 备选方案二/三…，如 香葱 / 香菜）
+	moreSeas, _ := promptBool(reader, "添加调料?", len(r.Seasonings) > 0)
+	for moreSeas {
+		seasName, _ := prompt(reader, "调料名称（方案一，如 香葱）", "")
+		if strings.TrimSpace(seasName) == "" {
+			break
+		}
+		seasAmount, _ := prompt(reader, "用量（回车跳过）", "")
+		seas := models.Seasoning{Name: strings.TrimSpace(seasName), Amount: strings.TrimSpace(seasAmount)}
+		moreAlt, _ := promptBool(reader, "添加备选方案（如 香菜 代替 香葱）?", false)
+		for moreAlt {
+			altName, _ := prompt(reader, "备选名称（方案二，如 香菜）", "")
+			if strings.TrimSpace(altName) == "" {
+				break
+			}
+			altAmount, _ := prompt(reader, "备选用量（回车跳过）", "")
+			seas.Alternatives = append(seas.Alternatives, models.SeasoningOption{Name: strings.TrimSpace(altName), Amount: strings.TrimSpace(altAmount)})
+			moreAlt, _ = promptBool(reader, "再添加备选方案（方案三）?", false)
+		}
+		r.Seasonings = append(r.Seasonings, seas)
+		moreSeas, _ = promptBool(reader, "继续添加调料?", false)
+	}
+
 	// 步骤（自然语言：第一步/第二步…，每步之间可插图片）
 	if len(r.Steps) == 0 {
 		for {

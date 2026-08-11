@@ -103,15 +103,14 @@ func (p *SearchIndexer) Build(ctx *pipeline.BuildContext) error {
 	})
 }
 
-// toSearchEntry 由菜谱生成搜索条目
+// toSearchEntry 由菜谱生成搜索条目（聚合所有版本的食材/调料与步骤）
 func toSearchEntry(r *models.Recipe) SearchEntry {
-	ings := r.MainIngredientNames()
-	for _, s := range r.Ingredients.Side {
-		ings = append(ings, s.Name)
-	}
+	ings := r.IngredientNamesAll()
 	var steps []string
-	for _, s := range r.Steps {
-		steps = append(steps, fmt.Sprintf("%d. %s", s.Order, s.Description))
+	for _, v := range r.VersionsEffective() {
+		for _, s := range v.Steps {
+			steps = append(steps, fmt.Sprintf("%d. %s", s.Order, s.Description))
+		}
 	}
 	return SearchEntry{
 		ID:          r.ID,
@@ -121,10 +120,10 @@ func toSearchEntry(r *models.Recipe) SearchEntry {
 		Kitchenware: r.Kitchenware,
 		Ingredients: ings,
 		Steps:       strings.Join(steps, "\n"),
-		Cover:       r.Media.Cover,
-		PrepTime:    r.Stats.PrepTime,
-		CookTime:    r.Stats.CookTime,
-		Difficulty:  r.Stats.Difficulty,
+		Cover:       r.VersionsEffective()[0].Media.Cover,
+		PrepTime:    r.VersionsEffective()[0].Stats.PrepTime,
+		CookTime:    r.VersionsEffective()[0].Stats.CookTime,
+		Difficulty:  r.VersionsEffective()[0].Stats.Difficulty,
 	}
 }
 
