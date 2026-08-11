@@ -17,3 +17,5 @@
 
     fv add                          # 新增菜谱（写入本仓库 recipes/）
     fv gh push --recipe <id>        # 把单个菜谱连同图片提交到本分支
+
+> 当前含测试图片（封面/步骤图 SVG 占位，见 .flavor-vault/assets/images/）。
