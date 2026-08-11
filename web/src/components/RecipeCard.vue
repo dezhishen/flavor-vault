@@ -54,7 +54,7 @@ defineEmits<{ click: [] }>()
 // 封面图：数据中为相对路径，这里解析到 assets 目录
 function resolveImage(cover: string): string {
   if (/^(https?:)?\/\//.test(cover)) return cover
-  return `./assets/${cover}`
+  return `/assets/${cover}`
 }
 </script>
 

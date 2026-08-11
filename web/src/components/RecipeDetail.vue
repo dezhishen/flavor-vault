@@ -165,7 +165,7 @@ const activeVersion = computed<Version>(
 
 function resolveAsset(p: string): string {
   if (/^(https?:)?\/\//.test(p)) return p
-  return `./assets/${p}`
+  return `/assets/${p}`
 }
 </script>
 

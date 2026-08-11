@@ -2,8 +2,8 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import type { FacetIndex, Meta, RecipeDetail, RecipeSummary, SearchEntry } from '../types'
 
-/** 数据 API 基础路径（Vite dev 代理到构建产物） */
-const DATA_BASE = import.meta.env.DEV ? '/data' : './data'
+/** 数据 API 基础路径（站点部署在域名根路径 /data；Vite dev 代理到构建产物） */
+const DATA_BASE = '/data'
 
 /**
  * recipeStore：启动时加载 meta.json、all.json、filters.json 与 search.json，

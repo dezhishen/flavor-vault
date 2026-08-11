@@ -3,7 +3,7 @@ import vue from '@vitejs/plugin-vue'
 import fs from 'node:fs'
 import path from 'node:path'
 
-// 使用相对路径 base，兼容 GitHub Pages 子路径部署
+// 使用根路径 base（站点部署在自定义域名根路径；配合 404.html 支持 history 路由深链刷新）
 export default defineConfig({
   plugins: [
     vue(),
@@ -29,7 +29,7 @@ export default defineConfig({
       },
     },
   ],
-  base: './',
+  base: '/',
   build: {
     outDir: 'dist',
     chunkSizeWarningLimit: 1500,
