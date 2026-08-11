@@ -1,17 +1,19 @@
 # 🍲 Flavor Vault
 
-基于 **Git + 纯静态托管** 的菜谱管理工具。使用 Go 编写的 CLI 维护菜谱（每道菜谱一个独立 JSON），构建时执行 **ETL 流水线** 生成分片静态数据（倒排索引、标签分组、AI 快照等），最终由 **Vue 3 + Element Plus** 前端消费，呈现可筛选、可搜索的菜谱页面。无服务器、无数据库、无成本。
+基于 **Git + 纯静态托管** 的菜谱管理工具。使用 Go 编写的 CLI 维护菜谱（每道菜谱一个独立 JSON，经 GitHub API 单文件操作），构建时执行 **ETL 流水线** 生成分片静态数据（倒排索引、标签分组、搜索、AI 快照等），最终由 **Vue 3 + Element Plus** 前端消费，呈现可筛选、可搜索的菜谱页面。无服务器、无数据库、无成本。
 
 ---
 
 ## ✨ 特性
 
-- **极简存储**：菜谱为独立 JSON 文件，Git 友好，天然支持版本控制与协作。
+- **极简存储**：菜谱为独立 JSON 文件，Git 友好，天然支持版本控制与协作；编辑经 GitHub API 单文件提交，无需本地克隆。
 - **插件化 ETL**：构建流水线由插件组成，每个插件生成独立数据集，可注册 CLI 子命令。
 - **毫秒级查询**：预计算 `厨具 / 主要食材 / 标签` 倒排索引，多维条件内存交集。
+- **全文搜索**：构建生成 `search.json`，前端搜索框与 `fv search` 共用同一份索引。
 - **AI 就绪**：`fv ask` 自然语言检索；构建生成 `ai-corpus.json`（JSON Lines）供云端 AI 拉取。
 - **增量构建**：基于文件哈希 + TTL 的缓存系统，重复构建毫秒完成。
-- **纯静态部署**：产物为 HTML/JS/CSS/JSON，一键部署 GitHub Pages / Cloudflare Pages。
+- **纯静态部署**：产物为 HTML/JS/CSS/JSON，由 GitHub Actions 部署到 gh-pages。
+- **自更新**：`fv update` 从 GitHub Releases 拉取当前平台二进制并原子替换。
 
 ---
 
@@ -19,97 +21,87 @@
 
 | 组件 | 选型 |
 |------|------|
-| CLI | Go 1.22+ · Cobra · Viper |
-| 前端 | Vue 3 + TypeScript · Element Plus · Pinia · Vite · npm/pnpm |
+| CLI | Go 1.22+ · Cobra · Viper · go-github |
+| 前端 | Vue 3 + TypeScript · Element Plus · Pinia · Vite |
 | 部署 | GitHub Actions · GitHub Pages |
-| 存储 | Git（菜谱 JSON） |
+| 存储 | Git（菜谱 JSON 于独立 `recipes` 分支） |
 
 ---
 
 ## 📦 快速开始
 
-### 1. 构建 CLI
+### 一条命令安装（基于 Release 二进制，OpenClaw 等任何环境可用）
 
 ```bash
-go build -o fv ./cmd/fv
+mkdir -p ~/.local/bin && curl -fsSL "https://github.com/dezhishen/flavor-vault/releases/latest/download/fv-$(uname -s|tr A-Z a-z)-$(uname -m|sed 's/x86_64/amd64/;s/aarch64/arm64/')" -o ~/.local/bin/fv && chmod +x ~/.local/bin/fv && ~/.local/bin/fv --help
 ```
 
-### 2. 初始化
+> 自动识别系统与架构（`fv-linux-amd64` / `fv-darwin-arm64` / `fv-windows-amd64.exe` 等，见 Releases 页）。若 `~/.local/bin` 不在 PATH，先执行 `export PATH="$HOME/.local/bin:$PATH"`。之后用 `fv update` 自更新到最新版；源码构建为 `go build -o fv ./cmd/fv`。
+
+### 初始化（配置写到用户主目录）
 
 ```bash
-fv init
+fv init     # 生成 ~/.flavor-vault/config.yaml（-c 可指定其他位置，-f 覆盖）
 ```
 
-会在当前目录生成：
+### 两种使用模式
 
-```
-.flavor-vault/
-├── config.yaml   # 标签白名单、厨具建议、缓存与插件配置
-├── recipes/      # 菜谱 JSON（含 6 道示例菜谱）
-└── cache/        # 构建缓存（自动生成，已被 .gitignore 忽略）
-```
+| 模式 | 用途 | 需要什么 |
+|---|---|---|
+| **只读** | 查询菜谱 | 无需配置（默认端点 `https://fv.sdniu.top/data`；本地有 `dist/data` 时读本地） |
+| **读写** | 新增/编辑/删除菜谱 | `GITHUB_TOKEN` + `--repo owner/repo` + `--branch recipes`（或写入配置） |
 
-### 3. 添加菜谱（交互式）
+> **AI 助手（OpenClaw 等）请统一 `fv init` 生成配置，所有命令显式 `-c ~/.flavor-vault/config.yaml`**，不要依赖工作目录自动查找。
 
 ```bash
-fv add
+# 只读：查询菜谱
+fv list -c ~/.flavor-vault/config.yaml
+fv search 红烧 -c ~/.flavor-vault/config.yaml
+fv show <id> -c ~/.flavor-vault/config.yaml
+
+# 读写：编辑菜谱（提交作者自动取自你的 GITHUB_TOKEN 对应账户）
+export GITHUB_TOKEN=ghp_xxx
+fv add  -c ~/.flavor-vault/config.yaml --repo <owner>/<repo> --branch recipes
+fv edit <id> -c ~/.flavor-vault/config.yaml --repo <owner>/<repo> --branch recipes --json '{"stats":{"difficulty":4}}'
+fv rm   <id> -c ~/.flavor-vault/config.yaml --repo <owner>/<repo> --branch recipes -y
 ```
-
-### 4. 构建静态站点
-
-```bash
-fv build                # 增量构建（使用缓存）
-fv build --force        # 强制全量重建
-```
-
-### 5. 本地预览（润 dev）
-
-```bash
-fv build                # 先生成数据（dist/data）与图片（dist/assets）
-cd web
-npm install
-npm run dev             # 开发服务器（默认 5173 端口）
-```
-
-> 开发服务器已内置 `/data`（数据）与 `/assets`（图片）代理，自动读取 `dist/` 下的构建产物，本地即可看到完整卡片与封面。
-> 使用 pnpm 亦可（`pnpm install && pnpm dev`）。
 
 ---
 
 ## 🖥 CLI 命令
 
-| 命令 | 用途 | 示例 |
-|------|------|------|
-| `fv init [-c <path>] [-f]` | 初始化 `.flavor-vault/` 及默认 config | `fv init -c /path/to/config.yaml` |
-| `fv add [--json <json>] [--action-id <id>]` | 创建菜谱（交互式或 JSON，支持草稿缓存） | `fv add --json @recipe.json --action-id a1` |
-| `fv edit <id> [--json <patch>] [--action-id <id>]` | 编辑菜谱（$EDITOR 或 JSON 补丁，支持草稿缓存） | `fv edit hong-shao-rou --json '{"stats":{"difficulty":4}}'` |
-| `fv rm <id> [--action-id <id>]` | 删除菜谱 | `fv rm hong-shao-rou` |
-| `fv list [--tag <tag>] [--json]` | 列出菜谱 | `fv list --tag 凉菜` |
-| `fv show <id>` | 打印完整菜谱（JSON） | `fv show hong-shao-rou` |
-| `fv build [--force] [--output]` | 执行 ETL 流水线 | `fv build --force` |
-| `fv filter --厨具 <kw> --标签 <tag> --食材 <ing>` | 倒排索引交集筛选 | `fv filter --厨具 炒锅 --标签 凉菜` |
-| `fv stats [--json]` | 显示统计信息 | `fv stats` |
-| `fv ask <query>` | AI 自然语言检索（本地缓存优先） | `fv ask "不用炒锅的凉菜"` |
-| `fv push <msg> [--no-rebase] [-f]` | git 推送（自动 fetch/rebase 防冲突） | `fv push "添加红烧肉"` |
-| `fv gh push <msg> [--dir <d>] [--branch <b>]` | 通过 GitHub API 推送（快进守卫） | `fv gh push "发布" --dir dist --branch gh-pages` |
-| `fv gh status / pr / release / workflow` | GitHub 只读/追加式操作 | `fv gh status` |
-| `fv action list/show/clear <id>` | 管理基于 action-id 的操作缓存 | `fv action list` |
-| `fv version` | 显示版本 | `fv version` |
+| 命令 | 用途 |
+|------|------|
+| `fv init [-c <path>] [-f] [--endpoint <url>]` | 生成配置到 `~/.flavor-vault/config.yaml` |
+| `fv list [-c <cfg>] [--tag 标签] [--json]` | 列出菜谱 |
+| `fv show <id> [-c <cfg>] [--raw]` | 打印单菜谱详情 |
+| `fv search <关键词...> [-c <cfg>] [--json]` | 全文搜索（多词 AND） |
+| `fv filter --厨具 炒锅 --标签 凉菜 [-c <cfg>] [--json]` | 倒排索引交集筛选 |
+| `fv stats [-c <cfg>] [--json]` | 统计信息 |
+| `fv ask <问题> [-c <cfg>] [--top N]` | AI 语料检索 |
+| `fv add [-c <cfg>] [--json '...'\|@file] [--action-id X]` | 创建菜谱（交互式/JSON，经 GitHub API） |
+| `fv edit <id> [-c <cfg>] [--json <patch>] [--action-id X]` | 编辑菜谱（JSON 补丁式） |
+| `fv rm <id> [-c <cfg>] [-y]` | 删除菜谱 |
+| `fv build [--force] [--output] [--asset-dir] [--ai-snapshot] [--endpoint]` | 执行 ETL 构建静态站点 |
+| `fv gh push --recipe <id>` | 用 API 推送单个菜谱文件（含图片） |
+| `fv gh status / pr / release / workflow` | GitHub 只读/追加式操作 |
+| `fv config get/set <key> <val>` | 查看/修改配置（endpoint / asset_dir / author.* / github.*） |
+| `fv action list/show/clear` | 管理 `--action-id` 操作缓存（草稿续写） |
+| `fv update [--check] [--version vX]` | 自更新到 GitHub Releases 最新版 |
+| `fv version` | 显示版本 |
 
-所有命令均支持 `--json` 输出，方便 AI 或脚本解析。
+**全局参数**：`-c/--config`（配置路径）、`--endpoint`（读，亦 `FV_ENDPOINT`）、`--repo/--branch`（写，亦 `FV_REPO/FV_BRANCH`）、`--action-id`（操作缓存 ID）。所有命令支持 `--json` 输出，方便 AI/脚本解析。
 
 ---
 
 ## 🎯 基于 `action-id` 的可续写操作
 
-菜谱维护（`add` / `edit` / `rm`）支持全局参数 `--action-id`：把**操作参数**（菜谱草稿/补丁）缓存到 `/tmp/flavor-vaults/action-<id>.json`，**校验无误后才真正完成动作**（写入/删除）并自动清除缓存。这大幅降低 AI 或人进行多轮菜谱维护的难度——不必每次重发全部数据。
-
-### 工作流
+菜谱维护（`add` / `edit` / `rm`）支持全局参数 `--action-id`：把**操作参数**（菜谱草稿/补丁）缓存到 `<系统临时目录>/flavor-vaults/action-<id>.json`，**校验无误后才真正完成动作**（写入/删除）并自动清除缓存。这大幅降低 AI 或人进行多轮菜谱维护的难度——不必每次重发全部数据。
 
 ```bash
 # 1. AI/人 提交一次操作（数据不完整，校验失败）
 fv add --action-id a1 --json '{"name":"红烧肉"}'
-#    → ⚠ 校验失败，草稿已缓存到 /tmp/flavor-vaults/action-a1.json
+#    → ⚠ 校验失败，草稿已缓存
 
 # 2. 查看/检查缓存
 fv action list
@@ -117,241 +109,41 @@ fv action show a1
 
 # 3. 修正后以相同 action-id 重试（自动恢复草稿并合并新数据）
 fv add --action-id a1 --json @recipe-full.json
-#    → ✔ 动作完成，已清除缓存；菜谱已创建
+#    → ✔ 动作完成，已清除缓存
 ```
 
-### 特性
-
-- **草稿续写**：交互式 `fv add` 中断后，以相同 action-id 重新执行可基于缓存草稿续写（预填默认值）。
-- **失败留痕**：校验未通过时参数保留在缓存中，并提示重试命令。
-- **完成即清**：动作成功后自动清除缓存，避免残留。
-- **JSON 直接输入**：`--json` 支持内联 JSON 或 `@文件路径`，适合 AI 批量提交。
-- **编辑补丁**：`fv edit --json` 未提供的字段保持原值（补丁式更新）。
-- **缓存管理**：`fv action list` 查看待处理项，`fv action show` 查看参数，`fv action clear` 手动清除。
-- 缓存目录可通过环境变量 `FV_ACTION_DIR` 覆盖（默认 `/tmp/flavor-vaults`）。
+- **草稿续写**：交互式 `fv add` 中断后以相同 action-id 重试可基于缓存续写。
+- **失败留痕**：校验未通过时参数保留在缓存中并提示重试命令；**成功即清**。
+- **JSON 直接输入**：`--json` 支持内联 JSON 或 `@文件路径`；`fv edit --json` 为补丁式（未提供字段保留）。
+- 缓存目录默认 `<os.TempDir>/flavor-vaults`（Windows 为 `%TEMP%`），可用环境变量 `FV_ACTION_DIR` 覆盖。
 
 ---
 
-## ⚙️ 配置文件与 `--config`
+## ⚙️ 配置（用户主目录）
 
-所有命令支持全局参数 `--config`/`-c` 指定配置文件路径，默认读取 `<项目根>/.flavor-vault/config.yaml`（从当前目录向上自动查找）。
-
-```bash
-fv list                      # 自动查找 .flavor-vault/config.yaml
-fv -c /path/to/config.yaml list    # 使用指定配置文件（可跨目录工作）
-fv --config .flavor-vault/config.yaml build
-```
-
-**路径解析规则**：
-- 配置为标准布局 `<root>/.flavor-vault/config.yaml` → 项目根为 `.flavor-vault` 的上级目录；
-- 其他自定义路径（如 `/data/vault/config.yaml`）→ 项目根为配置文件所在目录，菜谱/缓存位于 `<root>/.flavor-vault/`。
-
-**初始化配置**（终端下交互式咨询，CI/管道自动跳过）：
-
-```bash
-fv init                          # 交互式：咨询自定义资源目录 / 独立数据分支 / 是否新增示例菜谱
-fv init --no-samples             # 不生成示例菜谱数据
-fv init --asset-dir custom/assets # 自定义图片资源目录
-fv init --separate-recipes       # 菜谱数据放到独立分支（见下文）
-fv init --separate-recipes --recipes-branch data   # 自定义分支名
-fv init -c /path/to/config.yaml  # 在指定位置初始化配置
-fv init -f                       # 覆盖已存在的配置文件
-```
-
-> `fv init` 在终端运行时会依次询问：**① 是否自定义菜谱数据（图片资源目录）② 是否将菜谱数据放到独立分支（可 fork/私有化）③ 是否生成示例菜谱数据**；按回车使用默认值，非交互环境（CI/管道）直接用参数或默认值。
-
----
-
-## 🌿 独立菜谱数据仓库分支（`--separate-recipes`）
-
-默认菜谱与代码同在 `main`。若希望**菜谱数据独立成一个分支**（相当于一个**可独立 fork / 私有化的数据仓库**），初始化时一条命令完成全部配置：
-
-```bash
-fv init --separate-recipes
-fv init --separate-recipes --recipes-branch data   # 自定义分支名
-```
-
-`recipes` 分支是一个**自包含的数据仓库**，包含：
-
-```
-.gitignore                     # 忽略缓存/推送锁
-README.md                      # 数据仓库说明（fork/私有化指引）
-.flavor-vault/
-  config.yaml                  # 数据侧配置（标签白名单、资源目录等）
-  recipes/*.json               # 菜谱源文件（含图片引用与外部链接）
-  assets/                      # 图片等资源（封面/过程图/步骤图）
-```
-
-初始化会：写入 `github.recipes_branch` → 创建孤立 `recipes` 数据仓库分支（不打扰当前分支）→ 建立本地 worktree `<root>/.recipes` → 让 `main` 忽略数据目录。
-
-**之后的维护完全透明**（CLI 自动从 worktree 读写）：
-
-```bash
-fv add / fv edit / fv rm          # 直接操作 .recipes 里的菜谱文件
-fv list / fv show / fv build      # 从 worktree 读取，行为不变
-fv gh push --recipe hong-shao-rou # 自动提交/更新到 recipes 分支（含图片资源）
-```
-
-**发布流程**：
-- 首次：`git push -u origin recipes`（推送数据仓库分支）
-- 之后：`fv gh push --recipe <id>` 直接改远端 recipes 分支；代码仍走 `main`
-- CI 部署时把数据仓库的 `config.yaml + recipes + assets` 合并进工作区再 `fv build`，**以数据侧 config 为准**；`main` 只含代码
-
-> 取舍：独立分支带来数据/代码关注点分离、可 fork/私有化复用，代价是本地多一个 worktree、CI 多一次分支合并。单用户也可继续用默认"同分支"模式，两种方式 CLI 行为一致。
-
-### 🖼 图片与外部链接
-
-菜谱的 `media` 支持：
-- `cover` / `images` / `step.image_ref` — 封面、过程图、步骤图（本地相对路径存于 `assets/`，或直接填外部 URL `https://...`）；
-- `video_url` — 外部视频/链接（详情页展示"查看视频"）。
-
-`asset_collector` 插件在 `fv build` 时把菜谱引用的**本地图片**复制到 `dist/assets/`；外部 URL 原样透传。`fv gh push --recipe` 会把菜谱连同其本地图片一起提交到数据仓库分支，保证数据完整。
-
-**配置项**（`config.yaml`）：
+默认配置在 **`~/.flavor-vault/config.yaml`**（`fv init` 生成；`-c` 指定其他位置）。项目根另有 `config.example.yaml` 示例。也可直接用参数/环境变量，不写配置文件。
 
 ```yaml
-tags: [凉菜, 热菜, 川菜, ...]        # 标签白名单（fv add 校验）
-kitchenware: [炒锅, 砂锅, ...]      # 厨具建议列表
-cache:
-  enabled: true
-  ttl_seconds: 86400
-  plugins: { facet_indexer: 3600 }
-output_dir: ./dist                 # 构建输出目录（可自定义）
-ai_snapshot: true                  # 是否生成 AI 快照
-
-# GitHub 集成（fv gh / fv push）
+endpoint: ""            # 只读数据地址；留空用默认 https://fv.sdniu.top/data
+asset_dir: .flavor-vault/assets
+author:
+  name: ""              # 提交作者；留空自动取 GITHUB_TOKEN 对应账户
+  email: ""
 github:
-  token: ""                        # 访问令牌（推荐用环境变量 GITHUB_TOKEN）
-  owner: ""                        # 仓库属主（默认从 git remote 推断）
-  repo: ""                         # 仓库名（默认从 git remote 推断）
-  default_branch: main             # 默认分支
-  auto_rebase: true                # push 前自动 fetch + rebase 防冲突
+  token: ""             # 或环境变量 GITHUB_TOKEN
+  repo: ""              # 菜谱仓库 owner/repo
+  branch: recipes       # 数据分支
 ```
+
+`fv config get` 查看当前生效配置，`fv config set <key> <value>` 修改（endpoint / asset_dir / author.name / author.email / github.repo / github.branch）。
 
 ---
 
-## 🔐 推送与冲突避免
+## 🌿 数据与部署
 
-集成 GitHub 客户端（`go-github`）后，推送面临 5 类冲突风险。Flavor Vault 通过**单一写者 + 快进守卫**来规避：
-
-| 冲突来源 | 说明 | 规避机制 |
-|---------|------|---------|
-| **双写通道** | git transport 与 GitHub API 是两套写远端的通道，同时用会"分叉大脑" | 职责分离：`fv push`（git 通道）负责同步本地 git 对象；`fv gh` 只做只读/追加式操作；`fv gh push` 走 API 但严格快进 |
-| **非快进** | 远端已被他人推进，直接 push 被拒或 force 覆盖他人提交 | `fv push` 先 `git fetch` 检测落后 → 自动 `git pull --rebase`（`--no-rebase` 则安全中止）；`-f` 时用 `--force-with-lease`（带预期 SHA 校验）而非裸 `--force` |
-| **并发推送** | 多个 CLI 进程同时推送互相覆盖 | 推送锁 `.flavor-vault/push.lock`（独占文件 + 过期接管），实现单一写者 |
-| **API 竞态** | `fv gh push` 创建提交期间远端被推进 | 快进守卫：updateRef 前重新校验父提交 SHA == 远端 tip，不等则返回 `ErrNonFastForward` 中止（乐观锁），绝不强推 |
-| **凭据冲突** | git 走系统凭据/SSH，API 走 PAT，账号/scope 不一致 | 统一 token 来源（`GITHUB_TOKEN` 环境变量或 `config.github.token`），owner/repo 从配置或 `git remote` 自动推断 |
-
-### 两种推送方式怎么选
-
-```bash
-# 方式一：git 通道（推荐日常使用，同步整个仓库）
-fv push "添加红烧肉"
-
-# 方式二：GitHub API 通道（无本地 git 或只推产物到 gh-pages）
-fv gh push "发布站点" --dir dist --branch gh-pages --author "Name <email>"
-```
-
-`fv gh` 其余命令均为只读或追加式，不写分支 ref，天然无冲突：
-
-```bash
-fv gh status                            # 仓库信息 / 最新提交 / CI 状态（只读）
-fv gh pr --title "..." --head feat --base main   # 创建 PR（追加）
-fv gh release --tag v1.0 --name "v1.0"           # 创建 Release（追加）
-fv gh workflow --workflow deploy.yml             # 触发 CI（追加）
-```
-
-### 按"文件思路"用 gh 提交/更新菜谱
-
-`fv gh push --recipe <id>` 只提交**单个菜谱文件** `recipes/<id>.json`（快进守卫，不碰其他文件），内容可来自 `--json` 或本地文件，提交前自动做与本地 `fv add` 相同的校验：
-
-```bash
-# 新增：提供菜谱内容（内联 JSON 或 @文件）
-fv gh push "新增红烧肉" --recipe hong-shao-rou --json @recipe.json
-
-# 更新：复用本地 recipes/<id>.json（远端已存在则自动识别为"更新"）
-fv gh push "调整难度" --recipe hong-shao-rou
-```
-
-每次 `--recipe` 推送都只产生一个文件的 commit，`fv build` 在 CI 上自动重建派生数据，与本地维护完全同构。
-
----
-
-## � 两种用户：维护者与使用者
-
-Flavor Vault 面向两类用户：
-
-### ① 维护者 —— 维护自己的菜谱（可引用外部仓库）
-
-本地维护 + 构建 + 推送到 GitHub：
-
-```bash
-fv add / fv edit / fv rm          # 维护自己的菜谱
-fv gh push --recipe <id>          # 按文件提交单个菜谱（含图片）到数据分支
-fv build                          # 构建站点数据
-fv push / fv gh push              # 推送代码或数据
-```
-
-**引用外部菜谱仓库**（聚合他人/社区菜谱）：
-
-```bash
-fv source add community git@github.com:someone/recipes.git --branch recipes
-fv source pull                    # 克隆/更新外部源到本地
-fv source list / fv source remove <name>
-fv build                          # 构建时自动合并本地 + 外部源菜谱
-fv list / fv filter / fv ask      # 查找范围包含外部源
-```
-
-### ② 使用者 —— 只查找菜谱
-
-无需维护任何数据，**只改一个 `endpoint`**（就是 Pages 部署的那套 `data/` 数据）即可查询：
-
-```bash
-fv init --no-samples
-fv config set endpoint https://user.github.io/flavor-vault/data
-fv list                 # 从远端拉取菜谱列表
-fv filter --标签 凉菜      # 倒排索引交集（远端 filters.json）
-fv show hong-shao-rou   # 详情（远端 details/<id>.json）
-fv ask "不用炒锅的凉菜"    # AI 检索（远端 ai-corpus.json）
-fv stats                # 统计（远端 meta.json）
-```
-
-> `list/filter/show/ask/stats` 会自动判断：配置了 `endpoint` 就走远端（与页面同一套数据）；否则读本地 `dist/data`。前端页面本身也是这套数据的消费者。
-
----
-
-## �🔌 插件系统
-
-每个插件实现统一接口，在 `fv build` 时顺序执行：
-
-```go
-type Plugin interface {
-    Name() string
-    Build(ctx *BuildContext) error
-    RegisterCommands(root *cobra.Command) error
-}
-```
-
-| 插件 | 职责 | 输出 |
-|------|------|------|
-| `validator` | 校验必填字段与标签白名单 | — |
-| `facet_indexer` | 厨具/食材/标签倒排索引 | `data/filters.json` · 注册 `fv filter` |
-| `tag_indexer` | 按标签分组 | `data/by-tag/*.json` |
-| `detail_splitter` | 详情拆分到独立文件 | `data/details/{id}.json` |
-| `stats_collector` | 统计与轻量清单 | `data/meta.json` · `data/all.json` · 注册 `fv stats` |
-| `ai_exporter` | AI 精简快照（JSON Lines） | `data/ai-corpus.json` |
-
-新增插件只需实现接口并在 `cmd/fv/main.go` 或 `internal/cli/root.go` 中注册，无需改动既有代码。
-
-### 缓存机制
-
-每个插件通过 `cache.CacheManager` 集成缓存：
-
-1. 计算依赖文件（菜谱 + config.yaml）的 MD5 哈希。
-2. 命中缓存（哈希一致 && 未超 TTL）则直接复用，跳过重建。
-3. 未命中或 `--force` 时全量重建并写回缓存。
-
-TTL 可全局或按插件配置（见 `config.yaml` 的 `cache.plugins`）。
+- **数据分支**：菜谱存于独立 `recipes` 分支（`recipes/<id>.json` 单文件 + `assets/`），相当于可 fork / 私有化的数据仓库。
+- **触发**：`recipes` 分支有变动 → GitHub Actions 构建并部署 gh-pages（只更新页面）；推送 `v*` tag → 构建 + 发布多架构客户端 Release 并更新页面（tag 含 `-` 为预览版 prerelease）；`main` 不触发部署。
+- **build 配置**：在 workflow 内声明（`./fv build --force --output ./dist --asset-dir .flavor-vault/assets --ai-snapshot --endpoint https://fv.sdniu.top/data`），默认值 = 当前运行仓库的 GitHub 信息。
 
 ---
 
@@ -359,51 +151,28 @@ TTL 可全局或按插件配置（见 `config.yaml` 的 `cache.plugins`）。
 
 ```
 dist/
-├── index.html          # 前端入口
-├── assets/             # JS/CSS（前端构建产物）
-└── data/               # ETL 生成数据
-    ├── meta.json       # 统计信息
-    ├── all.json        # 全部菜谱轻量清单
-    ├── filters.json    # 倒排索引
-    ├── by-tag/*.json   # 标签分组
-    ├── details/*.json  # 菜谱详情（懒加载）
-    └── ai-corpus.json  # AI 快照
+├── index.html / assets/   # 前端产物
+└── data/                  # ETL 数据
+    ├── meta.json          # 统计 + 默认 endpoint
+    ├── all.json           # 菜谱轻量清单
+    ├── filters.json       # 倒排索引
+    ├── search.json        # 全文搜索索引
+    ├── by-tag/*.json      # 标签分组
+    ├── details/*.json     # 菜谱详情（懒加载）
+    └── ai-corpus.json     # AI 快照（JSON Lines）
 ```
 
 ---
 
 ## 🤖 AI 使用场景
 
-### 本地 AI（Cursor / Claude Desktop 等）
-
 ```bash
-# 结构化筛选
+# 本地：结构化筛选 / 自然语言检索
 fv filter --厨具 蒸箱 --标签 凉菜 --json
-
-# 自然语言检索（关键词打分 + 否定词过滤）
-fv ask "不用炒锅的凉菜"
-fv ask "烤箱能做的甜点" --json
+fv ask "不用炒锅的凉菜" --json
 ```
 
-### 云端 AI（无法访问本地文件）
-
-构建时生成的 `ai-corpus.json`（JSON Lines）可部署到静态托管。AI 通过 System Prompt 获取该 URL，首次对话时拉取到上下文，后续检索全部在内存中完成。
-
----
-
-## 🚀 部署（GitHub Pages）
-
-推送到 `main` 分支后，GitHub Actions 自动完成：构建 CLI → 构建 Vue → 执行 ETL → 发布到 `gh-pages` 分支。
-
-1. 在仓库 **Settings → Pages** 中选择 `gh-pages` 分支作为源。
-2. 推送代码即可，无需手动操作。
-
-手动部署：
-
-```bash
-fv build --force
-git add -A && git commit -m "build" && git push origin main:gh-pages
-```
+- **云端 AI**：构建生成的 `ai-corpus.json`（JSON Lines）部署到静态托管，AI 通过 System Prompt 获取 URL，首次对话拉取到上下文后全部内存检索。
 
 ---
 
@@ -413,38 +182,14 @@ git add -A && git commit -m "build" && git push origin main:gh-pages
 # Go 单元测试（store / cache / pipeline / plugins / utils）
 go test ./...
 
-# 前端类型检查
+# 前端类型检查 + 构建
 cd web && npm run typecheck
-
-# 前端构建
 cd web && npm run build
 ```
 
-端到端测试：在临时目录 `fv init` → `fv add` → `fv build`，检查 `dist/` 输出。
+**本地预览**：
 
----
-
-## 📁 项目结构
-
+```bash
+fv build                              # 生成 dist/data 与 dist/assets
+cd web && npm install && npm run dev  # 开发服务器（5173，/data 与 /assets 代理到 dist/）
 ```
-flavor-vault/
-├── cmd/fv/                  # CLI 入口
-├── internal/
-│   ├── models/              # 数据模型
-│   ├── store/               # 存储层（加载/CRUD）
-│   ├── cache/               # 缓存管理器
-│   ├── pipeline/            # 插件框架与调度器
-│   ├── plugins/             # 6 个内置插件
-│   ├── cli/                 # Cobra 命令
-│   ├── utils/               # 哈希、交集算法
-│   └── vault/               # 项目根定位与配置
-├── web/                     # Vue 3 前端
-├── .github/workflows/       # 自动构建部署
-└── .flavor-vault/           # 本地数据目录
-```
-
----
-
-## 📄 License
-
-MIT
