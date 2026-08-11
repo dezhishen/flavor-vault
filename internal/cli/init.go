@@ -8,7 +8,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"flavor-vault/internal/models"
 	"flavor-vault/internal/vault"
 )
 
@@ -18,14 +17,13 @@ func newInitCmd() *cobra.Command {
 	var (
 		force    bool
 		endpoint string
-		assetDir string
 	)
 	cmd := &cobra.Command{
 		Use:   "init",
-		Short: "初始化本地开发目录（可选；读取用 --endpoint，编辑用 --repo/--branch）",
+		Short: "初始化本地开发目录（可选）：.flavor-vault + CLI 配置示例",
 		Args:  cobra.NoArgs,
-		Example: `  fv init                                              # 创建 .flavor-vault 与默认配置
-  fv init -c /path/to/config.yaml                       # 在指定位置初始化配置
+		Example: `  fv init                                              # 创建 .flavor-vault 与 CLI 配置示例
+  fv init -c /path/to/config.yaml                       # 在指定位置初始化
   fv init --endpoint https://owner.github.io/repo/data  # 记录默认读取地址
   # 之后无需配置文件：
   #   读取  → fv list --endpoint <url>  /  fv search 词 --endpoint <url>
@@ -48,25 +46,16 @@ func newInitCmd() *cobra.Command {
 				dir = d
 				cfgPath = vault.ConfigPath(d)
 			}
-
-			cfg := models.DefaultConfig()
-			if cmd.Flags().Changed("endpoint") {
-				cfg.Endpoint = endpoint
-			}
-			if cmd.Flags().Changed("asset-dir") {
-				cfg.AssetDir = assetDir
-			}
-			return initVault(cmd, dir, cfgPath, force, cfg)
+			return initVault(cmd, dir, cfgPath, force, endpoint)
 		},
 	}
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "覆盖已存在的配置文件")
-	cmd.Flags().StringVar(&endpoint, "endpoint", "", "默认数据 endpoint（记录到配置，可选）")
-	cmd.Flags().StringVar(&assetDir, "asset-dir", ".flavor-vault/assets", "图片资源目录（相对项目根，可选）")
+	cmd.Flags().StringVar(&endpoint, "endpoint", "", "默认数据 endpoint（写入配置示例，可选）")
 	return cmd
 }
 
-// initVault 创建 .flavor-vault 目录与可选配置
-func initVault(cmd *cobra.Command, dir, cfgPath string, force bool, cfg *models.Config) error {
+// initVault 创建 .flavor-vault 目录与 CLI 配置示例
+func initVault(cmd *cobra.Command, dir, cfgPath string, force bool, endpoint string) error {
 	vaultDir := vault.VaultRoot(dir)
 	for _, d := range []string{vaultDir, vault.CacheRoot(dir)} {
 		if err := os.MkdirAll(d, 0o755); err != nil {
@@ -75,7 +64,10 @@ func initVault(cmd *cobra.Command, dir, cfgPath string, force bool, cfg *models.
 	}
 
 	if _, err := os.Stat(cfgPath); os.IsNotExist(err) || force {
-		if err := vault.SaveConfigAt(cfgPath, cfg); err != nil {
+		if err := os.MkdirAll(filepath.Dir(cfgPath), 0o755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(cfgPath, []byte(sampleConfigYAML(endpoint)), 0o644); err != nil {
 			return err
 		}
 		fmt.Fprintf(cmd.OutOrStdout(), "✔ 已生成配置 %s\n", cfgPath)
@@ -98,6 +90,21 @@ func initVault(cmd *cobra.Command, dir, cfgPath string, force bool, cfg *models.
 	fmt.Fprintln(cmd.OutOrStdout(), "  编辑：fv add/edit/rm --repo <owner/repo> --branch <branch>（需 GITHUB_TOKEN）")
 	fmt.Fprintln(cmd.OutOrStdout(), "  构建/发布：由 GitHub Actions 自动处理")
 	return nil
+}
+
+// sampleConfigYAML 生成 CLI 配置示例（只读 endpoint / 读写 github）
+func sampleConfigYAML(endpoint string) string {
+	return fmt.Sprintf(`# Flavor Vault CLI 配置示例（可选）
+#
+# 只读（查询菜谱）：只需 endpoint
+# 读写（编辑菜谱）：配置 github（菜谱仓库 + 权限）；或用 --repo/--branch + GITHUB_TOKEN
+
+endpoint: %q
+# github:
+#     token: ""         # GitHub 令牌（建议用环境变量 GITHUB_TOKEN）
+#     repo: ""          # 菜谱数据仓库 owner/repo；留空 = 当前仓库
+#     branch: recipes   # 数据分支（默认 recipes）
+`, strings.TrimSpace(endpoint))
 }
 
 // isInteractive 判断标准输入是否为终端（决定是否发起交互式咨询）

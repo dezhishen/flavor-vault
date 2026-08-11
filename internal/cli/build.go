@@ -20,14 +20,17 @@ func newBuildCmd() *cobra.Command {
 		force       bool
 		incremental bool
 		output      string
+		assetDir    string
+		aiSnapshot  bool
 		endpoint    string
 	)
 	cmd := &cobra.Command{
 		Use:   "build",
-		Short: "执行 ETL 流水线，生成静态站点",
+		Short: "执行 ETL 流水线，生成静态站点（build 配置由调用方/workflow 传入）",
 		Args:  cobra.NoArgs,
 		Example: `  fv build --force
-  fv build --endpoint https://owner.github.io/repo/data   # 注入默认 endpoint 到 meta.json（也可用 FV_ENDPOINT）`,
+  fv build --endpoint https://owner.github.io/repo/data   # 注入默认 endpoint 到 meta.json（也可用 FV_ENDPOINT）
+  fv build --output ./dist --asset-dir .flavor-vault/assets --ai-snapshot`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			start := time.Now()
 
@@ -37,6 +40,12 @@ func newBuildCmd() *cobra.Command {
 			}
 			if output != "" {
 				cfg.OutputDir = output
+			}
+			if assetDir != "" {
+				cfg.AssetDir = assetDir
+			}
+			if !aiSnapshot {
+				cfg.AISnapshot = false
 			}
 			outDir := vault.ResolveOutputDir(projectRoot, cfg)
 
@@ -86,6 +95,8 @@ func newBuildCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&force, "force", false, "强制重建（忽略缓存）")
 	cmd.Flags().BoolVar(&incremental, "incremental", false, "增量构建（基于缓存自动判断，默认开启）")
 	cmd.Flags().StringVar(&output, "output", "", "覆盖输出目录")
+	cmd.Flags().StringVar(&assetDir, "asset-dir", "", "图片资源目录（默认 .flavor-vault/assets）")
+	cmd.Flags().BoolVar(&aiSnapshot, "ai-snapshot", true, "是否生成 AI 快照 ai-corpus.json")
 	cmd.Flags().StringVar(&endpoint, "endpoint", "", "注入默认数据 endpoint 到 meta.json（也可用 FV_ENDPOINT 环境变量）")
 	return cmd
 }

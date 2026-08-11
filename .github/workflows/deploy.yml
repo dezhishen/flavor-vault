@@ -52,8 +52,8 @@ jobs:
           cd web
           npm run build
 
-      # 独立菜谱数据仓库：把 recipes 分支的 config/recipes/assets 合并进工作区
-      # （未使用独立分支时该分支不存在，自动跳过，使用主分支自带数据）
+      # 独立菜谱数据仓库：把 recipes 分支的 recipes/assets 合并进工作区
+      # （build 配置在下方 workflow 中显式声明；数据分支仅提供菜谱与图片）
       - name: Checkout recipes data repo
         uses: actions/checkout@v4
         with:
@@ -65,8 +65,6 @@ jobs:
         run: |
           if [ -d data-src/.flavor-vault ]; then
             mkdir -p .flavor-vault
-            # 以数据仓库的 config.yaml 为准（数据侧配置权威）
-            cp -f data-src/.flavor-vault/config.yaml .flavor-vault/config.yaml
             if [ -d data-src/.flavor-vault/recipes ]; then
               mkdir -p .flavor-vault/recipes
               cp -r data-src/.flavor-vault/recipes/. .flavor-vault/recipes/
@@ -75,18 +73,24 @@ jobs:
               mkdir -p .flavor-vault/assets
               cp -r data-src/.flavor-vault/assets/. .flavor-vault/assets/
             fi
-            echo "已合并数据仓库（config+recipes+assets）"
+            echo "已合并数据仓库（recipes+assets）"
           else
             echo "无 recipes 数据仓库分支，使用主分支数据"
           fi
 
       - name: Run ETL pipeline
-        # fv build 读取 .flavor-vault/config.yaml，并将前端产物合并到 dist。
-        # 注入默认 endpoint（构建时替换）：写入实际 GitHub Pages 地址到 meta.json，
-        # 供未配置 endpoint 的消费端 CLI 作为默认值读取。
+        # build 配置在此声明（默认值 = 当前运行的 GitHub 信息，如 PAGES_BASE 由仓库推导）：
+        #   --output     输出目录 ./dist
+        #   --asset-dir  图片资源目录 .flavor-vault/assets
+        #   --ai-snapshot 生成 ai-corpus.json
+        #   --endpoint   默认数据地址 = 本仓库 GitHub Pages data（写入 meta.json，供消费端 CLI 默认读取）
         run: |
           PAGES_BASE="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
-          ./fv build --force --endpoint "$PAGES_BASE/data"
+          ./fv build --force \
+            --output ./dist \
+            --asset-dir .flavor-vault/assets \
+            --ai-snapshot \
+            --endpoint "$PAGES_BASE/data"
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v3
