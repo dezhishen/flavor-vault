@@ -1,31 +1,38 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
-
-	"flavor-vault/internal/store"
 )
 
 func newRmCmd() *cobra.Command {
 	var yes bool
 	cmd := &cobra.Command{
 		Use:   "rm <id>",
-		Short: "删除菜谱 JSON（支持 --action-id 缓存删除意图）",
+		Short: "删除菜谱（经 GitHub API 删除数据源分支文件；支持 --action-id 缓存删除意图）",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, projectRoot, _, err := loadProjectConfig(cmd)
+			id := args[0]
+
+			// 编辑目标：GitHub API（数据源分支）
+			cl, branch, projectRoot, err := recipeAPIClient(cmd)
 			if err != nil {
 				return err
 			}
-			id := args[0]
-			fs := store.NewRecipeFileStore(recipesDir(cfg, projectRoot))
-			if !fs.Exists(id) {
-				return fmt.Errorf("菜谱 %q 不存在", id)
-			}
+			ctx := context.Background()
 
 			st := actionStoreFor(cmd)
+
+			// 先确认存在
+			exists, err := cl.FileExists(ctx, branch, apiRecipePath(id))
+			if err != nil {
+				return err
+			}
+			if !exists {
+				return fmt.Errorf("菜谱 %q 不存在", id)
+			}
 
 			// 缓存删除意图（供 AI/人追踪与续写）
 			if st != nil {
@@ -47,7 +54,7 @@ func newRmCmd() *cobra.Command {
 				}
 			}
 
-			if err := fs.Delete(id); err != nil {
+			if err := apiDeleteRecipe(ctx, cl, branch, id, projectRoot, fmt.Sprintf("rm: %s", id)); err != nil {
 				return err
 			}
 			completeAction(cmd, st)

@@ -96,6 +96,27 @@ func LoadConfigAt(configPath string) (*models.Config, error) {
 	return cfg, nil
 }
 
+// LoadConfigOptional 加载配置（配置可选，不报错）：
+// 优先 --config 指定路径，其次查找 .flavor-vault/config.yaml，都没有则返回默认配置。
+// 返回 (配置, 项目根, 配置文件路径)。
+func LoadConfigOptional(configFlag string) (*models.Config, string, string) {
+	if flag := strings.TrimSpace(configFlag); flag != "" {
+		if root, cp, err := ResolveWithConfig(flag); err == nil {
+			if cfg, err := LoadConfigAt(cp); err == nil {
+				return cfg, root, cp
+			}
+		}
+	}
+	if root, err := FindRoot(); err == nil {
+		cp := ConfigPath(root)
+		if cfg, err := LoadConfigAt(cp); err == nil {
+			return cfg, root, cp
+		}
+	}
+	dir, _ := os.Getwd()
+	return models.DefaultConfig(), dir, ""
+}
+
 // LoadConfig 加载配置；若文件不存在则使用默认配置
 func LoadConfig(projectRoot string) (*models.Config, string, error) {
 	path := ConfigPath(projectRoot)

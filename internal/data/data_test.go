@@ -8,20 +8,20 @@ import (
 	"flavor-vault/internal/models"
 )
 
-func TestRemoteEndpointConsumerVsMaintainer(t *testing.T) {
-	// 使用者模式：返回配置的 endpoint
+func TestRemoteEndpoint(t *testing.T) {
+	// 配置了 endpoint → 返回去尾斜杠后的地址
 	consumer := &models.Config{Endpoint: "https://example.com/data/"}
 	if got := RemoteEndpoint(consumer); got != "https://example.com/data" {
-		t.Errorf("consumer endpoint = %q, want trimmed", got)
+		t.Errorf("endpoint = %q, want trimmed", got)
 	}
-	// 使用者模式：未配置 → 空
+	// 未配置 → 空
 	if got := RemoteEndpoint(&models.Config{}); got != "" {
-		t.Errorf("consumer empty endpoint = %q, want empty", got)
+		t.Errorf("empty endpoint = %q, want empty", got)
 	}
-	// 维护者模式：即便配置了 endpoint 也不使用（本地数据源为准）
+	// 读取只依赖 endpoint（即使维护者配置了 source 也照常返回）
 	m := &models.Config{Endpoint: "https://example.com/data", Source: models.SourceConfig{Branch: "recipes"}}
-	if got := RemoteEndpoint(m); got != "" {
-		t.Errorf("maintainer endpoint = %q, want empty", got)
+	if got := RemoteEndpoint(m); got != "https://example.com/data" {
+		t.Errorf("maintainer endpoint = %q, want set", got)
 	}
 }
 
@@ -37,14 +37,9 @@ func TestDefaultEndpointFromMeta(t *testing.T) {
 	}
 
 	cfg := &models.Config{OutputDir: "./dist"}
-	// 使用者模式：未配置 endpoint → 从本地 meta.json 取默认
+	// 未配置 endpoint → 从本地 meta.json 取默认（构建时注入）
 	if got := DefaultEndpoint(cfg, dir); got != "https://dezhishen.github.io/flavor-vault/data" {
 		t.Errorf("DefaultEndpoint = %q", got)
-	}
-	// 维护者模式：不使用默认 endpoint
-	m := &models.Config{OutputDir: "./dist", Source: models.SourceConfig{Branch: "recipes"}}
-	if got := DefaultEndpoint(m, dir); got != "" {
-		t.Errorf("maintainer DefaultEndpoint = %q, want empty", got)
 	}
 	// meta 缺失 → 空
 	if got := DefaultEndpoint(cfg, t.TempDir()); got != "" {

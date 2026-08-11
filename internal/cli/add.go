@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bufio"
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -18,7 +19,6 @@ import (
 	"flavor-vault/internal/data"
 	"flavor-vault/internal/models"
 	"flavor-vault/internal/plugins"
-	"flavor-vault/internal/store"
 	"flavor-vault/internal/utils"
 )
 
@@ -76,17 +76,29 @@ func newAddCmd() *cobra.Command {
 				return failAndCache(cmd, st, "add", r.ID, r, err)
 			}
 
-			fs := store.NewRecipeFileStore(recipesDir(cfg, projectRoot))
-			if fs.Exists(r.ID) {
+			// 6. 经 GitHub API 提交到数据源分支（单文件 + 本地图片资源，无需本地 clone）
+			ctx := context.Background()
+			cl, branch, projectRoot, err := recipeAPIClient(cmd)
+			if err != nil {
+				return failAndCache(cmd, st, "add", r.ID, r, err)
+			}
+			exists, err := cl.FileExists(ctx, branch, apiRecipePath(r.ID))
+			if err != nil {
+				return failAndCache(cmd, st, "add", r.ID, r, err)
+			}
+			if exists {
 				return failAndCache(cmd, st, "add", r.ID, r, fmt.Errorf("菜谱 %q 已存在", r.ID))
 			}
-
-			// 6. 无误 → 完成动作（写入）
-			if err := fs.Save(r); err != nil {
-				return err
+			assetBase := cfg.AssetDir
+			if assetBase == "" {
+				assetBase = ".flavor-vault/assets"
+			}
+			if err := apiSaveRecipe(ctx, cl, branch, r, assetBase, assetDirFor(cfg, projectRoot), projectRoot,
+				fmt.Sprintf("add: %s", r.Name)); err != nil {
+				return failAndCache(cmd, st, "add", r.ID, r, err)
 			}
 			completeAction(cmd, st)
-			fmt.Fprintf(cmd.OutOrStdout(), "✔ 已创建菜谱 %s (%s)\n", r.ID, r.Name)
+			fmt.Fprintf(cmd.OutOrStdout(), "✔ 已创建并提交菜谱 %s (%s)\n", r.ID, r.Name)
 			return nil
 		},
 	}

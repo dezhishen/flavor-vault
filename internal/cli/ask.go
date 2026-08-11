@@ -15,7 +15,7 @@ import (
 
 func newAskCmd() *cobra.Command {
 	var (
-		top    int
+		top     int
 		jsonOut bool
 	)
 	cmd := &cobra.Command{

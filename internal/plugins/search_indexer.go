@@ -49,14 +49,7 @@ func (p *SearchIndexer) RegisterCommands(root *cobra.Command) error {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			query := strings.Join(args, " ")
 			configFlag, _ := cmd.Flags().GetString("config")
-			projectRoot, cfgPath, err := vault.ResolveContext(configFlag)
-			if err != nil {
-				return err
-			}
-			cfg, err := vault.LoadConfigAt(cfgPath)
-			if err != nil {
-				return err
-			}
+			cfg, projectRoot, _ := vault.LoadConfigOptional(configFlag)
 			locator, remote := data.Locator(cfg, projectRoot, "search.json")
 			raw, err := data.ReadJSON(locator, remote)
 			if err != nil {

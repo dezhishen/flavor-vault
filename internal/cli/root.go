@@ -29,7 +29,14 @@ func NewRootCommand() *cobra.Command {
 
 	// 全局 --config/-c 参数：指定配置文件路径（默认 <root>/.flavor-vault/config.yaml）
 	root.PersistentFlags().StringP("config", "c", "",
-		"配置文件路径（默认 .flavor-vault/config.yaml）")
+		"配置文件路径（默认 .flavor-vault/config.yaml，可省略）")
+
+	// 全局 endpoint：读取（非编辑）命令的数据地址。不设则用默认（本地 dist/data 或构建时注入）
+	root.PersistentFlags().String("endpoint", "", "数据 endpoint（读取用；也可用 FV_ENDPOINT）")
+
+	// 全局编辑参数：add/edit/rm 经 GitHub API 操作指定仓库/分支的文件
+	root.PersistentFlags().String("repo", "", "编辑目标 GitHub 仓库（owner/repo；也可用 FV_REPO）")
+	root.PersistentFlags().String("branch", "", "编辑目标分支（默认 recipes；也可用 FV_BRANCH）")
 
 	root.AddCommand(
 		newInitCmd(),
@@ -42,7 +49,6 @@ func NewRootCommand() *cobra.Command {
 		newAskCmd(),
 		newPushCmd(),
 		newGhCmd(),
-		newSourceCmd(),
 		newConfigCmd(),
 		newActionCmd(),
 	)

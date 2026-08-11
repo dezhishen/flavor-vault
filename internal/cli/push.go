@@ -28,10 +28,7 @@ func newPushCmd() *cobra.Command {
 		Short: "执行 git add + commit + push（自动 fetch/rebase 防冲突）",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			projectRoot, _, err := resolveProject(cmd)
-			if err != nil {
-				return err
-			}
+			projectRoot, _, _ := resolveProject(cmd)
 			message := strings.Join(args, " ")
 
 			// 1. 推送锁（单一写者，避免并发推送）

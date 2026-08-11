@@ -52,6 +52,57 @@ func (c *Client) FileExists(ctx context.Context, branch, path string) (bool, err
 	return true, nil
 }
 
+// ListDir 返回某分支指定目录下的文件名列表（只读，目录不存在返回空列表）
+func (c *Client) ListDir(ctx context.Context, branch, dir string) ([]string, error) {
+	_, entries, resp, err := c.gh.Repositories.GetContents(ctx, c.Owner, c.Repo, dir,
+		&github.RepositoryContentGetOptions{Ref: branch})
+	if err != nil {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	var names []string
+	for _, e := range entries {
+		if e.GetType() == "file" {
+			names = append(names, e.GetName())
+		}
+	}
+	return names, nil
+}
+
+// GetFile 返回某分支指定文件的原始内容与 SHA（只读；文件不存在返回 (nil, "", nil)）
+func (c *Client) GetFile(ctx context.Context, branch, path string) ([]byte, string, error) {
+	f, _, resp, err := c.gh.Repositories.GetContents(ctx, c.Owner, c.Repo, path,
+		&github.RepositoryContentGetOptions{Ref: branch})
+	if err != nil {
+		if resp != nil && resp.StatusCode == http.StatusNotFound {
+			return nil, "", nil
+		}
+		return nil, "", err
+	}
+	raw, err := f.GetContent()
+	if err != nil {
+		return nil, "", err
+	}
+	return []byte(raw), f.GetSHA(), nil
+}
+
+// DeleteFile 提交删除某分支上的文件（SHA 校验天然防并发覆盖）
+func (c *Client) DeleteFile(ctx context.Context, branch, path, sha, message string, author Author) error {
+	_, _, err := c.gh.Repositories.DeleteFile(ctx, c.Owner, c.Repo, path,
+		&github.RepositoryContentFileOptions{
+			Message: github.String(message),
+			SHA:     github.String(sha),
+			Branch:  github.String(branch),
+			Author:  &github.CommitAuthor{Name: github.String(author.Name), Email: github.String(author.Email)},
+		})
+	if err != nil {
+		return fmt.Errorf("删除 %s 失败: %w", path, err)
+	}
+	return nil
+}
+
 // CreatePR 创建 Pull Request（追加式，不写分支，天然无 ref 冲突）
 func (c *Client) CreatePR(ctx context.Context, title, head, base, body string) (*github.PullRequest, error) {
 	pr, _, err := c.gh.PullRequests.Create(ctx, c.Owner, c.Repo, &github.NewPullRequest{

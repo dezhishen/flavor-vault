@@ -58,15 +58,12 @@ func DefaultBranch(cfgBranch string) string {
 	return "main"
 }
 
-// ResolveRepo 解析属主/仓库：优先配置，其次从 git remote origin 推断
-func ResolveRepo(projectRoot string, cfgOwner, cfgRepo string) (owner, repo string, err error) {
-	if cfgOwner != "" && cfgRepo != "" {
-		return cfgOwner, cfgRepo, nil
-	}
+// ResolveRepo 从 git remote origin 解析代码仓库的属主/仓库名
+func ResolveRepo(projectRoot string) (owner, repo string, err error) {
 	url := gitRemoteURL(projectRoot)
 	o, r := parseRemoteURL(url)
 	if o == "" || r == "" {
-		return "", "", fmt.Errorf("无法解析仓库：请配置 config 的 github.owner/repo，或设置 git remote origin")
+		return "", "", fmt.Errorf("无法解析仓库：请设置 git remote origin")
 	}
 	return o, r, nil
 }
@@ -111,6 +108,26 @@ func parseRemoteURL(url string) (owner, repo string) {
 		return parts[len(parts)-2], parts[len(parts)-1]
 	}
 	return "", ""
+}
+
+// ParseRepoSpec 解析仓库标识："owner/repo"、完整 git/HTTPS URL、git@host:owner/repo
+func ParseRepoSpec(spec string) (owner, repo string, err error) {
+	s := strings.TrimSpace(spec)
+	if s == "" {
+		return "", "", fmt.Errorf("仓库标识不能为空")
+	}
+	// 非 URL 的 "owner/repo" 形式
+	if !strings.Contains(s, "://") && !strings.HasPrefix(s, "git@") && !strings.Contains(s, "@") {
+		parts := strings.Split(strings.TrimRight(s, "/"), "/")
+		if len(parts) == 2 && parts[0] != "" && parts[1] != "" {
+			return parts[0], parts[1], nil
+		}
+	}
+	o, r := parseRemoteURL(s)
+	if o == "" || r == "" {
+		return "", "", fmt.Errorf("无法解析仓库标识 %q（应为 owner/repo 或 URL）", spec)
+	}
+	return o, r, nil
 }
 
 // Author 提交作者信息

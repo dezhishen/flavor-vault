@@ -53,14 +53,7 @@ func (p *FacetIndexer) RegisterCommands(root *cobra.Command) error {
   fv filter --食材 鸡翅 --厨具 烤箱 --json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			configFlag, _ := cmd.Flags().GetString("config")
-			projectRoot, cfgPath, err := vault.ResolveContext(configFlag)
-			if err != nil {
-				return err
-			}
-			cfg, err := vault.LoadConfigAt(cfgPath)
-			if err != nil {
-				return err
-			}
+			cfg, projectRoot, _ := vault.LoadConfigOptional(configFlag)
 			// 支持远程 endpoint（与 pages 同一套数据）或本地 dist/data
 			locator, remote := data.Locator(cfg, projectRoot, "filters.json")
 			raw, err := data.ReadJSON(locator, remote)

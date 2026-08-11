@@ -45,7 +45,7 @@ func ghClient(cmd *cobra.Command) (*ghc.Client, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
-	owner, repo, err := ghc.ResolveRepo(projectRoot, cfg.GitHub.Owner, cfg.GitHub.Repo)
+	owner, repo, err := ghc.ResolveRepo(projectRoot)
 	if err != nil {
 		return nil, "", err
 	}

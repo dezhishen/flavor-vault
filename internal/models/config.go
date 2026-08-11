@@ -42,10 +42,6 @@ type SourceConfig struct {
 type GitHubConfig struct {
 	// 访问令牌（也可用环境变量 GITHUB_TOKEN）
 	Token string `yaml:"token" mapstructure:"token"`
-	// 代码仓库属主（默认从 git remote 推断；gh status/pr/release/workflow 用）
-	Owner string `yaml:"owner" mapstructure:"owner"`
-	// 代码仓库名（默认从 git remote 推断）
-	Repo string `yaml:"repo" mapstructure:"repo"`
 	// 默认分支（默认 main）
 	DefaultBranch string `yaml:"default_branch" mapstructure:"default_branch"`
 	// 推送前是否自动 fetch + rebase（fv push 防非快进冲突，默认 true）

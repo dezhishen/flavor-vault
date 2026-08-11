@@ -1,24 +1,24 @@
 package cli
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	"flavor-vault/internal/models"
 	"flavor-vault/internal/plugins"
-	"flavor-vault/internal/store"
 )
 
 func newEditCmd() *cobra.Command {
 	var jsonInput string
 	cmd := &cobra.Command{
 		Use:   "edit <id>",
-		Short: "编辑已有菜谱（$EDITOR 或 --json 补丁；可用 --action-id 缓存）",
+		Short: "编辑已有菜谱（$EDITOR 或 --json 补丁；经 GitHub API 更新数据源分支文件）",
 		Args:  cobra.ExactArgs(1),
 		Example: `  fv edit hong-shao-rou                               # $EDITOR 编辑
   fv edit hong-shao-rou --json '{"stats":{"difficulty":4}}'   # 局部更新
@@ -29,12 +29,18 @@ func newEditCmd() *cobra.Command {
 				return err
 			}
 			id := args[0]
-			fs := store.NewRecipeFileStore(recipesDir(cfg, projectRoot))
+
+			// 编辑目标：GitHub API（数据源分支）
+			cl, branch, projectRoot, err := recipeAPIClient(cmd)
+			if err != nil {
+				return err
+			}
+			ctx := context.Background()
 
 			st := actionStoreFor(cmd)
 
-			// 1. 读取目标菜谱
-			base, err := fs.Load(id)
+			// 1. 从数据源分支读取目标菜谱
+			base, err := apiLoadRecipe(ctx, cl, branch, id)
 			if err != nil {
 				return err
 			}
@@ -53,23 +59,41 @@ func newEditCmd() *cobra.Command {
 					return err
 				}
 			} else if !restored {
-				// 4. 无补丁且无缓存 → $EDITOR 交互编辑
-				path := recipePath(cfg, projectRoot, id)
+				// 4. 无补丁且无缓存 → $EDITOR 交互编辑（临时文件）
+				tmp, err := os.CreateTemp("", "fv-recipe-*.json")
+				if err != nil {
+					return err
+				}
+				tmpPath := tmp.Name()
+				raw, err := json.MarshalIndent(base, "", "  ")
+				if err == nil {
+					_, err = tmp.Write(raw)
+				}
+				_ = tmp.Close()
+				if err != nil {
+					return err
+				}
+				defer os.Remove(tmpPath)
+
 				editor := os.Getenv("EDITOR")
 				if editor == "" {
 					editor = "vi"
 				}
-				e := exec.Command(editor, path)
+				e := exec.Command(editor, tmpPath)
 				e.Stdin = os.Stdin
 				e.Stdout = os.Stdout
 				e.Stderr = os.Stderr
 				if err := e.Run(); err != nil {
 					return fmt.Errorf("启动编辑器失败: %w", err)
 				}
-				// 重新读取编辑后的内容，并缓存（若配置了 action-id）
-				base, err = fs.Load(id)
+				// 重新读取编辑后的内容
+				edited, err := os.ReadFile(tmpPath)
 				if err != nil {
 					return err
+				}
+				base = &models.Recipe{}
+				if err := json.Unmarshal(edited, base); err != nil {
+					return fmt.Errorf("编辑后的菜谱 JSON 解析失败: %w", err)
 				}
 				if st != nil {
 					if err := cacheRecipe(st, "edit", id, base); err != nil {
@@ -78,8 +102,6 @@ func newEditCmd() *cobra.Command {
 						fmt.Fprintf(cmd.ErrOrStderr(), "ℹ 编辑内容已缓存到 %s\n", st.Path())
 					}
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "✔ 已编辑 %s\n", path)
-				return nil
 			}
 
 			// 5. 强制保持目标 ID 与时间戳
@@ -91,19 +113,20 @@ func newEditCmd() *cobra.Command {
 				return failAndCache(cmd, st, "edit", id, base, err)
 			}
 
-			// 7. 无误 → 完成动作（写入）
-			if err := fs.Save(base); err != nil {
-				return err
+			// 7. 经 GitHub API 提交更新（单文件）
+			assetBase := cfg.AssetDir
+			if assetBase == "" {
+				assetBase = ".flavor-vault/assets"
+			}
+			if err := apiSaveRecipe(ctx, cl, branch, base, assetBase, assetDirFor(cfg, projectRoot), projectRoot,
+				fmt.Sprintf("edit: %s", base.Name)); err != nil {
+				return failAndCache(cmd, st, "edit", id, base, err)
 			}
 			completeAction(cmd, st)
-			fmt.Fprintf(cmd.OutOrStdout(), "✔ 已更新菜谱 %s (%s)\n", id, base.Name)
+			fmt.Fprintf(cmd.OutOrStdout(), "✔ 已更新并提交菜谱 %s (%s)\n", id, base.Name)
 			return nil
 		},
 	}
 	cmd.Flags().StringVar(&jsonInput, "json", "", "以 JSON 补丁方式更新字段（支持 @文件路径），未提供的字段保持不变")
 	return cmd
-}
-
-func recipePath(cfg *models.Config, projectRoot, id string) string {
-	return filepath.Join(recipesDir(cfg, projectRoot), id+".json")
 }

@@ -15,9 +15,9 @@ import (
 )
 
 // RemoteEndpoint 返回配置的远程数据 endpoint（去尾斜杠）。
-// 维护者模式（配置了菜谱数据源）以本地数据源为准，不使用远程 endpoint。
+// 读取（非编辑）命令只依赖 endpoint：配置了就用远程，否则回退本地/默认。
 func RemoteEndpoint(cfg *models.Config) string {
-	if cfg == nil || cfg.Maintainer() {
+	if cfg == nil {
 		return ""
 	}
 	return strings.TrimRight(strings.TrimSpace(cfg.Endpoint), "/")
@@ -39,9 +39,9 @@ func Locator(cfg *models.Config, projectRoot, file string) (locator string, remo
 }
 
 // DefaultEndpoint 返回构建时写入本地数据 meta.json 的默认 endpoint（构建时替换）。
-// 仅在未配置 endpoint 且非维护者模式下生效。
+// 仅在未配置 endpoint 时作为默认值使用。
 func DefaultEndpoint(cfg *models.Config, projectRoot string) string {
-	if cfg == nil || cfg.Maintainer() {
+	if cfg == nil {
 		return ""
 	}
 	outDir := vault.ResolveOutputDir(projectRoot, cfg)
