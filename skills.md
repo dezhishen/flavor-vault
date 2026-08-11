@@ -11,6 +11,40 @@ Flavor Vault 是一个基于 **GitHub + 纯静态托管** 的菜谱管理系统�
 - 静态站点：由 GitHub Actions 构建并部署到 gh-pages（`dist/`）
 - 前端：Vue3 + Element Plus，纯静态，读 `./data/*.json`
 
+## 快速开始（如何开始）
+
+### 1. 安装 CLI
+
+```bash
+export PATH="$HOME/.local/opt/go/bin:$PATH"   # 若 go 在自定义目录
+go build -o fv ./cmd/fv
+./fv --help
+```
+
+### 2. 初始化（可选）
+
+```bash
+# 生成 config.example.yaml 与 .flavor-vault/（可选；不初始化也能直接用）
+fv init
+# 或在示例中记录默认读取地址
+fv init --endpoint https://fv.sdniu.top/data
+```
+
+### 3. 开始使用
+
+```bash
+# 只读：立即查询（无需配置，默认端点 https://fv.sdniu.top/data）
+fv list
+fv search 红烧
+fv show <id>
+
+# 读写（编辑菜谱）：需 GitHub 权限（GITHUB_TOKEN + 数据仓库）
+export GITHUB_TOKEN=ghp_xxx
+fv add --repo <owner>/<repo> --branch recipes                          # 交互式新增
+fv edit <id> --repo <owner>/<repo> --branch recipes --json '{"stats":{"difficulty":4}}'
+fv rm <id> --repo <owner>/<repo> --branch recipes -y
+```
+
 ## 使用模式（两种）
 
 | 模式 | 用途 | 需要什么 |
@@ -19,14 +53,6 @@ Flavor Vault 是一个基于 **GitHub + 纯静态托管** 的菜谱管理系统�
 | **读写** | 新增/编辑/删除菜谱 | `--repo <owner/repo>`（或 `FV_REPO`）+ `--branch <branch>`（默认 `recipes`，或 `FV_BRANCH`）+ `GITHUB_TOKEN` |
 
 > 不需要任何配置文件。可选 `config.example.yaml`（项目根）供复制参考；也可放 `.flavor-vault/config.yaml`（endpoint / github 块）。
-
-## 构建 / 安装
-
-```bash
-export PATH="$HOME/.local/opt/go/bin:$PATH"   # 若 go 在自定义目录
-go build -o fv ./cmd/fv
-./fv --help
-```
 
 ## 命令一览
 
