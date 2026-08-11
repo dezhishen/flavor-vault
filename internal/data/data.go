@@ -14,8 +14,12 @@ import (
 	"flavor-vault/internal/vault"
 )
 
+// DefaultEndpoint 内置默认数据 endpoint（站点 data 目录）。
+// CLI 未配置 endpoint 且本地无构建产物时使用；可在构建时替换（CI 注入 meta.json 的 endpoint 覆盖）。
+const DefaultEndpoint = "https://fv.sdniu.top/data"
+
 // RemoteEndpoint 返回配置的远程数据 endpoint（去尾斜杠）。
-// 读取（非编辑）命令只依赖 endpoint：配置了就用远程，否则回退本地/默认。
+// 读取（非编辑）命令只依赖 endpoint：显式配置了就用远程。
 func RemoteEndpoint(cfg *models.Config) string {
 	if cfg == nil {
 		return ""
@@ -23,24 +27,29 @@ func RemoteEndpoint(cfg *models.Config) string {
 	return strings.TrimRight(strings.TrimSpace(cfg.Endpoint), "/")
 }
 
-// Locator 返回某数据文件（如 meta.json）的读取位置。
-// 使用者模式：配置了 endpoint 用远程；否则用默认（构建时写入本地 meta.json 的 endpoint，可为空）；
-// 否则返回本地 dist/data/<file>。维护者模式直接读本地。
+// Locator 返回某数据文件（如 meta.json）的读取位置，优先级：
+//  1. 显式 endpoint（--endpoint / 配置 / FV_ENDPOINT）→ 远程
+//  2. 本地构建产物（dist/data/<file> 存在）→ 本地（离线/开发）
+//  3. 构建时注入到本地 meta.json 的 endpoint → 远程
+//  4. 内置默认 endpoint（DefaultEndpoint）→ 远程
+//  5. 本地（文件不存在，读取时报"请先 fv build 或配置 endpoint"）
 func Locator(cfg *models.Config, projectRoot, file string) (locator string, remote bool) {
 	if e := RemoteEndpoint(cfg); e != "" {
 		return e + "/" + file, true
 	}
-	// 未配置 endpoint：尝试构建时注入到本地 meta.json 的默认 endpoint
-	if e := DefaultEndpoint(cfg, projectRoot); e != "" {
+	outDir := vault.ResolveOutputDir(projectRoot, cfg)
+	local := filepath.Join(outDir, "data", file)
+	if info, err := os.Stat(local); err == nil && !info.IsDir() {
+		return local, false
+	}
+	if e := DefaultEndpointFromMeta(cfg, projectRoot); e != "" {
 		return e + "/" + file, true
 	}
-	outDir := vault.ResolveOutputDir(projectRoot, cfg)
-	return filepath.Join(outDir, "data", file), false
+	return DefaultEndpoint + "/" + file, true
 }
 
-// DefaultEndpoint 返回构建时写入本地数据 meta.json 的默认 endpoint（构建时替换）。
-// 仅在未配置 endpoint 时作为默认值使用。
-func DefaultEndpoint(cfg *models.Config, projectRoot string) string {
+// DefaultEndpointFromMeta 返回构建时写入本地数据 meta.json 的 endpoint（构建时替换）。
+func DefaultEndpointFromMeta(cfg *models.Config, projectRoot string) string {
 	if cfg == nil {
 		return ""
 	}

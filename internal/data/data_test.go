@@ -38,11 +38,15 @@ func TestDefaultEndpointFromMeta(t *testing.T) {
 
 	cfg := &models.Config{OutputDir: "./dist"}
 	// 未配置 endpoint → 从本地 meta.json 取默认（构建时注入）
-	if got := DefaultEndpoint(cfg, dir); got != "https://dezhishen.github.io/flavor-vault/data" {
-		t.Errorf("DefaultEndpoint = %q", got)
+	if got := DefaultEndpointFromMeta(cfg, dir); got != "https://dezhishen.github.io/flavor-vault/data" {
+		t.Errorf("DefaultEndpointFromMeta = %q", got)
 	}
 	// meta 缺失 → 空
-	if got := DefaultEndpoint(cfg, t.TempDir()); got != "" {
-		t.Errorf("no meta DefaultEndpoint = %q, want empty", got)
+	if got := DefaultEndpointFromMeta(cfg, t.TempDir()); got != "" {
+		t.Errorf("no meta DefaultEndpointFromMeta = %q, want empty", got)
+	}
+	// 内置默认端点
+	if DefaultEndpoint != "https://fv.sdniu.top/data" {
+		t.Errorf("DefaultEndpoint const = %q", DefaultEndpoint)
 	}
 }

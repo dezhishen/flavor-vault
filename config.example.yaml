@@ -6,7 +6,7 @@
 #   编辑 → fv add --repo owner/repo --branch recipes + GITHUB_TOKEN
 #
 # 两种使用模式：
-#   1) 只读（查询菜谱）：只需配置 endpoint
+#   1) 只读（查询菜谱）：只需配置 endpoint；未配置时用默认端点 https://fv.sdniu.top/data
 #   2) 读写（编辑菜谱）：配置 github（菜谱仓库 + 权限）
 
 endpoint: ""

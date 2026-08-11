@@ -15,7 +15,7 @@ Flavor Vault 是一个基于 **GitHub + 纯静态托管** 的菜谱管理系统�
 
 | 模式 | 用途 | 需要什么 |
 |---|---|---|
-| **只读** | 查询菜谱 | `--endpoint <url>`（或 `FV_ENDPOINT`）；未设则读本地 `dist/data` |
+| **只读** | 查询菜谱 | `--endpoint <url>`（或 `FV_ENDPOINT`）；未配置时用默认端点 `https://fv.sdniu.top/data`；本地有 `dist/data` 时读本地 |
 | **读写** | 新增/编辑/删除菜谱 | `--repo <owner/repo>`（或 `FV_REPO`）+ `--branch <branch>`（默认 `recipes`，或 `FV_BRANCH`）+ `GITHUB_TOKEN` |
 
 > 不需要任何配置文件。可选 `config.example.yaml`（项目根）供复制参考；也可放 `.flavor-vault/config.yaml`（endpoint / github 块）。

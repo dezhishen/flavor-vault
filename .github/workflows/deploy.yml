@@ -83,9 +83,9 @@ jobs:
         #   --output     输出目录 ./dist
         #   --asset-dir  图片资源目录 .flavor-vault/assets
         #   --ai-snapshot 生成 ai-corpus.json
-        #   --endpoint   默认数据地址 = 本仓库 GitHub Pages data（写入 meta.json，供消费端 CLI 默认读取）
+        #   --endpoint   默认数据地址 = 站点 https://fv.sdniu.top 的 data（写入 meta.json，供消费端 CLI 默认读取）
         run: |
-          PAGES_BASE="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          PAGES_BASE="https://fv.sdniu.top"
           ./fv build --force \
             --output ./dist \
             --asset-dir .flavor-vault/assets \
