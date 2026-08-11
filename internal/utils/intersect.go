@@ -1,6 +1,9 @@
 package utils
 
-import "sort"
+import (
+	"sort"
+	"strings"
+)
 
 // IntersectSorted 计算两个有序字符串切片的交集（要求 a、b 均已排序）
 // 返回的新切片保持有序。
@@ -64,4 +67,12 @@ func Contains(items []string, target string) bool {
 		}
 	}
 	return false
+}
+
+// IsRemoteURL 判断路径是否为外部资源（http/https/data: 协议）
+func IsRemoteURL(p string) bool {
+	l := strings.ToLower(strings.TrimSpace(p))
+	return strings.HasPrefix(l, "http://") ||
+		strings.HasPrefix(l, "https://") ||
+		strings.HasPrefix(l, "data:")
 }

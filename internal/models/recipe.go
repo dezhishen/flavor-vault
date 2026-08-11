@@ -1,5 +1,6 @@
 package models
 
+import "strings"
 import "time"
 
 // Recipe 菜谱模型
@@ -65,4 +66,26 @@ func (r *Recipe) MainIngredientNames() []string {
 // TotalTime 总耗时（分钟）
 func (r *Recipe) TotalTime() int {
 	return r.Stats.PrepTime + r.Stats.CookTime
+}
+
+// AssetRefs 返回该菜谱引用的所有资源路径（封面/过程图/步骤图，去重、含外部 URL）
+func (r *Recipe) AssetRefs() []string {
+	seen := make(map[string]bool)
+	var out []string
+	add := func(p string) {
+		p = strings.TrimSpace(p)
+		if p == "" || seen[p] {
+			return
+		}
+		seen[p] = true
+		out = append(out, p)
+	}
+	add(r.Media.Cover)
+	for _, img := range r.Media.Images {
+		add(img)
+	}
+	for _, s := range r.Steps {
+		add(s.ImageRef)
+	}
+	return out
 }

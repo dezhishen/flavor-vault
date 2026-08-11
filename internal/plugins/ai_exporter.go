@@ -23,6 +23,8 @@ type AICorpusEntry struct {
 	PrepTime        int      `json:"prep_time"`
 	CookTime        int      `json:"cook_time"`
 	Difficulty      int      `json:"difficulty"`
+	Cover           string   `json:"cover,omitempty"`     // 封面（本地路径或外部 URL）
+	VideoURL        string   `json:"video_url,omitempty"` // 外部视频/链接
 }
 
 // AIExporter 生成 AI 专用的精简快照（JSON Lines）
@@ -70,5 +72,7 @@ func toAICorpusEntry(r *models.Recipe) AICorpusEntry {
 		PrepTime:        r.Stats.PrepTime,
 		CookTime:        r.Stats.CookTime,
 		Difficulty:      r.Stats.Difficulty,
+		Cover:           r.Media.Cover,
+		VideoURL:        r.Media.VideoURL,
 	}
 }

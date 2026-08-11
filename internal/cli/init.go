@@ -104,9 +104,14 @@ func initVault(cmd *cobra.Command, dir, cfgPath string, force, separateRecipes b
 		}
 	}
 
-	// 独立菜谱分支：创建分支 + worktree + 忽略配置
+	// 生成示例封面资源（图片/外链由菜谱 JSON 引用）
+	if err := writeSampleAssets(vault.ResolveAssetDir(dir, cfg)); err != nil {
+		return err
+	}
+
+	// 独立菜谱分支：创建"数据仓库"分支 + worktree + 忽略配置
 	if separateRecipes {
-		if err := setupRecipesBranch(cmd, dir, recipesBranch); err != nil {
+		if err := setupRecipesBranch(cmd, dir, recipesBranch, cfg); err != nil {
 			return err
 		}
 	}

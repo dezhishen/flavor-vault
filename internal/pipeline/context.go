@@ -28,6 +28,7 @@ type BuildContext struct {
 	Options    map[string]interface{}    // 额外参数
 	Cache      *cache.CacheManager       // 缓存管理器
 	DataDir    string                    // 输出 data 目录（OutputDir/data）
+	AssetDir   string                    // 图片等资源源目录（读取菜谱引用的本地资源）
 }
 
 // NewBuildContext 构造构建上下文

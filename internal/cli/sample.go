@@ -2,6 +2,8 @@ package cli
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 
 	"flavor-vault/internal/models"
@@ -38,7 +40,7 @@ func writeSampleRecipe(recipesDir string) error {
 				{Order: 4, Description: "转入砂锅，加热水没过肉块，小火炖 1 小时。"},
 				{Order: 5, Description: "大火收汁，出锅装盘。"},
 			},
-			Media: models.Media{Cover: "images/hong-shao-rou.jpg"},
+			Media: models.Media{Cover: "images/hong-shao-rou.svg"},
 			Stats: models.Stats{PrepTime: 20, CookTime: 70, Difficulty: 3},
 		},
 		{
@@ -64,7 +66,7 @@ func writeSampleRecipe(recipesDir string) error {
 				{Order: 2, Description: "大蒜拍碎切末。"},
 				{Order: 3, Description: "加入生抽、香醋、香油、辣椒油拌匀，冷藏 10 分钟更佳。"},
 			},
-			Media: models.Media{Cover: "images/pai-huang-gua.jpg"},
+			Media: models.Media{Cover: "images/pai-huang-gua.svg"},
 			Stats: models.Stats{PrepTime: 10, CookTime: 0, Difficulty: 1},
 		},
 		{
@@ -90,7 +92,7 @@ func writeSampleRecipe(recipesDir string) error {
 				{Order: 3, Description: "锅内下番茄翻炒出汁，加糖和盐调味。"},
 				{Order: 4, Description: "倒入鸡蛋翻炒均匀，撒葱花出锅。"},
 			},
-			Media: models.Media{Cover: "images/fan-qie-chao-dan.jpg"},
+			Media: models.Media{Cover: "images/fan-qie-chao-dan.svg"},
 			Stats: models.Stats{PrepTime: 10, CookTime: 10, Difficulty: 1},
 		},
 		{
@@ -117,7 +119,7 @@ func writeSampleRecipe(recipesDir string) error {
 				{Order: 3, Description: "下豆瓣酱炒出红油，加适量水烧开。"},
 				{Order: 4, Description: "下豆腐小火煮 3 分钟，勾芡撒花椒粉和蒜苗。"},
 			},
-			Media: models.Media{Cover: "images/ma-po-dou-fu.jpg"},
+			Media: models.Media{Cover: "images/ma-po-dou-fu.svg"},
 			Stats: models.Stats{PrepTime: 10, CookTime: 15, Difficulty: 2},
 		},
 		{
@@ -143,7 +145,7 @@ func writeSampleRecipe(recipesDir string) error {
 				{Order: 3, Description: "放入鸡翅，200℃ 烤 15 分钟，中途翻面。"},
 				{Order: 4, Description: "出炉撒黑胡椒即可。"},
 			},
-			Media: models.Media{Cover: "images/kong-qi-zha-ji-chi.jpg"},
+			Media: models.Media{Cover: "images/kong-qi-zha-ji-chi.svg"},
 			Stats: models.Stats{PrepTime: 35, CookTime: 15, Difficulty: 1},
 		},
 		{
@@ -169,7 +171,7 @@ func writeSampleRecipe(recipesDir string) error {
 				{Order: 3, Description: "所有材料放入砂锅，加足量水大火烧开。"},
 				{Order: 4, Description: "转小火炖 1.5 小时，加盐调味。"},
 			},
-			Media: models.Media{Cover: "images/lao-huo-tang.jpg"},
+			Media: models.Media{Cover: "images/lao-huo-tang.svg"},
 			Stats: models.Stats{PrepTime: 15, CookTime: 90, Difficulty: 2},
 		},
 	}
@@ -180,6 +182,37 @@ func writeSampleRecipe(recipesDir string) error {
 		r.UpdatedAt = ts
 		if err := fs.Save(r); err != nil {
 			return fmt.Errorf("写入示例菜谱 %s 失败: %w", r.ID, err)
+		}
+	}
+	return nil
+}
+
+// writeSampleAssets 生成示例 SVG 封面占位图（图片+外链同样由菜谱 JSON 引用）
+func writeSampleAssets(assetDir string) error {
+	palette := []string{"#e53e3e", "#dd6b20", "#d69e2e", "#38a169", "#3182ce", "#805ad5"}
+	names := map[string]string{
+		"hong-shao-rou":       "红烧肉",
+		"pai-huang-gua":       "拍黄瓜",
+		"fan-qie-chao-dan":    "番茄炒蛋",
+		"ma-po-dou-fu":        "麻婆豆腐",
+		"kong-qi-zha-ji-chi":  "空气炸锅鸡翅",
+		"lao-huo-tang":        "玉米排骨汤",
+	}
+	i := 0
+	for id, name := range names {
+		svg := fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
+  <rect width="600" height="400" fill="%s"/>
+  <text x="300" y="200" font-size="72" text-anchor="middle" fill="#fff" font-family="sans-serif">🍲</text>
+  <text x="300" y="282" font-size="34" text-anchor="middle" fill="#fff" font-family="sans-serif">%s</text>
+</svg>
+`, palette[i%len(palette)], name)
+		i++
+		path := filepath.Join(assetDir, "images", id+".svg")
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(path, []byte(svg), 0o644); err != nil {
+			return err
 		}
 	}
 	return nil

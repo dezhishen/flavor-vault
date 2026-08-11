@@ -47,6 +47,7 @@ func newBuildCmd() *cobra.Command {
 			}
 
 			ctx := pipeline.NewBuildContext(res.Recipes, cfg, outDir, vault.CacheRoot(projectRoot), cfgPath, force)
+			ctx.AssetDir = vault.ResolveAssetDir(projectRoot, cfg)
 
 			// 注册插件（按依赖顺序）
 			scheduler := pipeline.NewScheduler(cmd.ErrOrStderr())
@@ -56,6 +57,7 @@ func newBuildCmd() *cobra.Command {
 			scheduler.AddPlugin(&plugins.FacetIndexer{})
 			scheduler.AddPlugin(&plugins.TagIndexer{})
 			scheduler.AddPlugin(&plugins.DetailSplitter{})
+			scheduler.AddPlugin(&plugins.AssetCollector{})
 			scheduler.AddPlugin(&plugins.StatsCollector{})
 			scheduler.AddPlugin(&plugins.AIExporter{})
 

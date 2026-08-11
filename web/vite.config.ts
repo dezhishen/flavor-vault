@@ -8,20 +8,24 @@ export default defineConfig({
   plugins: [
     vue(),
     {
-      // 开发服务器：将 /data/* 代理到项目根 dist/data
-      name: 'serve-vault-data',
+      // 开发服务器：把 /data/* 与 /assets/* 代理到项目根 dist（本地润 dev 的数据与图片）
+      name: 'serve-vault-dist',
       configureServer(server) {
-        const distData = path.resolve(__dirname, '../dist/data')
-        server.middlewares.use('/data', (req, res, next) => {
-          const urlPath = (req.url || '').split('?')[0]
-          const file = path.join(distData, urlPath)
-          if (file.startsWith(distData) && fs.existsSync(file) && fs.statSync(file).isFile()) {
-            res.setHeader('Content-Type', 'application/json; charset=utf-8')
-            fs.createReadStream(file).pipe(res)
-            return
-          }
-          next()
-        })
+        const distRoot = path.resolve(__dirname, '../dist')
+        const serve = (base: string, mime: string) => {
+          server.middlewares.use(base, (req, res, next) => {
+            const urlPath = (req.url || '').split('?')[0]
+            const file = path.join(distRoot, base, urlPath)
+            if (file.startsWith(distRoot) && fs.existsSync(file) && fs.statSync(file).isFile()) {
+              res.setHeader('Content-Type', mime)
+              fs.createReadStream(file).pipe(res)
+              return
+            }
+            next()
+          })
+        }
+        serve('/data', 'application/json; charset=utf-8')
+        serve('/assets', 'application/octet-stream')
       },
     },
   ],

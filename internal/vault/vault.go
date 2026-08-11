@@ -137,6 +137,23 @@ func ResolveRecipesDir(projectRoot string, cfg *models.Config) string {
 	return RecipesDir(projectRoot)
 }
 
+// ResolveAssetDir 解析图片等资源目录（配置 asset_dir，默认 .flavor-vault/assets）。
+// 独立菜谱分支模式下优先使用 worktree 内的资源目录。
+func ResolveAssetDir(projectRoot string, cfg *models.Config) string {
+	base := ".flavor-vault/assets"
+	if cfg != nil && strings.TrimSpace(cfg.AssetDir) != "" {
+		base = cfg.AssetDir
+	}
+	dir := filepath.Join(projectRoot, filepath.FromSlash(base))
+	if cfg != nil && cfg.GitHub.RecipesBranch != "" {
+		wtDir := filepath.Join(RecipesWorktree(projectRoot), filepath.FromSlash(base))
+		if info, err := os.Stat(wtDir); err == nil && info.IsDir() {
+			return wtDir
+		}
+	}
+	return dir
+}
+
 // ConfigPath 返回配置文件路径
 func ConfigPath(projectRoot string) string {
 	return filepath.Join(projectRoot, DirName, ConfigName)

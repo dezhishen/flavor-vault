@@ -14,3 +14,6 @@ web/dist/
 # 系统文件
 .DS_Store
 *.log
+.recipes/
+.flavor-vault/recipes/
+.flavor-vault/assets/

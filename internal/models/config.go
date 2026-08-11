@@ -15,6 +15,8 @@ type Config struct {
 	AISnapshot bool `yaml:"ai_snapshot" mapstructure:"ai_snapshot"`
 	// 插件配置（每个插件可覆盖 TTL）
 	Plugins map[string]PluginConfig `yaml:"plugins" mapstructure:"plugins"`
+	// 图片等资源目录（相对项目根，默认 .flavor-vault/assets）
+	AssetDir string `yaml:"asset_dir" mapstructure:"asset_dir"`
 	// GitHub 集成（fv gh / fv push）
 	GitHub GitHubConfig `yaml:"github" mapstructure:"github"`
 }
@@ -67,6 +69,7 @@ func DefaultConfig() *Config {
 		},
 		OutputDir:  "./dist",
 		AISnapshot: true,
+		AssetDir:   ".flavor-vault/assets",
 		GitHub: GitHubConfig{
 			DefaultBranch: "main",
 			AutoRebase:    true,

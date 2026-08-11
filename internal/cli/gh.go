@@ -13,6 +13,8 @@ import (
 	ghc "flavor-vault/internal/github"
 	"flavor-vault/internal/models"
 	"flavor-vault/internal/plugins"
+	"flavor-vault/internal/utils"
+	"flavor-vault/internal/vault"
 )
 
 // newGhCmd 基于 go-github 的 GitHub 客户端命令组。
@@ -141,6 +143,30 @@ func newGhPushCmd() *cobra.Command {
 					mode = "更新"
 				}
 				files = map[string][]byte{path: content}
+
+				// 附带该菜谱引用的本地图片资源一起提交（外部 URL 跳过）
+				assetBase := cfg.AssetDir
+				if assetBase == "" {
+					assetBase = ".flavor-vault/assets"
+				}
+				assetDir := vault.ResolveAssetDir(projectRoot, cfg)
+				assetCount := 0
+				for _, ref := range r.AssetRefs() {
+					if utils.IsRemoteURL(ref) {
+						continue
+					}
+					src := filepath.Join(assetDir, filepath.FromSlash(ref))
+					data, err := os.ReadFile(src)
+					if err != nil {
+						fmt.Fprintf(cmd.ErrOrStderr(), "⚠ 资源缺失（已跳过）: %s\n", src)
+						continue
+					}
+					files[filepath.ToSlash(filepath.Join(assetBase, ref))] = data
+					assetCount++
+				}
+				if assetCount > 0 {
+					fmt.Fprintf(cmd.OutOrStdout(), "  ↳ 附带 %d 个图片资源\n", assetCount)
+				}
 				fmt.Fprintf(cmd.OutOrStdout(), "▶ %s菜谱 %s/%s@%s ...\n", mode, cl.Owner, cl.Repo, branch)
 			} else {
 				src := dirFlag
