@@ -1,10 +1,10 @@
-cache:
-    enabled: true
-    ttl_seconds: 86400
-    plugins:
-        facet_indexer: 3600
-output_dir: ./dist
-ai_snapshot: true
-plugins: {}
-asset_dir: .flavor-vault/assets
+# Flavor Vault CLI 配置示例（可选，recipes 数据分支）
+#
+# 只读：fv list/search --endpoint <url>             （或 FV_ENDPOINT）
+# 编辑：fv add --repo owner/repo --branch recipes + GITHUB_TOKEN
+
 endpoint: ""
+# github:
+#     token: ""         # GitHub 令牌（建议用环境变量 GITHUB_TOKEN）
+#     repo: ""          # 菜谱数据仓库 owner/repo；留空 = 当前仓库
+#     branch: recipes   # 数据分支（默认 recipes）
