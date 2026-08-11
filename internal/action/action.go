@@ -11,8 +11,8 @@ import (
 	"flavor-vault/internal/models"
 )
 
-// 默认缓存目录：/tmp/flavor-vaults（可用环境变量 FV_ACTION_DIR 覆盖）
-const DefaultDir = "/tmp/flavor-vaults"
+// 默认缓存子目录名：<系统临时目录>/flavor-vaults（跨平台；可用 FV_ACTION_DIR 覆盖）
+const DefaultDirName = "flavor-vaults"
 
 // Action 缓存的单次操作
 type Action struct {
@@ -41,12 +41,13 @@ func NewWithDir(id, dir string) *Store {
 	return &Store{ID: id, Dir: dir}
 }
 
-// Dir 返回缓存根目录（支持 FV_ACTION_DIR 覆盖）
+// Dir 返回缓存根目录：默认 <系统临时目录>/flavor-vaults（Linux /tmp、Windows %TEMP%），
+// 可用环境变量 FV_ACTION_DIR 覆盖。
 func Dir() string {
 	if d := os.Getenv("FV_ACTION_DIR"); strings.TrimSpace(d) != "" {
 		return strings.TrimSpace(d)
 	}
-	return DefaultDir
+	return filepath.Join(os.TempDir(), DefaultDirName)
 }
 
 // Path 返回该 action-id 对应的缓存文件路径

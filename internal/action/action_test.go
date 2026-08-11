@@ -102,7 +102,8 @@ func TestDefaultDir(t *testing.T) {
 	old := os.Getenv("FV_ACTION_DIR")
 	t.Setenv("FV_ACTION_DIR", "")
 	defer func() { _ = os.Setenv("FV_ACTION_DIR", old) }()
-	if Dir() != DefaultDir {
-		t.Fatalf("Dir() = %s, want %s", Dir(), DefaultDir)
+	want := filepath.Join(os.TempDir(), DefaultDirName)
+	if got := Dir(); got != want {
+		t.Fatalf("Dir() = %s, want %s", got, want)
 	}
 }
