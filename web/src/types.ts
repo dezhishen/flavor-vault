@@ -81,3 +81,18 @@ export interface FilterSelections {
   tags: string[]
   ingredients: string[]
 }
+
+/** 搜索索引条目（search.json，前端与 CLI 共用同一份数据） */
+export interface SearchEntry {
+  id: string
+  name: string
+  description: string
+  tags: string[]
+  kitchenware: string[]
+  ingredients: string[]
+  steps: string
+  cover?: string
+  prep_time: number
+  cook_time: number
+  difficulty: number
+}

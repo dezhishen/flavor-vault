@@ -1,18 +1,19 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { FacetIndex, Meta, RecipeDetail, RecipeSummary } from '../types'
+import type { FacetIndex, Meta, RecipeDetail, RecipeSummary, SearchEntry } from '../types'
 
 /** 数据 API 基础路径（Vite dev 代理到构建产物） */
 const DATA_BASE = import.meta.env.DEV ? '/data' : './data'
 
 /**
- * recipeStore：启动时加载 meta.json 与 all.json，
+ * recipeStore：启动时加载 meta.json、all.json、filters.json 与 search.json，
  * 懒加载 details/{id}.json。
  */
 export const useRecipeStore = defineStore('recipe', () => {
   const meta = ref<Meta | null>(null)
   const summaries = ref<RecipeSummary[]>([])
   const facet = ref<FacetIndex | null>(null)
+  const searchIndex = ref<SearchEntry[]>([])
   const loaded = ref(false)
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -24,17 +25,19 @@ export const useRecipeStore = defineStore('recipe', () => {
     loading.value = true
     error.value = null
     try {
-      const [metaRes, allRes, facetRes] = await Promise.all([
+      const [metaRes, allRes, facetRes, searchRes] = await Promise.all([
         fetch(`${DATA_BASE}/meta.json`),
         fetch(`${DATA_BASE}/all.json`),
         fetch(`${DATA_BASE}/filters.json`),
+        fetch(`${DATA_BASE}/search.json`),
       ])
-      if (!metaRes.ok || !allRes.ok || !facetRes.ok) {
+      if (!metaRes.ok || !allRes.ok || !facetRes.ok || !searchRes.ok) {
         throw new Error('数据加载失败，请稍后再试')
       }
       meta.value = await metaRes.json()
       summaries.value = await allRes.json()
       facet.value = await facetRes.json()
+      searchIndex.value = await searchRes.json()
       loaded.value = true
     } catch (e) {
       error.value = e instanceof Error ? e.message : String(e)
@@ -68,6 +71,7 @@ export const useRecipeStore = defineStore('recipe', () => {
     meta,
     summaries,
     facet,
+    searchIndex,
     loaded,
     loading,
     error,

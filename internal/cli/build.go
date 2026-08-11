@@ -60,6 +60,7 @@ func newBuildCmd() *cobra.Command {
 			scheduler.AddPlugin(&plugins.AssetCollector{})
 			scheduler.AddPlugin(&plugins.StatsCollector{})
 			scheduler.AddPlugin(&plugins.AIExporter{})
+			scheduler.AddPlugin(&plugins.SearchIndexer{})
 
 			if err := scheduler.Run(ctx); err != nil {
 				return err

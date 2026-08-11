@@ -221,3 +221,56 @@ func splitLines(s string) []string {
 	}
 	return out
 }
+
+func TestSearchIndexerBuild(t *testing.T) {
+	ctx := newTestContext(t, testRecipes(), true)
+	p := &SearchIndexer{}
+	if err := p.Build(ctx); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(filepath.Join(ctx.DataDir, "search.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var entries []SearchEntry
+	if err := json.Unmarshal(raw, &entries); err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 3 {
+		t.Fatalf("expected 3 entries, got %d", len(entries))
+	}
+	if entries[0].ID != "r1" || len(entries[0].Ingredients) == 0 {
+		t.Errorf("unexpected search entry: %+v", entries[0])
+	}
+}
+
+func TestMatchSearch(t *testing.T) {
+	entries := []SearchEntry{
+		{ID: "r1", Name: "红烧肉", Tags: []string{"热菜"}, Kitchenware: []string{"炒锅"}, Ingredients: []string{"五花肉"}, Steps: "1. 焯水\n2. 加冰糖炒色"},
+		{ID: "r2", Name: "拍黄瓜", Tags: []string{"凉菜"}, Kitchenware: []string{"保鲜袋"}, Ingredients: []string{"黄瓜"}, Steps: "1. 拍碎黄瓜"},
+		{ID: "r3", Name: "空气炸鸡翅", Tags: []string{"快手"}, Kitchenware: []string{"空气炸锅"}, Ingredients: []string{"鸡翅"}, Steps: "1. 腌制"},
+	}
+
+	if got := MatchSearch(entries, "红烧"); len(got) != 1 || got[0].ID != "r1" {
+		t.Errorf("红烧: got %+v", got)
+	}
+	if got := MatchSearch(entries, "鸡翅"); len(got) != 1 || got[0].ID != "r3" {
+		t.Errorf("鸡翅: got %+v", got)
+	}
+	// 多 token 全命中（AND）
+	if got := MatchSearch(entries, "炒锅 红烧"); len(got) != 1 || got[0].ID != "r1" {
+		t.Errorf("炒锅 红烧: got %+v", got)
+	}
+	// 大小写不敏感
+	if got := MatchSearch(entries, "R1"); len(got) != 0 { // ID 不参与匹配
+		t.Errorf("ID 不应参与匹配: got %+v", got)
+	}
+	// 无匹配
+	if got := MatchSearch(entries, "披萨"); len(got) != 0 {
+		t.Errorf("披萨: got %+v", got)
+	}
+	// 空查询
+	if got := MatchSearch(entries, "  "); len(got) != 0 {
+		t.Errorf("空查询: got %+v", got)
+	}
+}

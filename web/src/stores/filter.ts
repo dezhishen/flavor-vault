@@ -10,6 +10,8 @@ export const useFilterStore = defineStore('filter', () => {
   const kitchenware = ref<string[]>([])
   const tags = ref<string[]>([])
   const ingredients = ref<string[]>([])
+  /** 搜索关键词（来自搜索框，与筛选条件取交集） */
+  const keyword = ref('')
 
   const selections = computed<FilterSelections>(() => ({
     kitchenware: kitchenware.value,
@@ -21,14 +23,16 @@ export const useFilterStore = defineStore('filter', () => {
     () =>
       kitchenware.value.length > 0 ||
       tags.value.length > 0 ||
-      ingredients.value.length > 0,
+      ingredients.value.length > 0 ||
+      keyword.value.trim() !== '',
   )
 
   function reset() {
     kitchenware.value = []
     tags.value = []
     ingredients.value = []
+    keyword.value = ''
   }
 
-  return { kitchenware, tags, ingredients, selections, isActive, reset }
+  return { kitchenware, tags, ingredients, keyword, selections, isActive, reset }
 })

@@ -64,5 +64,6 @@ func registerPluginCommands(root *cobra.Command) error {
 	sch.AddPlugin(&plugins.DetailSplitter{})
 	sch.AddPlugin(&plugins.StatsCollector{})
 	sch.AddPlugin(&plugins.AIExporter{})
+	sch.AddPlugin(&plugins.SearchIndexer{})
 	return sch.RegisterCommands(root)
 }
