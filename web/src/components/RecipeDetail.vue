@@ -113,82 +113,19 @@
           <!-- 主要食材（非必须通过条目 Note 备注表达，无独立 optional 分组） -->
           <div v-if="mainIngredients.length" class="block main-ing-block order-1">
             <div class="block-title">🥘 主要食材</div>
-            <el-table :data="mainIngredients" size="small" border>
-              <el-table-column prop="name" label="食材" min-width="110" />
-              <el-table-column prop="amount" label="用量" min-width="90" />
-              <el-table-column prop="note" label="备注" min-width="110" />
-              <el-table-column label="可替换" min-width="150">
-                <template #default="{ row }">
-                  <template v-if="(row.alternatives || []).length">
-                    <el-tag
-                      v-for="(a, j) in row.alternatives || []"
-                      :key="j"
-                      size="small"
-                      type="success"
-                      effect="plain"
-                      class="alt-tag"
-                    >
-                      {{ a.name }}{{ a.amount ? ` ${a.amount}` : '' }}{{ a.note ? `（${a.note}）` : '' }}
-                    </el-tag>
-                  </template>
-                  <span v-else class="muted">—</span>
-                </template>
-              </el-table-column>
-            </el-table>
+            <IngredientTable :items="mainIngredients" />
           </div>
 
           <!-- 配菜 / 辅料（用料） -->
           <div v-if="(activeVersion.ingredients.side || []).length" class="block side-ing-block order-2">
             <div class="block-title">🥬 配菜 / 辅料</div>
-            <el-table :data="activeVersion.ingredients.side || []" size="small" border>
-              <el-table-column prop="name" label="食材" min-width="110" />
-              <el-table-column prop="amount" label="用量" min-width="90" />
-              <el-table-column prop="note" label="备注" min-width="110" />
-              <el-table-column label="可替换" min-width="150">
-                <template #default="{ row }">
-                  <template v-if="(row.alternatives || []).length">
-                    <el-tag
-                      v-for="(a, j) in row.alternatives || []"
-                      :key="j"
-                      size="small"
-                      type="success"
-                      effect="plain"
-                      class="alt-tag"
-                    >
-                      {{ a.name }}{{ a.amount ? ` ${a.amount}` : '' }}{{ a.note ? `（${a.note}）` : '' }}
-                    </el-tag>
-                  </template>
-                  <span v-else class="muted">—</span>
-                </template>
-              </el-table-column>
-            </el-table>
+            <IngredientTable :items="activeVersion.ingredients.side || []" />
           </div>
 
           <!-- 调料（含备选方案） -->
           <div v-if="(activeVersion.seasonings || []).length" class="block season-block order-3">
             <div class="block-title">🧂 调料</div>
-            <el-table :data="activeVersion.seasonings || []" size="small" border>
-              <el-table-column prop="name" label="调料" min-width="100" />
-              <el-table-column prop="amount" label="用量" min-width="80" />
-              <el-table-column prop="note" label="备注" min-width="100" />
-              <el-table-column label="备选方案" min-width="150">
-                <template #default="{ row }">
-                  <template v-if="(row.alternatives || []).length">
-                    <el-tag
-                      v-for="(a, j) in row.alternatives || []"
-                      :key="j"
-                      size="small"
-                      type="success"
-                      effect="plain"
-                      class="alt-tag"
-                    >
-                      {{ a.name }}{{ a.amount ? ` ${a.amount}` : '' }}{{ a.note ? `（${a.note}）` : '' }}
-                    </el-tag>
-                  </template>
-                  <span v-else class="muted">—</span>
-                </template>
-              </el-table-column>
-            </el-table>
+            <IngredientTable :items="activeVersion.seasonings || []" name-label="调料" />
           </div>
         </aside>
       </div>
@@ -202,6 +139,7 @@ import { toPng } from 'html-to-image'
 import { ElMessage } from 'element-plus'
 import { Download } from '@element-plus/icons-vue'
 import { useViewport } from '../composables/useViewport'
+import IngredientTable from './IngredientTable.vue'
 import type { RecipeDetail, Version } from '../types'
 
 const props = defineProps<{ detail: RecipeDetail }>()
@@ -442,15 +380,6 @@ function resolveAsset(p: string): string {
   margin-top: 8px;
 }
 
-.alt-tag {
-  margin-right: 6px;
-  margin-bottom: 2px;
-}
-
-.muted {
-  color: var(--el-text-color-placeholder);
-}
-
 /* H5 自适应：单列 + 步骤优先（display:contents 让各块按 order 重排） */
 @media (max-width: 768px) {
   .recipe-detail :deep(.el-card__body) {
@@ -502,7 +431,7 @@ function resolveAsset(p: string): string {
     aspect-ratio: 16 / 9;
   }
 
-  /* 表格横向可滚动，避免溢出 */
+  /* 食材/调料表格在窄屏可横向滚动，避免溢出 */
   .detail-main :deep(.el-table),
   .detail-side :deep(.el-table) {
     width: 100%;
