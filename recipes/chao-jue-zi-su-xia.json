@@ -3,12 +3,12 @@
   "name": "超绝紫苏虾",
   "description": "紫苏的清香是灵魂，出锅前3分钟放紫苏沫，紫苏叶变软趴趴就入味了。虾先单独炒半熟，再和姜蒜小米辣一起炒。",
   "stats": {
-    "prep_time": 10,
-    "cook_time": 10,
-    "difficulty": 2
+    "prep_time": 0,
+    "cook_time": 0,
+    "difficulty": 0
   },
   "created_at": "0001-01-01T00:00:00Z",
-  "updated_at": "0001-01-01T00:00:00Z",
+  "updated_at": "2026-08-12T13:58:32.244730126+08:00",
   "tags": [
     "热菜",
     "快手",
@@ -18,74 +18,97 @@
     "炒锅"
   ],
   "ingredients": {
-    "main": [
-      {
-        "name": "虾",
-        "amount": "适量"
-      },
-      {
-        "name": "紫苏",
-        "amount": "一把，取叶切沫"
-      }
-    ],
-    "side": [
-      {
-        "name": "姜",
-        "amount": "适量"
-      },
-      {
-        "name": "蒜",
-        "amount": "适量"
-      },
-      {
-        "name": "小米辣",
-        "amount": "适量"
-      },
-      {
-        "name": "生抽",
-        "amount": "适量"
-      },
-      {
-        "name": "蚝油",
-        "amount": "适量"
-      },
-      {
-        "name": "油",
-        "amount": "适量"
-      },
-      {
-        "name": "盐",
-        "amount": "适量"
-      }
-    ],
+    "main": [],
+    "side": [],
     "optional": []
   },
   "seasonings": [],
-  "steps": [
-    {
-      "order": 1,
-      "description": "备菜：虾去头、去脚，用剪刀剪成小段；姜蒜切末，小米辣切圈，紫苏取叶切沫"
-    },
-    {
-      "order": 2,
-      "description": "虾单独下锅炒至半熟，盛出备用"
-    },
-    {
-      "order": 3,
-      "description": "另起锅，姜蒜小米辣炒香"
-    },
-    {
-      "order": 4,
-      "description": "倒入半熟的虾一起翻炒"
-    },
-    {
-      "order": 5,
-      "description": "加生抽、蚝油、油、盐调味，出锅前3分钟放入紫苏沫，炒到紫苏叶都软趴趴、入味即可出锅"
-    }
-  ],
+  "steps": [],
   "media": {
-    "cover": "images/chao-jue-zi-su-xia/chao-jue-zi-su-xia-cover.jpg",
+    "cover": "",
     "images": []
   },
-  "versions": []
+  "versions": [
+    {
+      "name": "",
+      "ingredients": {
+        "main": [
+          {
+            "name": "虾",
+            "amount": "适量"
+          },
+          {
+            "name": "紫苏",
+            "amount": "一把，取叶切沫"
+          }
+        ],
+        "side": [
+          {
+            "name": "姜",
+            "amount": "适量"
+          },
+          {
+            "name": "蒜",
+            "amount": "适量"
+          },
+          {
+            "name": "小米辣",
+            "amount": "适量"
+          },
+          {
+            "name": "生抽",
+            "amount": "适量"
+          },
+          {
+            "name": "蚝油",
+            "amount": "适量"
+          },
+          {
+            "name": "油",
+            "amount": "适量"
+          },
+          {
+            "name": "盐",
+            "amount": "适量"
+          }
+        ],
+        "optional": []
+      },
+      "steps": [
+        {
+          "order": 1,
+          "description": "备菜：虾去头、去脚，用剪刀剪成小段；虾头单独保留；姜蒜切末，小米辣切圈，紫苏取叶切沫"
+        },
+        {
+          "order": 2,
+          "description": "虾头用小火煎出虾油，用筷子夹出虾头，丢弃"
+        },
+        {
+          "order": 3,
+          "description": "虾单独下锅炒至半熟，盛出备用"
+        },
+        {
+          "order": 4,
+          "description": "起锅，姜蒜小米辣炒香"
+        },
+        {
+          "order": 5,
+          "description": "倒入半熟的虾一起翻炒"
+        },
+        {
+          "order": 6,
+          "description": "加生抽、蚝油、油、盐调味，出锅前3分钟放入紫苏沫，炒到紫苏叶都软趴趴、入味即可出锅"
+        }
+      ],
+      "media": {
+        "cover": "images/chao-jue-zi-su-xia/chao-jue-zi-su-xia-cover.jpg",
+        "images": []
+      },
+      "stats": {
+        "prep_time": 10,
+        "cook_time": 10,
+        "difficulty": 2
+      }
+    }
+  ]
 }
