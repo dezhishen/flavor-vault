@@ -70,7 +70,7 @@ const { options } = useFilter()
 
 <style scoped>
 .filter-panel {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   border-radius: 12px;
 }
 

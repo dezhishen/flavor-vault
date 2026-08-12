@@ -58,11 +58,17 @@ func newRmCmd() *cobra.Command {
 				}
 			}
 
-			if err := apiDeleteRecipe(ctx, cl, branch, id, cfg, cfgPath, projectRoot, fmt.Sprintf("rm: %s", id)); err != nil {
+			n, err := apiDeleteRecipe(ctx, cl, branch, id, cfg, cfgPath, projectRoot, fmt.Sprintf("rm: %s", id))
+			if err != nil {
 				return err
 			}
 			completeAction(cmd, st)
 			fmt.Fprintf(cmd.OutOrStdout(), "✔ 已删除菜谱 %s\n", id)
+			if n > 0 {
+				fmt.Fprintf(cmd.OutOrStdout(), "✔ 已清理 %d 个图片资产（images/%s/）\n", n, id)
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), "ℹ 无图片资产可清理")
+			}
 			return nil
 		},
 	}

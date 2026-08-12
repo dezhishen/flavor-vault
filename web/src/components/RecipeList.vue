@@ -53,7 +53,7 @@ const { recipeStore } = useRecipe()
 
 <style scoped>
 .list-toolbar {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .count {
@@ -73,7 +73,7 @@ const { recipeStore } = useRecipe()
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
+  gap: 14px;
 }
 
 /* H5 自适应：小屏 2 列，超窄 1 列 */

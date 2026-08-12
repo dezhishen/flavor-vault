@@ -25,6 +25,6 @@ const recipeStore = useRecipeStore()
 
 <style scoped>
 .load-error {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 </style>

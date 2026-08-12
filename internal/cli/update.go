@@ -26,6 +26,7 @@ func newUpdateCmd() *cobra.Command {
 	var (
 		checkOnly bool
 		force     bool
+		pre       bool
 		repo      string
 		targetVer string
 	)
@@ -34,6 +35,7 @@ func newUpdateCmd() *cobra.Command {
 		Short: "自更新 fv 到 GitHub Releases 最新版（或指定版本）",
 		Example: `  fv update                 # 更新到最新正式版
   fv update --check          # 仅检查是否有新版本
+  fv update --pre            # 更新到最新预览版（含预发布，方便测试）
   fv update --version v0.1.0 # 更新到指定版本
   fv update --repo owner/repo`,
 		Args: cobra.NoArgs,
@@ -59,6 +61,8 @@ func newUpdateCmd() *cobra.Command {
 				} else {
 					rel, err = cl.ReleaseByTag(ctx, strings.TrimSpace(targetVer))
 				}
+			} else if pre {
+				rel, err = latestInclPre(ctx, cl)
 			} else {
 				rel, err = cl.LatestRelease(ctx)
 			}
@@ -69,6 +73,9 @@ func newUpdateCmd() *cobra.Command {
 
 			fmt.Fprintf(cmd.OutOrStdout(), "当前版本: %s\n", cur)
 			fmt.Fprintf(cmd.OutOrStdout(), "最新版本: %s\n", tag)
+			if rel.Prerelease {
+				fmt.Fprintln(cmd.OutOrStdout(), "（预览版）")
+			}
 
 			if checkOnly {
 				if isNewer(cur, tag) {
@@ -152,9 +159,28 @@ func newUpdateCmd() *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&checkOnly, "check", false, "仅检查最新版本，不下载")
 	cmd.Flags().BoolVar(&force, "force", false, "版本相同也强制覆盖")
+	cmd.Flags().BoolVar(&pre, "pre", false, "更新到最新预览版（含预发布 Release，方便测试）")
 	cmd.Flags().StringVar(&repo, "repo", updateRepo, "发布仓库（owner/repo）")
-	cmd.Flags().StringVar(&targetVer, "version", "", "目标版本（默认最新正式版）")
+	cmd.Flags().StringVar(&targetVer, "version", "", "目标版本（默认最新正式版；--pre 时默认最新预览版）")
 	return cmd
+}
+
+// latestInclPre 返回最高版本 Release（含预发布），供 --pre 提前测试预览版
+func latestInclPre(ctx context.Context, cl *ghc.Client) (*ghc.Release, error) {
+	rels, err := cl.ListReleases(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(rels) == 0 {
+		return nil, fmt.Errorf("仓库没有 Release")
+	}
+	best := rels[0]
+	for _, rel := range rels[1:] {
+		if isNewer(strings.TrimPrefix(best.Tag, "v"), strings.TrimPrefix(rel.Tag, "v")) {
+			best = rel
+		}
+	}
+	return best, nil
 }
 
 // spawnWindowsReplace 在 Windows 派发一个后台脚本，把 .new 覆盖回可执行文件

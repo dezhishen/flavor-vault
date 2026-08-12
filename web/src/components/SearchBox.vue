@@ -40,7 +40,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .search-box {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 .search-box :deep(.el-input__wrapper) {
   border-radius: 20px;

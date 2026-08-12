@@ -49,7 +49,7 @@ watch(() => props.id, fetchDetail)
 }
 
 .detail-header {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .detail-title {
@@ -57,6 +57,6 @@ watch(() => props.id, fetchDetail)
 }
 
 .skeleton {
-  padding: 20px 0;
+  padding: 16px 0;
 }
 </style>

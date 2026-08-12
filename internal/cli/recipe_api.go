@@ -298,23 +298,47 @@ func stageLocalAssets(cfg *models.Config, projectRoot string, r *models.Recipe) 
 	return staged, nil
 }
 
-// apiDeleteRecipe 删除数据源分支上的单个菜谱
-func apiDeleteRecipe(ctx context.Context, cl *ghc.Client, branch, id string, cfg *models.Config, cfgPath, projectRoot, message string) error {
+// apiDeleteRecipe 删除数据源分支上的单个菜谱，并清理其图片资产目录
+// （<assetBase>/images/<id>/，封面/步骤图等）。返回被清理的资产文件数。
+func apiDeleteRecipe(ctx context.Context, cl *ghc.Client, branch, id string, cfg *models.Config, cfgPath, projectRoot, message string) (int, error) {
 	_, sha, err := cl.GetFile(ctx, branch, apiRecipePath(id))
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if sha == "" {
-		return fmt.Errorf("菜谱 %q 不存在", id)
+		return 0, fmt.Errorf("菜谱 %q 不存在", id)
 	}
 	author, err := ensureAuthor(ctx, cl, cfg, cfgPath, projectRoot)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	if err := cl.DeleteFile(ctx, branch, apiRecipePath(id), sha, message, author); err != nil {
-		return err
+		return 0, err
 	}
-	return nil
+	return apiDeleteRecipeAssets(ctx, cl, branch, id, cfg, author)
+}
+
+// apiDeleteRecipeAssets 删除菜谱在数据源分支上的图片资产目录（<assetBase>/images/<id>/）。
+// 目录不存在或无文件时静默返回 0（菜谱可无图 / 资产尚未上传）。
+func apiDeleteRecipeAssets(ctx context.Context, cl *ghc.Client, branch, id string, cfg *models.Config, author ghc.Author) (int, error) {
+	assetBase := ".flavor-vault/assets"
+	if cfg != nil && strings.TrimSpace(cfg.AssetDir) != "" {
+		assetBase = strings.TrimSpace(cfg.AssetDir)
+	}
+	prefix := filepath.ToSlash(filepath.Join(assetBase, "images", id))
+	entries, err := cl.ListTree(ctx, branch, prefix)
+	if err != nil {
+		return 0, fmt.Errorf("读取图片资产目录失败: %w", err)
+	}
+	if len(entries) == 0 {
+		return 0, nil
+	}
+	for _, e := range entries {
+		if err := cl.DeleteFile(ctx, branch, e.Path, e.SHA, "rm: "+id+"（清理图片资产）", author); err != nil {
+			return 0, fmt.Errorf("删除图片资产 %s 失败: %w", e.Path, err)
+		}
+	}
+	return len(entries), nil
 }
 
 // ensureAuthor 确定提交作者（维护模式 token 必填）：

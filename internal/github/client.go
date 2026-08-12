@@ -22,8 +22,9 @@ type Client struct {
 
 // Release 发布摘要（自更新/查询用）
 type Release struct {
-	Tag    string
-	Assets []*github.ReleaseAsset
+	Tag        string
+	Assets     []*github.ReleaseAsset
+	Prerelease bool // 预发布（预览版）标记
 }
 
 // NewPublicClient 创建匿名客户端（公开仓库只读，无需 token；自更新等场景用）

@@ -80,18 +80,19 @@ fv rm   <id> -c ~/.flavor-vault/config.yaml --repo <owner>/<repo> --branch recip
 | `fv init [-c <path>] [-f] [--endpoint <url>]` | 生成配置到 `~/.flavor-vault/config.yaml` |
 | `fv list [-c <cfg>] [--tag 标签] [--json]` | 列出菜谱 |
 | `fv show <id> [-c <cfg>] [--raw]` | 打印单菜谱详情 |
+| `fv share <id> [-c <cfg>] [--out <file>]` | 生成菜谱 Markdown 分享消息（可直接发 IM/AI 助手） |
 | `fv search <关键词...> [-c <cfg>] [--json]` | 全文搜索（多词 AND） |
 | `fv filter --厨具 炒锅 --标签 凉菜 [-c <cfg>] [--json]` | 倒排索引交集筛选 |
 | `fv stats [-c <cfg>] [--json]` | 统计信息 |
 | `fv ask <问题> [-c <cfg>] [--top N]` | AI 语料检索 |
 | `fv add [-c <cfg>] [--json '...'\|@file] [--action-id X] [-y]` | 创建菜谱（交互式/JSON，提交前预览+确认，`-y` 跳过） |
 | `fv edit <id> [-c <cfg>] [--json <patch>] [--action-id X] [-y]` | 编辑菜谱（JSON 补丁式，提交前预览+确认） |
-| `fv rm <id> [-c <cfg>] [-y]` | 删除菜谱 |
+| `fv rm <id> [-c <cfg>] [-y]` | 删除菜谱（同时清理其图片资产 `assets/images/<id>/`） |
 | `fv gh push --recipe <id> [-y]` | 用 API 推送单个菜谱文件（含图片，提交前预览+确认） |
 | `fv gh status / pr / release / workflow` | GitHub 只读/追加式操作 |
 | `fv config get/set <key> <val>` | 查看/修改配置（endpoint / asset_dir / author.* / github.*） |
 | `fv action list/show/clear` | 管理 `--action-id` 操作缓存（草稿续写） |
-| `fv update [--check] [--version vX]` | 自更新到 GitHub Releases 最新版 |
+| `fv update [--check] [--pre] [--version vX]` | 自更新到 GitHub Releases 最新版；`--pre` 更新到预览版（含预发布，便于测试） |
 | `fv version` | 显示版本 |
 
 **全局参数**：`-c/--config`（配置路径）、`--endpoint`（读，亦 `FV_ENDPOINT`）、`--repo/--branch`（写，亦 `FV_REPO/FV_BRANCH`）、`--action-id`（操作缓存 ID）。所有命令支持 `--json` 输出，方便 AI/脚本解析。

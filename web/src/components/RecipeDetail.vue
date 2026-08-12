@@ -1,5 +1,5 @@
 <template>
-  <el-card shadow="never" class="recipe-detail" :body-style="{ padding: '24px' }">
+  <el-card shadow="never" class="recipe-detail" :body-style="{ padding: '18px' }">
     <!-- 头部 -->
     <div class="detail-head">
       <div class="detail-head-top">
@@ -275,9 +275,9 @@ function resolveAsset(p: string): string {
 }
 
 .detail-title {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .detail-head-top {
@@ -297,13 +297,13 @@ function resolveAsset(p: string): string {
 
 .detail-tags .tag {
   margin-right: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .detail-desc {
   color: var(--el-text-color-secondary);
-  margin-top: 8px;
-  line-height: 1.6;
+  margin-top: 6px;
+  line-height: 1.55;
 }
 
 .version-tabs {
@@ -313,9 +313,9 @@ function resolveAsset(p: string): string {
 /* 双栏布局：主列（步骤优先）+ 侧栏（统计/主料/调料） */
 .detail-layout {
   display: flex;
-  gap: 24px;
+  gap: 16px;
   align-items: flex-start;
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .detail-main {
@@ -323,7 +323,7 @@ function resolveAsset(p: string): string {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
 }
 
 .detail-side {
@@ -333,13 +333,13 @@ function resolveAsset(p: string): string {
   top: 76px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .block-title {
   font-weight: 600;
-  margin-bottom: 10px;
-  font-size: 15px;
+  margin-bottom: 8px;
+  font-size: 14px;
   color: var(--el-text-color-primary);
 }
 
@@ -348,7 +348,7 @@ function resolveAsset(p: string): string {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 10px;
   background: var(--el-fill-color-lighter);
@@ -414,32 +414,32 @@ function resolveAsset(p: string): string {
 }
 
 .step-desc {
-  line-height: 1.6;
-  margin-bottom: 8px;
+  line-height: 1.55;
+  margin-bottom: 6px;
   white-space: pre-wrap;
 }
 
 /* 步骤图（桌面较大） */
 .step-img {
-  width: 240px;
-  height: 150px;
+  width: 210px;
+  height: 130px;
   border-radius: 8px;
 }
 
 .images {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
 }
 
 .gallery-img {
-  width: 180px;
-  height: 120px;
+  width: 160px;
+  height: 108px;
   border-radius: 8px;
 }
 
 .video {
-  margin-top: 12px;
+  margin-top: 8px;
 }
 
 .alt-tag {
@@ -454,7 +454,7 @@ function resolveAsset(p: string): string {
 /* H5 自适应：单列 + 步骤优先（display:contents 让各块按 order 重排） */
 @media (max-width: 768px) {
   .recipe-detail :deep(.el-card__body) {
-    padding: 14px !important;
+    padding: 12px !important;
   }
   .detail-title {
     font-size: 21px;
@@ -465,7 +465,7 @@ function resolveAsset(p: string): string {
 
   .detail-layout {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
   }
   /* 移除 main/side 容器盒，块成为 layout 直接子项以应用 order */
   .detail-main,

@@ -104,7 +104,7 @@ function resolveImage(cover: string): string {
 }
 
 .card-body {
-  padding: 12px 14px 14px;
+  padding: 10px 12px 12px;
 }
 
 .card-title {
@@ -125,7 +125,7 @@ function resolveImage(cover: string): string {
 }
 
 .card-tags {
-  margin: 8px 0;
+  margin: 6px 0;
 }
 
 .tag {

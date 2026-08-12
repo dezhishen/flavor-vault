@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/google/go-github/v63/github"
 )
@@ -211,6 +212,60 @@ func ReleaseAssetURL(rel *Release, name string) string {
 		}
 	}
 	return ""
+}
+
+// TreeEntry 分支树中的 blob 条目（路径 + SHA，用于定位/删除文件）
+type TreeEntry struct {
+	Path string
+	SHA  string
+}
+
+// ListTree 返回分支完整树中指定前缀下的全部 blob 条目（不下载内容，只取路径与 SHA）。
+// 用于删除菜谱时定位其图片资产目录（.flavor-vault/assets/images/<id>/）。
+func (c *Client) ListTree(ctx context.Context, branch, prefix string) ([]TreeEntry, error) {
+	sha, err := c.HeadSHA(ctx, branch)
+	if err != nil {
+		return nil, err
+	}
+	if sha == "" {
+		return nil, fmt.Errorf("分支 %s 不存在", branch)
+	}
+	commit, _, err := c.gh.Git.GetCommit(ctx, c.Owner, c.Repo, sha)
+	if err != nil {
+		return nil, err
+	}
+	tree, _, err := c.gh.Git.GetTree(ctx, c.Owner, c.Repo, commit.GetTree().GetSHA(), true)
+	if err != nil {
+		return nil, err
+	}
+	pfx := strings.TrimSuffix(prefix, "/") + "/"
+	if prefix == "" || prefix == "/" {
+		pfx = ""
+	}
+	var out []TreeEntry
+	for _, e := range tree.Entries {
+		if e.GetType() != "blob" {
+			continue
+		}
+		p := e.GetPath()
+		if pfx == "" || strings.HasPrefix(p, pfx) {
+			out = append(out, TreeEntry{Path: p, SHA: e.GetSHA()})
+		}
+	}
+	return out, nil
+}
+
+// ListReleases 列出全部 Release（按创建时间倒序，含预发布），供 --pre 选择预览版测试
+func (c *Client) ListReleases(ctx context.Context) ([]*Release, error) {
+	rels, _, err := c.gh.Repositories.ListReleases(ctx, c.Owner, c.Repo, &github.ListOptions{PerPage: 100})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*Release, 0, len(rels))
+	for _, rel := range rels {
+		out = append(out, &Release{Tag: rel.GetTagName(), Assets: rel.Assets, Prerelease: rel.GetPrerelease()})
+	}
+	return out, nil
 }
 
 // DispatchWorkflow 触发 workflow_dispatch（追加式，不写分支 ref）
