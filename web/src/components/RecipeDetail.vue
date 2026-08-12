@@ -51,7 +51,7 @@
           <!-- 配菜 / 非必须（可折叠，次要信息） -->
           <el-collapse
             v-if="(activeVersion.ingredients.side || []).length || (activeVersion.ingredients.optional || []).length"
-            class="minor-collapse order-5"
+            class="minor-collapse order-4"
           >
             <el-collapse-item title="🥬 配菜 / 辅料 / 非必须">
               <div v-if="(activeVersion.ingredients.side || []).length" class="ing-group">
@@ -99,34 +99,38 @@
 
         <!-- 侧栏：统计 / 主要食材 / 调料（桌面 sticky；移动端按 order 融入单列） -->
         <aside class="detail-side">
-          <!-- 统计卡 -->
-          <div class="stats-card order-1">
-            <div class="stat-item">
-              <span class="stat-icon">⏱</span>
-              <span class="stat-label">准备</span>
-              <span class="stat-value">{{ activeVersion.stats.prep_time }} 分钟</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-icon">🔥</span>
-              <span class="stat-label">烹饪</span>
-              <span class="stat-value">{{ activeVersion.stats.cook_time }} 分钟</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-icon">⭐</span>
-              <span class="stat-label">难度</span>
-              <span class="stat-value">
-                <el-rate :model-value="activeVersion.stats.difficulty" disabled size="small" />
-              </span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-icon">🕐</span>
-              <span class="stat-label">总耗时</span>
-              <span class="stat-value">{{ activeVersion.stats.prep_time + activeVersion.stats.cook_time }} 分钟</span>
-            </div>
-          </div>
+          <!-- 统计卡（时间/难度；移动端默认折叠藏起，顶部让给食材） -->
+          <el-collapse v-model="statsActive" class="stats-collapse order-5">
+            <el-collapse-item title="⏱ 时间 / 难度 / 总耗时" name="stats">
+              <div class="stats-card">
+                <div class="stat-item">
+                  <span class="stat-icon">⏱</span>
+                  <span class="stat-label">准备</span>
+                  <span class="stat-value">{{ activeVersion.stats.prep_time }} 分钟</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-icon">🔥</span>
+                  <span class="stat-label">烹饪</span>
+                  <span class="stat-value">{{ activeVersion.stats.cook_time }} 分钟</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-icon">⭐</span>
+                  <span class="stat-label">难度</span>
+                  <span class="stat-value">
+                    <el-rate :model-value="activeVersion.stats.difficulty" disabled size="small" />
+                  </span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-icon">🕐</span>
+                  <span class="stat-label">总耗时</span>
+                  <span class="stat-value">{{ activeVersion.stats.prep_time + activeVersion.stats.cook_time }} 分钟</span>
+                </div>
+              </div>
+            </el-collapse-item>
+          </el-collapse>
 
           <!-- 主要食材（必选） -->
-          <div v-if="(activeVersion.ingredients.main || []).length" class="block main-ing-block order-3">
+          <div v-if="(activeVersion.ingredients.main || []).length" class="block main-ing-block order-1">
             <div class="block-title">🥘 主要食材（必选）</div>
             <el-table :data="activeVersion.ingredients.main || []" size="small" border>
               <el-table-column prop="name" label="食材" min-width="110" />
@@ -136,7 +140,7 @@
           </div>
 
           <!-- 调料（含备选方案） -->
-          <div v-if="(activeVersion.seasonings || []).length" class="block season-block order-4">
+          <div v-if="(activeVersion.seasonings || []).length" class="block season-block order-3">
             <div class="block-title">🧂 调料</div>
             <el-table :data="activeVersion.seasonings || []" size="small" border>
               <el-table-column prop="name" label="调料" min-width="100" />
@@ -168,10 +172,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useViewport } from '../composables/useViewport'
 import type { RecipeDetail, Version } from '../types'
 
 const props = defineProps<{ detail: RecipeDetail }>()
+
+// 统计卡（时间/难度）：桌面默认展开，移动端默认折叠藏起（顶部让给食材）
+const { isMobile } = useViewport()
+const statsActive = ref<string[]>(['stats'])
+if (isMobile.value) statsActive.value = []
+watch(isMobile, (m) => {
+  statsActive.value = m ? [] : ['stats']
+})
 
 // 多版本：versions 非空用 versions；否则顶层字段作为单个默认版本
 const versions = computed<Version[]>(() => {
@@ -301,6 +314,23 @@ function resolveAsset(p: string): string {
   font-weight: 600;
 }
 
+/* 统计折叠（时间/难度） */
+.stats-collapse {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+}
+
+.stats-collapse :deep(.el-collapse-item__header) {
+  font-weight: 600;
+}
+
+.stats-card {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 4px 8px 8px;
+}
+
 .ing-group {
   margin-bottom: 12px;
 }
@@ -371,11 +401,11 @@ function resolveAsset(p: string): string {
     display: contents;
   }
 
-  .order-1 { order: 1; } /* 统计 */
+  .order-1 { order: 1; } /* 主要食材 */
   .order-2 { order: 2; } /* 步骤 */
-  .order-3 { order: 3; } /* 主要食材 */
-  .order-4 { order: 4; } /* 调料 */
-  .order-5 { order: 5; } /* 配菜/非必须折叠 */
+  .order-3 { order: 3; } /* 调料 */
+  .order-4 { order: 4; } /* 配菜/非必须折叠 */
+  .order-5 { order: 5; } /* 统计（时间/难度，折叠藏起） */
   .order-6 { order: 6; } /* 过程图/视频 */
 
   /* 统计卡 2x2 */
