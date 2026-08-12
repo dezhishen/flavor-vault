@@ -32,6 +32,12 @@ jobs:
         with:
           go-version: '1.25'
 
+      # 分享长图内置字体（go:embed）：字体不提交仓库，构建前下载（Ubuntu apt + 脚本）
+      - name: Prepare built-in fonts (share --img)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-droid-fallback fonts-dejavu-core
+          bash scripts/fetch-fonts.sh
+
       - name: Build CLI
         run: go build -o fv ./cmd/fv
 
