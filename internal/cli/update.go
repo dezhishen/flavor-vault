@@ -239,12 +239,52 @@ func isNewer(cur, target string) bool {
 			return b > a
 		}
 	}
-	// 数字相同：正式版比预发布新
-	if cpre != "" && tpre == "" {
-		return true
-	}
+	// 数字相同：正式版 > 预发布；两个预发布按 semver 段比较
 	if cpre == "" && tpre != "" {
-		return false
+		return false // cur 正式、target 预发布 → target 不更新
 	}
-	return tpre != cpre
+	if cpre != "" && tpre == "" {
+		return true // cur 预发布、target 正式 → target 更新
+	}
+	return preGreater(tpre, cpre)
+}
+
+// preGreater 返回预发布标识 a > b（semver 段比较：数字段按数值、字母段按字典序、数字段 < 字母段、缺失段更小）
+func preGreater(a, b string) bool {
+	as := strings.Split(a, ".")
+	bs := strings.Split(b, ".")
+	n := len(as)
+	if len(bs) > n {
+		n = len(bs)
+	}
+	for i := 0; i < n; i++ {
+		var x, y string
+		if i < len(as) {
+			x = as[i]
+		}
+		if i < len(bs) {
+			y = bs[i]
+		}
+		// 段缺失：缺失者更小（beta < beta.1）
+		if x == "" && y != "" {
+			return false
+		}
+		if x != "" && y == "" {
+			return true
+		}
+		xn, xErr := strconv.Atoi(x)
+		yn, yErr := strconv.Atoi(y)
+		if xErr == nil && yErr == nil {
+			if xn != yn {
+				return xn > yn
+			}
+		} else if xErr == nil && yErr != nil {
+			return false // 数字段 < 字母段
+		} else if xErr != nil && yErr == nil {
+			return true
+		} else if x != y {
+			return x > y // 字母段按字典序
+		}
+	}
+	return false // 完全相同
 }
