@@ -113,7 +113,7 @@ fv rm -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y
     {
       "name": "经典版",
       "ingredients": {
-        "main": [{"name": "五花肉", "amount": "500g"}, {"name": "鹌鹑蛋", "amount": "10个", "note": "没有可省略（可选）"}],
+        "main": [{"name": "五花肉", "amount": "500g", "alternatives": [{"name": "梅花肉", "amount": "500g", "note": "代替五花肉"}]}, {"name": "鹌鹑蛋", "amount": "10个", "note": "没有可省略（可选）"}],
         "side": [{"name": "冰糖", "amount": "20g"}]
       },
       "seasonings": [
@@ -136,7 +136,7 @@ fv rm -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y
 ```
 
 - **统一多版本结构**：菜谱内容（食材/调料/步骤/media/统计）一律放 `versions`（至少 1 个版本），**顶层只保留元数据**（`id/name/description/tags/kitchenware`）；`fv add`/`fv edit` 统一输出多版本，历史单版本结构会自动迁移（`normalizeMultiVersion`），前端按 tab 展示多版本
-- **食材**：`ingredients.main` 必选主料 / `side` 配菜辅料；每项可带 `note` 备注（非必须如"可省略/可选"写在备注里，无独立 `optional` 分组）
+- **食材**：`ingredients.main` 必选主料 / `side` 配菜辅料；每项可带 `note` 备注（非必须如"可省略/可选"写在备注里，无独立 `optional` 分组），可带 `alternatives` 可替换方案（如 梅花肉 代替 五花肉）
 - **调料**：`seasonings` 每项 `name` 为方案一，`alternatives` 为备选方案（方案二/三，如用香菜代替香葱）
 - **图片**：`image_ref`/`cover`/`images` 可为**本地路径**或外部 URL。给步骤配图：`fv edit <id> --json '{"steps":[{"order":1,"description":"...","image_ref":"/本地/图片.png"}]}'`——本地路径会被自动复制到 `images/<菜谱ID>/`（命名 `<菜谱名>-<步骤>-<序号>`，如 `images/hong-shao-rou/红烧肉-1-1.png`）并随菜谱经 API 上传；已分组引用（`images/<id>/...` 且本地有文件）幂等保留；`images/` 前缀本地无文件视为分支已有资产不重复上传；外部 URL 原样。同一菜谱的封面/过程图/步骤图集中存放于 `images/<菜谱ID>/` 目录。
 

@@ -382,7 +382,19 @@ func promptIngredient(reader *bufio.Reader, kind string) (models.Ingredient, err
 		return models.Ingredient{}, fmt.Errorf("食材名称不能为空")
 	}
 	amount, _ := prompt(reader, "用量（如 500g/适量）", "适量")
-	return models.Ingredient{Name: name, Amount: amount}, nil
+	ing := models.Ingredient{Name: name, Amount: amount}
+	// 可替换食材（方案二/三…，如 用梅花肉代替五花肉）
+	moreAlt, _ := promptBool(reader, "添加可替换食材（如 梅花肉 代替 五花肉）?", false)
+	for moreAlt {
+		altName, _ := prompt(reader, "可替换名称（方案二，如 梅花肉）", "")
+		if strings.TrimSpace(altName) == "" {
+			break
+		}
+		altAmount, _ := prompt(reader, "可替换用量（回车跳过）", "")
+		ing.Alternatives = append(ing.Alternatives, models.IngredientOption{Name: strings.TrimSpace(altName), Amount: strings.TrimSpace(altAmount)})
+		moreAlt, _ = promptBool(reader, "再添加可替换（方案三）?", false)
+	}
+	return ing, nil
 }
 
 var latinSlugRe = regexp.MustCompile(`[^a-z0-9]+`)

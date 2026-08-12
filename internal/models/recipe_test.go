@@ -46,7 +46,7 @@ func TestMainIngredientNamesAggregate(t *testing.T) {
 func TestIngredientNamesAll(t *testing.T) {
 	r := &Recipe{Versions: []Version{{
 		Ingredients: Ingredients{
-			Main: []Ingredient{{Name: "五花肉"}},
+			Main: []Ingredient{{Name: "五花肉", Alternatives: []IngredientOption{{Name: "梅花肉"}}}},
 			Side: []Ingredient{{Name: "冰糖"}},
 		},
 		Seasonings: []Seasoning{
@@ -55,7 +55,7 @@ func TestIngredientNamesAll(t *testing.T) {
 		},
 	}}}
 	got := r.IngredientNamesAll()
-	for _, want := range []string{"五花肉", "冰糖", "香葱", "香菜", "料酒"} {
+	for _, want := range []string{"五花肉", "梅花肉", "冰糖", "香葱", "香菜", "料酒"} {
 		found := false
 		for _, g := range got {
 			if g == want {

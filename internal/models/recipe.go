@@ -37,11 +37,21 @@ type Ingredients struct {
 }
 
 // Ingredient 单个食材
-// 必选/非必须由 Note 备注表达（如 "可省略"），或由 Alternatives 表达可替换方案。
+// 必选/非必须由 Note 备注表达（如 "可省略"），可替换方案由 Alternatives 表达。
 type Ingredient struct {
 	Name   string `json:"name"`
 	Amount string `json:"amount"`         // 如 "500g", "适量"
 	Note   string `json:"note,omitempty"` // 备注（如 "没有可省略"）
+	// 可替换食材（方案二/三…，如 用梅花肉代替五花肉）
+	Alternatives []IngredientOption `json:"alternatives,omitempty"`
+}
+
+// IngredientOption 食材可替换方案
+// （如 梅花肉 代替 五花肉；与 SeasoningOption 结构平行）
+type IngredientOption struct {
+	Name   string `json:"name"`             // 如 "梅花肉"
+	Amount string `json:"amount,omitempty"` // 用量
+	Note   string `json:"note,omitempty"`   // 如 "代替五花肉"
 }
 
 // Step 步骤
@@ -140,6 +150,9 @@ func (r *Recipe) IngredientNamesAll() []string {
 		groups = append(groups, v.Ingredients.Side...)
 		for _, ing := range groups {
 			add(ing.Name)
+			for _, alt := range ing.Alternatives {
+				add(alt.Name)
+			}
 		}
 		for _, s := range v.Seasonings {
 			add(s.Name)

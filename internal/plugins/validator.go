@@ -91,5 +91,14 @@ func validateVersion(v models.Version) []string {
 			}
 		}
 	}
+	// 食材可替换方案需有名称
+	ingredients := append(append([]models.Ingredient{}, v.Ingredients.Main...), v.Ingredients.Side...)
+	for _, ing := range ingredients {
+		for _, alt := range ing.Alternatives {
+			if strings.TrimSpace(alt.Name) == "" {
+				p = append(p, "食材备选方案缺少 name")
+			}
+		}
+	}
 	return p
 }

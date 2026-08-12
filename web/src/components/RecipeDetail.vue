@@ -55,6 +55,23 @@
               <el-table-column prop="name" label="食材" min-width="110" />
               <el-table-column prop="amount" label="用量" min-width="90" />
               <el-table-column prop="note" label="备注" min-width="110" />
+              <el-table-column label="可替换" min-width="150">
+                <template #default="{ row }">
+                  <template v-if="(row.alternatives || []).length">
+                    <el-tag
+                      v-for="(a, j) in row.alternatives || []"
+                      :key="j"
+                      size="small"
+                      type="success"
+                      effect="plain"
+                      class="alt-tag"
+                    >
+                      {{ a.name }}{{ a.amount ? ` ${a.amount}` : '' }}{{ a.note ? `（${a.note}）` : '' }}
+                    </el-tag>
+                  </template>
+                  <span v-else class="muted">—</span>
+                </template>
+              </el-table-column>
             </el-table>
           </div>
 
@@ -121,6 +138,23 @@
               <el-table-column prop="name" label="食材" min-width="110" />
               <el-table-column prop="amount" label="用量" min-width="90" />
               <el-table-column prop="note" label="备注" min-width="110" />
+              <el-table-column label="可替换" min-width="150">
+                <template #default="{ row }">
+                  <template v-if="(row.alternatives || []).length">
+                    <el-tag
+                      v-for="(a, j) in row.alternatives || []"
+                      :key="j"
+                      size="small"
+                      type="success"
+                      effect="plain"
+                      class="alt-tag"
+                    >
+                      {{ a.name }}{{ a.amount ? ` ${a.amount}` : '' }}{{ a.note ? `（${a.note}）` : '' }}
+                    </el-tag>
+                  </template>
+                  <span v-else class="muted">—</span>
+                </template>
+              </el-table-column>
             </el-table>
           </div>
 

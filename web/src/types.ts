@@ -18,6 +18,13 @@ export interface Ingredient {
   name: string
   amount: string
   note?: string
+  alternatives?: IngredientOption[]
+}
+
+export interface IngredientOption {
+  name: string
+  amount?: string
+  note?: string
 }
 
 export interface SeasoningOption {
