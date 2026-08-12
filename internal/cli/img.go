@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	qrcode "github.com/skip2/go-qrcode"
+	xdraw "golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/font/sfnt"
@@ -51,13 +52,13 @@ var latinFontCandidates = []string{
 
 // 调色板
 var (
-	colTitle   = color.RGBA{0x1f, 0x29, 0x37, 0xff} // 标题深灰
-	colBody    = color.RGBA{0x37, 0x41, 0x51, 0xff} // 正文
-	colMuted   = color.RGBA{0x6b, 0x72, 0x80, 0xff} // 次要灰
-	colAccent  = color.RGBA{0x05, 0x96, 0x69, 0xff} // 强调绿（食材/调料标题）
-	colTag     = color.RGBA{0xd9, 0x77, 0x06, 0xff} // 标签橙
-	colLine    = color.RGBA{0xe5, 0xe7, 0xeb, 0xff} // 分隔线
-	colBG      = color.RGBA{0xff, 0xff, 0xff, 0xff} // 背景白
+	colTitle  = color.RGBA{0x1f, 0x29, 0x37, 0xff} // 标题深灰
+	colBody   = color.RGBA{0x37, 0x41, 0x51, 0xff} // 正文
+	colMuted  = color.RGBA{0x6b, 0x72, 0x80, 0xff} // 次要灰
+	colAccent = color.RGBA{0x05, 0x96, 0x69, 0xff} // 强调绿（食材/调料标题）
+	colTag    = color.RGBA{0xd9, 0x77, 0x06, 0xff} // 标签橙
+	colLine   = color.RGBA{0xe5, 0xe7, 0xeb, 0xff} // 分隔线
+	colBG     = color.RGBA{0xff, 0xff, 0xff, 0xff} // 背景白
 )
 
 // loadFont 从候选路径解析第一个可用字体（ttc/ttf 均可）
@@ -104,19 +105,19 @@ func loadFonts() ([]*opentype.Font, error) {
 
 // painter 长图画布（多字体回退混排）
 type painter struct {
-	img    *image.RGBA
-	fonts  []*opentype.Font // 回退链：CJK 在前，Latin 在后
-	faces  map[*opentype.Font]map[float64]font.Face
-	buf    sfnt.Buffer
-	main   *opentype.Font // 主字体（行高/基线基准，取第一个 CJK）
-	W      int            // 画布宽
-	maxW   int            // 内容最大宽
+	img   *image.RGBA
+	fonts []*opentype.Font // 回退链：CJK 在前，Latin 在后
+	faces map[*opentype.Font]map[float64]font.Face
+	buf   sfnt.Buffer
+	main  *opentype.Font // 主字体（行高/基线基准，取第一个 CJK）
+	W     int            // 画布宽
+	maxW  int            // 内容最大宽
 }
 
 func newPainter(fonts []*opentype.Font, width, pad int) *painter {
 	main := fonts[0]
 	return &painter{
-		img:   image.NewRGBA(image.Rect(0, 0, width, 9000)),
+		img:   image.NewRGBA(image.Rect(0, 0, width, 15000)),
 		fonts: fonts,
 		faces: map[*opentype.Font]map[float64]font.Face{},
 		main:  main,
@@ -218,9 +219,13 @@ func (p *painter) rect(x, y, w, h int, col color.RGBA) {
 	draw.Draw(p.img, image.Rect(x, y, x+w, y+h), image.NewUniform(col), image.Point{}, draw.Src)
 }
 
+// imageLoader 按 image_ref 加载图片（本地文件或远程 URL），用于嵌入分享长图的步骤图
+// 由 share.go 注入（需要 cfg/assetBase 解析），img.go 不关心来源。
+type imageLoader func(ref string) (image.Image, error)
+
 // renderShareImage 将菜谱渲染为竖版分享长图（PNG），写入 outPath。
-// siteRoot 非空时在底部标注菜谱页面链接。
-func renderShareImage(r *models.Recipe, siteRoot, outPath string) error {
+// siteRoot 非空时在底部标注菜谱页面链接与二维码；loadImg 非空时嵌入步骤图。
+func renderShareImage(r *models.Recipe, siteRoot, outPath string, loadImg imageLoader) error {
 	fonts, err := loadFonts()
 	if err != nil {
 		return err
@@ -332,6 +337,15 @@ func renderShareImage(r *models.Recipe, siteRoot, outPath string) error {
 					prefix = fmt.Sprintf("%d. ", order)
 				}
 				y = p.text(prefix+desc, x+16, y, 16, colBody, p.maxW-16)
+				// 步骤图（image_ref，加载失败则跳过）
+				if loadImg != nil && strings.TrimSpace(s.ImageRef) != "" {
+					if img, err := loadImg(s.ImageRef); err == nil && img != nil {
+						scaled := scaleImage(img, 360, 260)
+						b := scaled.Bounds()
+						draw.Draw(p.img, image.Rect(x+16, y, x+16+b.Dx(), y+b.Dy()), scaled, image.Point{}, draw.Over)
+						y += b.Dy() + 8
+					}
+				}
 			}
 			y += 6
 		}
@@ -357,8 +371,8 @@ func renderShareImage(r *models.Recipe, siteRoot, outPath string) error {
 	}
 
 	end := y + pad
-	if end > 9000 {
-		end = 9000
+	if end > 15000 {
+		end = 15000
 	}
 	out := p.img.SubImage(image.Rect(0, 0, W, end)).(*image.RGBA)
 
@@ -380,4 +394,27 @@ func makeQRImage(text string) (image.Image, error) {
 		return nil, err
 	}
 	return q.Image(140), nil
+}
+
+// scaleImage 按比例缩放到 maxW x maxH 范围内（保持宽高比），返回新的 RGBA
+func scaleImage(src image.Image, maxW, maxH int) *image.RGBA {
+	sw, sh := src.Bounds().Dx(), src.Bounds().Dy()
+	if sw <= 0 || sh <= 0 {
+		w := image.NewRGBA(image.Rect(0, 0, 1, 1))
+		return w
+	}
+	w, h := maxW, maxW*sh/sw
+	if h > maxH {
+		h = maxH
+		w = maxH * sw / sh
+	}
+	if w < 1 {
+		w = 1
+	}
+	if h < 1 {
+		h = 1
+	}
+	dst := image.NewRGBA(image.Rect(0, 0, w, h))
+	xdraw.CatmullRom.Scale(dst, dst.Bounds(), src, src.Bounds(), xdraw.Over, nil)
+	return dst
 }

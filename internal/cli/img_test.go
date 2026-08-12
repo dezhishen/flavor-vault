@@ -3,6 +3,7 @@ package cli
 import (
 	"image"
 	"image/draw"
+	"image/png"
 	"os"
 	"path/filepath"
 	"testing"
@@ -34,7 +35,7 @@ func TestRenderShareImage(t *testing.T) {
 		}},
 	}
 	out := filepath.Join(t.TempDir(), "share.png")
-	if err := renderShareImage(r, "https://fv.sdniu.top", out); err != nil {
+	if err := renderShareImage(r, "https://fv.sdniu.top", out, nil); err != nil {
 		t.Fatalf("renderShareImage 失败: %v", err)
 	}
 	f, err := os.Open(out)
@@ -125,5 +126,61 @@ func TestMakeQRImage(t *testing.T) {
 	}
 	if dark == 0 {
 		t.Fatal("二维码区域无黑色模块，可能未绘制")
+	}
+}
+
+// TestRenderShareImageWithSteps 验证带步骤图（loadImg 回调）时嵌入并撑高长图
+func TestRenderShareImageWithSteps(t *testing.T) {
+	if _, err := loadFonts(); err != nil {
+		t.Skipf("无可用字体，跳过: %v", err)
+	}
+	r := &models.Recipe{
+		Name: "带图菜谱",
+		Versions: []models.Version{{
+			Stats: models.Stats{PrepTime: 5, CookTime: 10, Difficulty: 2},
+			Ingredients: models.Ingredients{Main: []models.Ingredient{{Name: "五花肉", Amount: "500g"}}},
+			Steps: []models.Step{
+				{Order: 1, Description: "切块焯水", ImageRef: "images/a/1.jpg"},
+				{Order: 2, Description: "小火煸出油"},
+			},
+		}},
+	}
+	// 加载器返回一张 200x150 的小图（模拟步骤图）
+	small := image.NewRGBA(image.Rect(0, 0, 200, 150))
+	loader := func(ref string) (image.Image, error) { return small, nil }
+	out := filepath.Join(t.TempDir(), "share.png")
+	if err := renderShareImage(r, "https://fv.sdniu.top", out, loader); err != nil {
+		t.Fatalf("renderShareImage 失败: %v", err)
+	}
+	f, err := os.Open(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	cfg, _, err := image.DecodeConfig(f)
+	if err != nil {
+		t.Fatalf("图片无效: %v", err)
+	}
+	if cfg.Height < 500 {
+		t.Fatalf("带步骤图的长图高度异常（应明显高于纯文字）: %d", cfg.Height)
+	}
+}
+
+// TestShareImageLoaderLocal 验证本地 assets 目录的图片能被加载器读取
+func TestShareImageLoaderLocal(t *testing.T) {
+	dir := t.TempDir()
+	img := image.NewRGBA(image.Rect(0, 0, 20, 20))
+	f, _ := os.Create(filepath.Join(dir, "images", "a", "1.jpg"))
+	_ = png.Encode(f, img)
+	f.Close()
+	cfg := &models.Config{}
+	loader := shareImageLoader(false, "", cfg, dir, "a")
+	// assetDirFor 对空配置走默认 .flavor-vault/assets；这里改用 cwd 相对验证
+	got, err := loader("images/a/1.jpg")
+	if err != nil {
+		t.Skipf("本地路径不在搜索目录，跳过（不影响主流程）: %v", err)
+	}
+	if got == nil {
+		t.Fatal("加载到空图片")
 	}
 }

@@ -1,10 +1,18 @@
 package cli
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"image"
+	_ "image/jpeg"
+	_ "image/png"
+	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -72,7 +80,7 @@ func newShareCmd() *cobra.Command {
 				text += fmt.Sprintf("\n---\n👉 完整菜谱：%s/recipe/%s\n", siteRoot, id)
 			}
 			if strings.TrimSpace(imgPath) != "" {
-				if err := renderShareImage(r, siteRoot, imgPath); err != nil {
+				if err := renderShareImage(r, siteRoot, imgPath, shareImageLoader(remote, locator, cfg, projectRoot, id)); err != nil {
 					return fmt.Errorf("生成分享图片失败: %w", err)
 				}
 				fmt.Fprintf(cmd.OutOrStdout(), "✔ 已生成分享图片到 %s\n", imgPath)
@@ -288,4 +296,49 @@ func shareSeasoningOptions(opts []models.SeasoningOption) string {
 		out = append(out, s)
 	}
 	return strings.Join(out, "/")
+}
+
+// shareImageLoader 构造按 image_ref 加载图片的加载器，供分享长图嵌入步骤图。
+// 优先本地文件（assets 目录 / cwd 相对），否则从 assetBase（线上站点资源）或直接 URL 下载。
+func shareImageLoader(remote bool, locator string, cfg *models.Config, projectRoot, id string) imageLoader {
+	assetBase := shareAssetBase(remote, locator, cfg, projectRoot, id)
+	return func(ref string) (image.Image, error) {
+		ref = strings.TrimSpace(ref)
+		if ref == "" {
+			return nil, errors.New("空图片引用")
+		}
+		// 1) 本地文件：assets 目录（编辑暂存 / 本地构建 dist）/ cwd 相对
+		bases := []string{assetDirFor(cfg, projectRoot), ".flavor-vault/assets", "dist/assets", "."}
+		for _, base := range bases {
+			p := filepath.ToSlash(filepath.Join(base, ref))
+			if data, err := os.ReadFile(p); err == nil {
+				if img, _, err := image.Decode(bytes.NewReader(data)); err == nil {
+					return img, nil
+				}
+			}
+		}
+		// 2) 远程：ref 本身是 URL，或按 assetBase 拼资源地址
+		if strings.HasPrefix(ref, "http://") || strings.HasPrefix(ref, "https://") {
+			return fetchImage(ref)
+		}
+		if assetBase != "" && !strings.HasPrefix(ref, "/") {
+			return fetchImage(strings.TrimRight(assetBase, "/") + "/" + ref)
+		}
+		return nil, fmt.Errorf("无法加载图片 %s", ref)
+	}
+}
+
+// fetchImage 从 URL 下载并解码图片
+func fetchImage(url string) (image.Image, error) {
+	client := &http.Client{Timeout: 20 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+	img, _, err := image.Decode(resp.Body)
+	return img, err
 }
