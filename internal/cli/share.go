@@ -18,18 +18,20 @@ import (
 func newShareCmd() *cobra.Command {
 	var (
 		outFile string
+		imgPath string
 		noImg   bool
 	)
 	cmd := &cobra.Command{
 		Use:   "share <id>",
-		Short: "生成本地可发送的菜谱分享消息（Markdown 带图，可直接发给 IM / AI 助手）",
-		Long: `生成菜谱的 Markdown 分享文案（标题/简介/标签/统计/食材/调料/步骤），
-默认嵌入封面图与步骤图（线上资源 URL），可直接复制到支持 Markdown 的 IM（钉钉/飞书/语雀等）或交给 AI 助手整理发送。
-数据来源：优先本地 recipes/<id>.json（维护者模式），否则读取部署的 details/<id>.json（使用者模式）。
---no-img 可输出纯文字（不嵌图）。`,
-		Example: `  fv share chao-jue-zi-su-xia                 # 打印带图 Markdown
-  fv share chao-jue-zi-su-xia --out ~/share.md  # 写入文件
-  fv share chao-jue-zi-su-xia --no-img          # 纯文字不带图`,
+		Short: "生成本地可发送的菜谱分享消息（Markdown 带图 / PNG 长图，可直接发给 IM / AI 助手）",
+		Long: `生成菜谱的分享内容：
+- 默认输出 Markdown（嵌入封面图与步骤图 + 完整菜谱链接），适合支持 Markdown 的 IM（钉钉/飞书/语雀等）；
+- --img 可导出 PNG 分享长图（竖版，含标题/简介/统计/食材/调料/步骤），适合不支持带图 Markdown 的平台；
+- --no-img 输出纯文字 Markdown；数据来源：优先本地 recipes/<id>.json，否则读取部署的 details/<id>.json。`,
+		Example: `  fv share chao-jue-zi-su-xia                    # 打印带图 Markdown
+  fv share chao-jue-zi-su-xia --out ~/share.md     # 写入 md 文件
+  fv share chao-jue-zi-su-xia --img ~/share.png    # 导出 PNG 分享长图
+  fv share chao-jue-zi-su-xia --no-img             # 纯文字不带图`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id := args[0]
@@ -69,6 +71,12 @@ func newShareCmd() *cobra.Command {
 			if siteRoot != "" {
 				text += fmt.Sprintf("\n---\n👉 完整菜谱：%s/recipe/%s\n", siteRoot, id)
 			}
+			if strings.TrimSpace(imgPath) != "" {
+				if err := renderShareImage(r, siteRoot, imgPath); err != nil {
+					return fmt.Errorf("生成分享图片失败: %w", err)
+				}
+				fmt.Fprintf(cmd.OutOrStdout(), "✔ 已生成分享图片到 %s\n", imgPath)
+			}
 			if strings.TrimSpace(outFile) != "" {
 				if err := os.WriteFile(outFile, []byte(text), 0o644); err != nil {
 					return fmt.Errorf("写入文件失败: %w", err)
@@ -81,6 +89,7 @@ func newShareCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&outFile, "out", "", "写入文件路径（默认打印到终端）")
+	cmd.Flags().StringVar(&imgPath, "img", "", "导出菜谱分享长图（PNG），如 /tmp/share.png")
 	cmd.Flags().BoolVar(&noImg, "no-img", false, "不嵌入图片（纯文字 Markdown）")
 	return cmd
 }
