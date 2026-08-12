@@ -87,7 +87,6 @@ fv rm   <id> -c ~/.flavor-vault/config.yaml --repo <owner>/<repo> --branch recip
 | `fv add [-c <cfg>] [--json '...'\|@file] [--action-id X]` | 创建菜谱（交互式/JSON，经 GitHub API） |
 | `fv edit <id> [-c <cfg>] [--json <patch>] [--action-id X]` | 编辑菜谱（JSON 补丁式） |
 | `fv rm <id> [-c <cfg>] [-y]` | 删除菜谱 |
-| `fv build [--force] [--output] [--asset-dir] [--ai-snapshot] [--endpoint]` | 执行 ETL 构建静态站点 |
 | `fv gh push --recipe <id>` | 用 API 推送单个菜谱文件（含图片） |
 | `fv gh status / pr / release / workflow` | GitHub 只读/追加式操作 |
 | `fv config get/set <key> <val>` | 查看/修改配置（endpoint / asset_dir / author.* / github.*） |
@@ -148,7 +147,7 @@ github:
 
 - **数据分支**：菜谱存于独立 `recipes` 分支（`recipes/<id>.json` 单文件 + `assets/`），相当于可 fork / 私有化的数据仓库。
 - **触发**：`recipes` 分支有变动 → GitHub Actions 构建并部署 gh-pages（只更新页面）；推送 `v*` tag → 构建 + 发布多架构客户端 Release 并更新页面（tag 含 `-` 为预览版 prerelease）；`main` 不触发部署。
-- **build 配置**：在 workflow 内声明（`./fv build --force --output ./dist --asset-dir .flavor-vault/assets --ai-snapshot --endpoint https://fv.sdniu.top/data`），默认值 = 当前运行仓库的 GitHub 信息。
+- **构建**：静态站点数据由独立构建器 `cmd/build` 在 CI 中完成（`go build -o build ./cmd/build && ./build --force --output ./dist --asset-dir .flavor-vault/assets --ai-snapshot --endpoint https://fv.sdniu.top/data`），配置默认值 = 当前运行仓库的 GitHub 信息；`fv` CLI 制品不包含 build 命令。
 
 ---
 
@@ -197,6 +196,6 @@ cd web && npm run build
 **本地预览**：
 
 ```bash
-fv build                              # 生成 dist/data 与 dist/assets
+go run ./cmd/build --sync --force     # 从 recipes 数据分支拉取数据 + 生成 dist/data 与 dist/assets（--sync 可省略）
 cd web && npm install && npm run dev  # 开发服务器（5173，/data 与 /assets 代理到 dist/）
 ```

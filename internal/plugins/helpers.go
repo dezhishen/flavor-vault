@@ -100,7 +100,7 @@ func cachedWriteFiles(ctx *pipeline.BuildContext, pluginName string, outDir stri
 func loadMeta(path string) (*Meta, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("加载统计信息失败（请先运行 fv build）: %w", err)
+		return nil, fmt.Errorf("加载统计信息失败（请先运行构建 cmd/build）: %w", err)
 	}
 	var m Meta
 	if err := json.Unmarshal(data, &m); err != nil {

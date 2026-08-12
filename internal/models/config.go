@@ -21,7 +21,7 @@ type Config struct {
 	AssetDir string `yaml:"asset_dir" mapstructure:"asset_dir"`
 
 	// 远程数据 endpoint（只读模式）。未配置时使用默认值；
-	// 默认值可在构建时替换（fv build --endpoint / FV_ENDPOINT 写入产物 meta）。
+	// 默认值可在构建时替换（cmd/build --endpoint / FV_ENDPOINT 写入产物 meta）。
 	Endpoint string `yaml:"endpoint" mapstructure:"endpoint"`
 
 	// 作者信息（编辑提交时使用，fv init 强制采集）。

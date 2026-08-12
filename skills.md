@@ -91,7 +91,7 @@ fv rm -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y
 
 | 命令 | 说明 |
 |---|---|
-| `fv build [--force] [--output ./dist] [--asset-dir .flavor-vault/assets] [--ai-snapshot] [--endpoint <url>]` | ETL 生成静态站点（build 配置由 CI/workflow 传入；本地用于预览） |
+| `go run ./cmd/build --sync --force` | 构建静态站点数据 dist/data+dist/assets（构建只在 CI 完成，fv 不含 build 命令；本地复刻 CI 用此入口） |
 | `fv init [-c <path>] [-f] [--github] [--repo <owner/repo>] [--branch <b>]` | 对话式生成配置到 `~/.flavor-vault/config.yaml`（回车即用默认；`--github` 一并配置编辑仓库） |
 | `fv config get / set <key> <val>` | 查看/修改可选配置（endpoint / asset_dir / github.repo / github.branch） |
 | `fv action list/show/clear` | 管理 `--action-id` 操作缓存（草稿续写） |
@@ -136,9 +136,9 @@ fv rm -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y
 - **调料**：`seasonings` 每项 `name` 为方案一，`alternatives` 为备选方案（方案二/三，如用香菜代替香葱）
 - **图片**：`image_ref`/`cover`/`images` 可为本地路径（随单文件经 API 提交）或外部 URL；步骤图命名 `<菜谱名>-<步骤>-<序号>`（如 `红烧肉-1-1.png`）
 
-## 构建（`fv build`）
+## 构建（`cmd/build`，在 CI 中完成）
 
-`fv build` 在 `--output ./dist`（默认）生成静态站点：ETL 产物 `dist/data/*.json`（`all.json` / `details/*.json` / `filters.json` / `search.json` / `meta.json` / `ai-corpus.json`）供前端与只读命令消费。build 参数由 CI/workflow 传入（`--output --asset-dir --ai-snapshot --endpoint`）；本地可用 `fv build --force` 预览。
+`fv` 制品不包含 build 命令；静态站点数据由独立构建器 `cmd/build` 在 CI 中执行，生成 ETL 产物 `dist/data/*.json`（`all.json` / `details/*.json` / `filters.json` / `search.json` / `meta.json` / `ai-corpus.json`）供前端与只读命令消费。参数由 CI/workflow 传入（`--output --asset-dir --ai-snapshot --endpoint`）。本地复刻 CI：`go run ./cmd/build --sync --force --output ./dist --asset-dir .flavor-vault/assets --ai-snapshot`（`--sync` 先从 recipes 数据分支拉取 recipes+assets 到本地布局）。
 
 ## AI 助手常用任务示例
 
@@ -168,8 +168,8 @@ fv rm -c "$CONFIG" <id> --repo <owner>/<repo> --branch recipes -y
 # 5. 自更新
 fv update --check
 
-# 6. 本地构建预览
-fv build --force --output ./dist --asset-dir .flavor-vault/assets --ai-snapshot --endpoint <url>
+# 6. 本地复刻 CI 构建（fv 不含 build 命令，用独立构建器）
+go run ./cmd/build --sync --force --output ./dist --asset-dir .flavor-vault/assets --ai-snapshot --endpoint <url>
 ```
 
 > 校验规则：`name` 非空；每个版本需 `ingredients.main` 至少一项、`steps` 至少一步、`difficulty` 1–5；调料与备选方案需有 `name`。失败会提示并用 `--action-id` 缓存草稿供修正后重试。

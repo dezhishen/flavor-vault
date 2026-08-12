@@ -32,7 +32,7 @@ func RemoteEndpoint(cfg *models.Config) string {
 //  2. 本地构建产物（dist/data/<file> 存在）→ 本地（离线/开发）
 //  3. 构建时注入到本地 meta.json 的 endpoint → 远程
 //  4. 内置默认 endpoint（DefaultEndpoint）→ 远程
-//  5. 本地（文件不存在，读取时报"请先 fv build 或配置 endpoint"）
+//  5. 本地（文件不存在，读取时报"请先构建数据或配置 endpoint"）
 func Locator(cfg *models.Config, projectRoot, file string) (locator string, remote bool) {
 	if e := RemoteEndpoint(cfg); e != "" {
 		return e + "/" + file, true
@@ -74,7 +74,7 @@ func ReadJSON(locator string, remote bool) ([]byte, error) {
 	}
 	data, err := os.ReadFile(locator)
 	if err != nil {
-		return nil, fmt.Errorf("读取数据文件失败（请先 fv build，或配置 endpoint 从远端读取）: %w", err)
+		return nil, fmt.Errorf("读取数据文件失败（请先构建数据（cmd/build），或配置 endpoint 从远端读取）: %w", err)
 	}
 	return data, nil
 }

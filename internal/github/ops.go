@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net/http"
 
@@ -96,6 +97,46 @@ func (c *Client) GetFile(ctx context.Context, branch, path string) ([]byte, stri
 		return nil, "", err
 	}
 	return []byte(raw), f.GetSHA(), nil
+}
+
+// FetchTree 拉取分支的完整文件树（path -> 内容），用于本地同步数据源（公开仓库可匿名）。
+func (c *Client) FetchTree(ctx context.Context, branch string) (map[string][]byte, error) {
+	sha, err := c.HeadSHA(ctx, branch)
+	if err != nil {
+		return nil, err
+	}
+	if sha == "" {
+		return nil, fmt.Errorf("分支 %s 不存在", branch)
+	}
+	commit, _, err := c.gh.Git.GetCommit(ctx, c.Owner, c.Repo, sha)
+	if err != nil {
+		return nil, err
+	}
+	tree, _, err := c.gh.Git.GetTree(ctx, c.Owner, c.Repo, commit.GetTree().GetSHA(), true)
+	if err != nil {
+		return nil, err
+	}
+	files := make(map[string][]byte)
+	for _, e := range tree.Entries {
+		if e.GetType() != "blob" {
+			continue
+		}
+		blob, _, err := c.gh.Git.GetBlob(ctx, c.Owner, c.Repo, e.GetSHA())
+		if err != nil {
+			continue
+		}
+		content := blob.GetContent()
+		if blob.GetEncoding() == "base64" {
+			raw, err := base64.StdEncoding.DecodeString(content)
+			if err != nil {
+				continue
+			}
+			files[e.GetPath()] = raw
+		} else {
+			files[e.GetPath()] = []byte(content)
+		}
+	}
+	return files, nil
 }
 
 // DeleteFile 提交删除某分支上的文件（SHA 校验天然防并发覆盖）

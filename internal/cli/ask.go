@@ -41,7 +41,7 @@ func newAskCmd() *cobra.Command {
 				return err
 			}
 			if len(entries) == 0 {
-				fmt.Fprintln(cmd.OutOrStdout(), "(AI 语料为空，请先 fv build 或检查 endpoint)")
+				fmt.Fprintln(cmd.OutOrStdout(), "(AI 语料为空，请先构建数据（cmd/build）或检查 endpoint)")
 				return nil
 			}
 
