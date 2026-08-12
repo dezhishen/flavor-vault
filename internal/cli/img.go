@@ -176,7 +176,7 @@ func renderShareImage(r *models.Recipe, siteRoot, outPath string) error {
 	}
 	for _, k := range r.Kitchenware {
 		if strings.TrimSpace(k) != "" {
-			meta = append(meta, "🔧 "+strings.TrimSpace(k))
+			meta = append(meta, "厨具 "+strings.TrimSpace(k))
 		}
 	}
 	if len(meta) > 0 {
@@ -191,13 +191,13 @@ func renderShareImage(r *models.Recipe, siteRoot, outPath string) error {
 				name = fmt.Sprintf("版本 %d", vi+1)
 			}
 			y += 8
-			y = p.text("◆ "+name, x, y, 20, colTitle, p.maxW) + 6
+			y = p.text(name, x, y, 20, colTitle, p.maxW) + 6
 		}
 
 		// 统计
 		if v.Stats.PrepTime > 0 || v.Stats.CookTime > 0 {
 			total := v.Stats.PrepTime + v.Stats.CookTime
-			stat := fmt.Sprintf("⏱ 准备 %d 分钟 · 烹饪 %d 分钟 · 总耗时 %d 分钟", v.Stats.PrepTime, v.Stats.CookTime, total)
+			stat := fmt.Sprintf("准备 %d 分钟 · 烹饪 %d 分钟 · 总耗时 %d 分钟", v.Stats.PrepTime, v.Stats.CookTime, total)
 			if v.Stats.Difficulty > 0 && v.Stats.Difficulty <= 5 {
 				stat += fmt.Sprintf(" · 难度 %s", strings.Repeat("★", v.Stats.Difficulty))
 			}
@@ -206,7 +206,7 @@ func renderShareImage(r *models.Recipe, siteRoot, outPath string) error {
 
 		// 主要食材
 		if len(v.Ingredients.Main) > 0 {
-			y = p.text("🥘 主要食材", x, y, 21, colAccent, p.maxW) + 2
+			y = p.text("主要食材", x, y, 21, colAccent, p.maxW) + 2
 			for _, ing := range v.Ingredients.Main {
 				y = p.text("· "+shareIngredient(ing), x+16, y, 16, colBody, p.maxW-16)
 			}
@@ -214,7 +214,7 @@ func renderShareImage(r *models.Recipe, siteRoot, outPath string) error {
 		}
 		// 配菜 / 辅料
 		if len(v.Ingredients.Side) > 0 {
-			y = p.text("🥬 配菜 / 辅料", x, y, 21, colAccent, p.maxW) + 2
+			y = p.text("配菜 / 辅料", x, y, 21, colAccent, p.maxW) + 2
 			for _, ing := range v.Ingredients.Side {
 				y = p.text("· "+shareIngredient(ing), x+16, y, 16, colBody, p.maxW-16)
 			}
@@ -222,7 +222,7 @@ func renderShareImage(r *models.Recipe, siteRoot, outPath string) error {
 		}
 		// 调料
 		if len(v.Seasonings) > 0 {
-			y = p.text("🧂 调料", x, y, 21, colAccent, p.maxW) + 2
+			y = p.text("调料", x, y, 21, colAccent, p.maxW) + 2
 			for _, s := range v.Seasonings {
 				parts := []string{s.Name}
 				if s.Amount != "" {
@@ -241,7 +241,7 @@ func renderShareImage(r *models.Recipe, siteRoot, outPath string) error {
 		// 步骤
 		if len(v.Steps) > 0 {
 			y += 4
-			y = p.text("📋 步骤", x, y, 21, colAccent, p.maxW) + 2
+			y = p.text("步骤", x, y, 21, colAccent, p.maxW) + 2
 			for _, s := range v.Steps {
 				desc := strings.TrimSpace(s.Description)
 				if desc == "" {
@@ -266,7 +266,7 @@ func renderShareImage(r *models.Recipe, siteRoot, outPath string) error {
 		y += 4
 		p.rect(x, y, p.maxW, 2, colLine)
 		y += 14
-		y = p.text("👉 完整菜谱："+siteRoot+"/recipe/"+r.ID, x, y, 13, colMuted, p.maxW)
+		y = p.text("完整菜谱："+siteRoot+"/recipe/"+r.ID, x, y, 13, colMuted, p.maxW)
 	}
 
 	end := y + pad
