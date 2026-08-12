@@ -187,26 +187,37 @@ func stageLocalAssets(cfg *models.Config, projectRoot string, r *models.Recipe) 
 		}
 		// 规范化：去掉 assetBase 前缀（.flavor-vault/assets/）得到 asset 相对引用
 		norm := strings.TrimPrefix(strings.TrimPrefix(ref, assetBase+"/"), "./"+assetBase+"/")
-		// 1) 已在资源目录内（含已暂存/用户放置）→ 原样（规范化后）
-		if !filepath.IsAbs(norm) {
+		groupPrefix := "images/" + sub + "/"
+
+		// 1) 已是本菜谱的分组引用（images/<id>/...）且本地存在 → 原样（幂等，不重复复制）
+		if !filepath.IsAbs(norm) && strings.HasPrefix(norm, groupPrefix) {
 			if _, err := os.Stat(filepath.Join(dir, filepath.FromSlash(norm))); err == nil {
 				return norm, nil
 			}
 		}
 		// 2) 分支已有资产（images/ 前缀，本地无原文件）→ 原样，不重复上传
 		if strings.HasPrefix(norm, "images/") && !filepath.IsAbs(norm) {
-			return norm, nil
+			if _, err := os.Stat(filepath.Join(dir, filepath.FromSlash(norm))); err != nil {
+				return norm, nil
+			}
 		}
-		// 3) 本地源文件：cwd 相对，或 assetBase 相对
-		candidates := []string{ref}
-		if !filepath.IsAbs(ref) {
-			candidates = append(candidates, filepath.ToSlash(filepath.Join(assetBase, norm)))
-		}
+		// 3) 定位本地源文件：先看资源目录内（assets 根/扁平，待归位到 images/<id>/），再 cwd 相对 / assetBase 相对
 		var src string
-		for _, cand := range candidates {
-			if info, err := os.Stat(cand); err == nil && !info.IsDir() {
-				src = cand
-				break
+		if !filepath.IsAbs(norm) {
+			if info, err := os.Stat(filepath.Join(dir, filepath.FromSlash(norm))); err == nil && !info.IsDir() {
+				src = filepath.Join(dir, filepath.FromSlash(norm))
+			}
+		}
+		if src == "" {
+			candidates := []string{ref}
+			if !filepath.IsAbs(ref) {
+				candidates = append(candidates, filepath.ToSlash(filepath.Join(assetBase, norm)))
+			}
+			for _, cand := range candidates {
+				if info, err := os.Stat(cand); err == nil && !info.IsDir() {
+					src = cand
+					break
+				}
 			}
 		}
 		if src == "" {

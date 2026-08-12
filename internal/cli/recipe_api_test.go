@@ -52,7 +52,8 @@ func TestStageLocalAssets(t *testing.T) {
 		t.Fatal("缺失本地图片应报错")
 	}
 
-	// 基路径前缀引用规范化：.flavor-vault/assets/封面.jpg → 封面.jpg（文件已在资源目录则原样保留）
+	// 基路径前缀引用规范化 + 归位：.flavor-vault/assets/封面.jpg（assets 根、非分组）
+	// → 复制到 images/<id>/ 并更新引用（命名 <菜谱名>-<hint>）
 	assetDir := filepath.Join(root, ".flavor-vault/assets")
 	if err := os.MkdirAll(assetDir, 0o755); err != nil {
 		t.Fatal(err)
@@ -66,10 +67,26 @@ func TestStageLocalAssets(t *testing.T) {
 	} else if n != 1 {
 		t.Fatalf("引用被规范化（算 1 处变更），得到 %d", n)
 	}
-	if r3.Media.Cover != "封面.jpg" {
-		t.Fatalf("未去掉 assetBase 前缀: %s", r3.Media.Cover)
+	if r3.Media.Cover != "images/紫苏虾/紫苏虾-cover.jpg" {
+		t.Fatalf("assets 根图片应归位到分组目录: %s", r3.Media.Cover)
 	}
-	if _, err := os.Stat(filepath.Join(assetDir, "封面.jpg")); err != nil {
-		t.Fatalf("资源目录内的文件应保留: %v", err)
+	if _, err := os.Stat(filepath.Join(assetDir, "images/紫苏虾/紫苏虾-cover.jpg")); err != nil {
+		t.Fatalf("归位的图片文件不存在: %v", err)
+	}
+	// 已分组引用幂等：再次 stage 不重复复制
+	r3b := &models.Recipe{ID: "zi-su-xia", Name: "紫苏虾", Media: models.Media{Cover: "images/zi-su-xia/紫苏虾-cover.jpg"}}
+	if err := os.MkdirAll(filepath.Join(assetDir, "images/zi-su-xia"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(assetDir, "images/zi-su-xia/紫苏虾-cover.jpg"), []byte("jpg"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := stageLocalAssets(cfg, root, r3b); err != nil {
+		t.Fatalf("幂等 stage 失败: %v", err)
+	} else if n != 0 {
+		t.Fatalf("已分组引用应原样保留（0 变更），得到 %d", n)
+	}
+	if r3b.Media.Cover != "images/zi-su-xia/紫苏虾-cover.jpg" {
+		t.Fatalf("已分组引用被改动: %s", r3b.Media.Cover)
 	}
 }
