@@ -24,6 +24,7 @@ import (
 
 func newAddCmd() *cobra.Command {
 	var jsonInput string
+	var yes bool
 	cmd := &cobra.Command{
 		Use:   "add",
 		Short: "创建新菜谱（交互式，或 --json 直接输入；可用 --action-id 缓存草稿）",
@@ -99,6 +100,19 @@ func newAddCmd() *cobra.Command {
 			if assetBase == "" {
 				assetBase = ".flavor-vault/assets"
 			}
+			// 预览并确认提交（--yes 跳过；取消则保留草稿供续写）
+			ok, err := confirmCommit(cmd, r, fmt.Sprintf("add: %s", r.Name))
+			if err != nil {
+				return err
+			}
+			if !ok {
+				if st != nil {
+					if cErr := cacheRecipe(st, "add", r.ID, r); cErr == nil {
+						fmt.Fprintf(cmd.ErrOrStderr(), "ℹ 已取消，草稿保留在 %s\n", st.Path())
+					}
+				}
+				return nil
+			}
 			if err := apiSaveRecipe(ctx, cl, branch, r, assetBase, assetDirFor(cfg, projectRoot), cfg, cfgPath, projectRoot,
 				fmt.Sprintf("add: %s", r.Name)); err != nil {
 				return failAndCache(cmd, st, "add", r.ID, r, err)
@@ -109,6 +123,7 @@ func newAddCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&jsonInput, "json", "", "直接以 JSON 提供菜谱（支持 @文件路径），跳过交互")
+	cmd.Flags().BoolVarP(&yes, "yes", "y", false, "跳过提交确认")
 	return cmd
 }
 

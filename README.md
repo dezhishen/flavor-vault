@@ -84,10 +84,10 @@ fv rm   <id> -c ~/.flavor-vault/config.yaml --repo <owner>/<repo> --branch recip
 | `fv filter --厨具 炒锅 --标签 凉菜 [-c <cfg>] [--json]` | 倒排索引交集筛选 |
 | `fv stats [-c <cfg>] [--json]` | 统计信息 |
 | `fv ask <问题> [-c <cfg>] [--top N]` | AI 语料检索 |
-| `fv add [-c <cfg>] [--json '...'\|@file] [--action-id X]` | 创建菜谱（交互式/JSON，经 GitHub API） |
-| `fv edit <id> [-c <cfg>] [--json <patch>] [--action-id X]` | 编辑菜谱（JSON 补丁式） |
+| `fv add [-c <cfg>] [--json '...'\|@file] [--action-id X] [-y]` | 创建菜谱（交互式/JSON，提交前预览+确认，`-y` 跳过） |
+| `fv edit <id> [-c <cfg>] [--json <patch>] [--action-id X] [-y]` | 编辑菜谱（JSON 补丁式，提交前预览+确认） |
 | `fv rm <id> [-c <cfg>] [-y]` | 删除菜谱 |
-| `fv gh push --recipe <id>` | 用 API 推送单个菜谱文件（含图片） |
+| `fv gh push --recipe <id> [-y]` | 用 API 推送单个菜谱文件（含图片，提交前预览+确认） |
 | `fv gh status / pr / release / workflow` | GitHub 只读/追加式操作 |
 | `fv config get/set <key> <val>` | 查看/修改配置（endpoint / asset_dir / author.* / github.*） |
 | `fv action list/show/clear` | 管理 `--action-id` 操作缓存（草稿续写） |

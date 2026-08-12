@@ -71,6 +71,7 @@ func newGhPushCmd() *cobra.Command {
 		ignoreFlag string
 		recipeFlag string
 		jsonFlag   string
+		yes        bool
 	)
 	cmd := &cobra.Command{
 		Use:   "push <message>",
@@ -182,6 +183,15 @@ func newGhPushCmd() *cobra.Command {
 					fmt.Fprintf(cmd.OutOrStdout(), "  ↳ 附带 %d 个图片资源\n", assetCount)
 				}
 				fmt.Fprintf(cmd.OutOrStdout(), "▶ %s菜谱 %s/%s@%s ...\n", mode, cl.Owner, cl.Repo, branch)
+
+				// 预览并确认提交（--yes 跳过；取消则中止）
+				ok, err := confirmCommit(cmd, &r, strings.TrimSpace(message))
+				if err != nil {
+					return err
+				}
+				if !ok {
+					return nil
+				}
 			} else {
 				src := dirFlag
 				if src == "" {
@@ -228,6 +238,7 @@ func newGhPushCmd() *cobra.Command {
 	cmd.Flags().StringVar(&ignoreFlag, "ignore", "", "额外忽略的路径（逗号分隔）")
 	cmd.Flags().StringVar(&recipeFlag, "recipe", "", "仅提交/更新单个菜谱文件 recipes/<id>.json（文件思路）")
 	cmd.Flags().StringVar(&jsonFlag, "json", "", "菜谱内容（配合 --recipe，支持 @文件路径）")
+	cmd.Flags().BoolVarP(&yes, "yes", "y", false, "跳过提交确认（仅 --recipe 时生效）")
 	return cmd
 }
 

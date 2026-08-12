@@ -63,6 +63,8 @@ fv rm -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y
 
 > 提交作者：默认自动取**你的 `GITHUB_TOKEN` 对应 GitHub 账户**（`GET /user`，无公开邮箱时用 GitHub noreply 邮箱）。如需覆盖，在配置 `author.name` / `author.email`（`fv config set author.name ...`）。
 
+> **提交确认**：`fv add` / `fv edit` / `fv gh push --recipe` 在真正推送前会**预览**菜谱内容（含待上传图片数）并请求确认（回车=提交，输入 `n` 取消）。**AI 助手非交互请统一加 `-y`/`--yes` 跳过确认**（避免卡在提示；无 stdin 时默认提交，但显式 `-y` 更明确）。
+
 > 配置可选（也可全用参数/环境变量），但 **AI 助手请统一用 `fv init` 生成配置并以 `-c` 显式指定**（默认用户主目录 `~/.flavor-vault/config.yaml`），不要依赖工作目录自动查找。项目根另有 `config.example.yaml` 供参考。
 
 ## 命令一览
@@ -82,10 +84,10 @@ fv rm -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y
 
 | 命令 | 说明 | 示例 |
 |---|---|---|
-| `fv add [-c <cfg>] [--json '...'\|@file] [--action-id X]` | 新增菜谱（交互式或 JSON），经 GitHub API 提交单文件 | `fv add -c ~/.flavor-vault/config.yaml --repo owner/recipes --branch recipes --json @r.json` |
-| `fv edit <id> [-c <cfg>] [--json '{"stats":{"difficulty":4}}']` | 编辑（JSON 补丁式，未提供字段保留） | `fv edit hong-shao-rou -c ~/.flavor-vault/config.yaml --repo owner/recipes --json '{"stats":{"difficulty":4}}'` |
+| `fv add [-c <cfg>] [--json '...'\|@file] [--action-id X] [-y]` | 新增菜谱（交互式或 JSON），提交前预览+确认（`-y` 跳过） | `fv add -c ~/.flavor-vault/config.yaml --repo owner/recipes --branch recipes --json @r.json -y` |
+| `fv edit <id> [-c <cfg>] [--json '{"stats":{"difficulty":4}}'] [-y]` | 编辑（JSON 补丁式，未提供字段保留），提交前预览+确认 | `fv edit hong-shao-rou -c ~/.flavor-vault/config.yaml --repo owner/recipes --json '{"stats":{"difficulty":4}}' -y` |
 | `fv rm <id> [-c <cfg>] [-y]` | 删除菜谱 | `fv rm hong-shao-rou -c ~/.flavor-vault/config.yaml --repo owner/recipes -y` |
-| `fv gh push --recipe <id> [-c <cfg>] [--json @file]` | 用 API 推单个菜谱文件（含图片） | `fv gh push --recipe hong-shao-rou -c ~/.flavor-vault/config.yaml --json @r.json` |
+| `fv gh push --recipe <id> [-c <cfg>] [--json @file] [-y]` | 用 API 推单个菜谱文件（含图片），提交前预览+确认（`-y` 跳过） | `fv gh push --recipe hong-shao-rou -c ~/.flavor-vault/config.yaml --json @r.json -y` |
 
 ### 构建 / 其他
 
@@ -152,15 +154,15 @@ fv list -c "$CONFIG"
 fv search 红烧 -c "$CONFIG"
 fv show <id> -c "$CONFIG"
 
-# 2. 新增菜谱（先构造合法 JSON：name + 每版本 ingredients.main/steps/stats.difficulty 1-5 必填）
+# 2. 新增菜谱（先构造合法 JSON：name + 每版本 ingredients.main/steps/stats.difficulty 1-5 必填；提交前会预览+确认，-y 跳过）
 export GITHUB_TOKEN=ghp_xxx
 # 单版本（顶层字段即默认版本）
-fv add -c "$CONFIG" --repo <owner>/<repo> --branch recipes --json '{"name":"...", "ingredients":{"main":[{"name":"材料","amount":"1"}]}, "steps":[{"order":1,"description":"做"}], "stats":{"prep_time":10,"cook_time":20,"difficulty":2}}'
+fv add -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y --json '{"name":"...", "ingredients":{"main":[{"name":"材料","amount":"1"}]}, "steps":[{"order":1,"description":"做"}], "stats":{"prep_time":10,"cook_time":20,"difficulty":2}}'
 # 多版本（versions 数组；或交互式 fv add 时选择“添加其他版本”逐个录入）
-fv add -c "$CONFIG" --repo <owner>/<repo> --branch recipes --json '{"name":"...", "versions":[{"name":"经典版","ingredients":{"main":[{"name":"五花肉","amount":"500g"}]},"steps":[{"order":1,"description":"焯水"}],"stats":{"difficulty":3}},{"name":"少油版","ingredients":{"main":[{"name":"白萝卜","amount":"1根"}]},"steps":[{"order":1,"description":"煎"}],"stats":{"difficulty":2}}]}'
+fv add -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y --json '{"name":"...", "versions":[{"name":"经典版","ingredients":{"main":[{"name":"五花肉","amount":"500g"}]},"steps":[{"order":1,"description":"焯水"}],"stats":{"difficulty":3}},{"name":"少油版","ingredients":{"main":[{"name":"白萝卜","amount":"1根"}]},"steps":[{"order":1,"description":"煎"}],"stats":{"difficulty":2}}]}'
 
 # 3. 编辑（补丁式；多版本菜谱默认编辑第一个版本，补丁含 versions 则整体替换）
-fv edit -c "$CONFIG" <id> --repo <owner>/<repo> --branch recipes --json '{"stats":{"difficulty":4}}'
+fv edit -c "$CONFIG" <id> --repo <owner>/<repo> --branch recipes -y --json '{"stats":{"difficulty":4}}'
 
 # 4. 删除
 fv rm -c "$CONFIG" <id> --repo <owner>/<repo> --branch recipes -y

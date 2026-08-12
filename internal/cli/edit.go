@@ -16,6 +16,7 @@ import (
 
 func newEditCmd() *cobra.Command {
 	var jsonInput string
+	var yes bool
 	cmd := &cobra.Command{
 		Use:   "edit <id>",
 		Short: "编辑已有菜谱（$EDITOR 或 --json 补丁；经 GitHub API 更新数据源分支文件）",
@@ -125,6 +126,19 @@ func newEditCmd() *cobra.Command {
 			if assetBase == "" {
 				assetBase = ".flavor-vault/assets"
 			}
+			// 预览并确认提交（--yes 跳过；取消则保留编辑草稿供续写）
+			ok, err := confirmCommit(cmd, base, fmt.Sprintf("edit: %s", base.Name))
+			if err != nil {
+				return err
+			}
+			if !ok {
+				if st != nil {
+					if cErr := cacheRecipe(st, "edit", id, base); cErr == nil {
+						fmt.Fprintf(cmd.ErrOrStderr(), "ℹ 已取消，编辑草稿保留在 %s\n", st.Path())
+					}
+				}
+				return nil
+			}
 			if err := apiSaveRecipe(ctx, cl, branch, base, assetBase, assetDirFor(cfg, projectRoot), cfg, cfgPath, projectRoot,
 				fmt.Sprintf("edit: %s", base.Name)); err != nil {
 				return failAndCache(cmd, st, "edit", id, base, err)
@@ -135,6 +149,7 @@ func newEditCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&jsonInput, "json", "", "以 JSON 补丁方式更新字段（支持 @文件路径），未提供的字段保持不变")
+	cmd.Flags().BoolVarP(&yes, "yes", "y", false, "跳过提交确认")
 	return cmd
 }
 
