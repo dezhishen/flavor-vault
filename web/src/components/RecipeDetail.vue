@@ -25,123 +25,153 @@
     </el-tabs>
 
     <template v-if="activeVersion">
-      <el-descriptions :column="isMobile ? 2 : 4" border class="detail-stats" size="small">
-        <el-descriptions-item label="准备时间">{{ activeVersion.stats.prep_time }} 分钟</el-descriptions-item>
-        <el-descriptions-item label="烹饪时间">{{ activeVersion.stats.cook_time }} 分钟</el-descriptions-item>
-        <el-descriptions-item label="难度">
-          <el-rate :model-value="activeVersion.stats.difficulty" disabled />
-        </el-descriptions-item>
-        <el-descriptions-item label="总耗时">
-          {{ activeVersion.stats.prep_time + activeVersion.stats.cook_time }} 分钟
-        </el-descriptions-item>
-      </el-descriptions>
+      <div class="detail-layout">
+        <!-- 主列：步骤优先 -->
+        <div class="detail-main">
+          <!-- 步骤 -->
+          <div class="block steps-block order-2">
+            <div class="block-title">📋 步骤</div>
+            <el-steps direction="vertical" :active="(activeVersion.steps || []).length">
+              <el-step v-for="s in activeVersion.steps || []" :key="s.order" :title="`第 ${s.order} 步`">
+                <template #description>
+                  <div class="step-desc">{{ s.description }}</div>
+                  <el-image
+                    v-if="s.image_ref"
+                    :src="resolveAsset(s.image_ref)"
+                    fit="cover"
+                    class="step-img"
+                    :preview-src-list="[resolveAsset(s.image_ref)]"
+                    :preview-teleported="true"
+                  />
+                </template>
+              </el-step>
+            </el-steps>
+          </div>
 
-      <!-- 食材（必选 / 配菜 / 非必须） -->
-      <el-divider content-position="left">食材</el-divider>
-      <div class="ingredients">
-        <div v-if="(activeVersion.ingredients.main || []).length" class="ing-group">
-          <div class="ing-group-title">主要食材（必选）</div>
-          <el-table :data="activeVersion.ingredients.main || []" size="small" border>
-            <el-table-column prop="name" label="食材" min-width="120" />
-            <el-table-column prop="amount" label="用量" min-width="100" />
-            <el-table-column prop="note" label="备注" min-width="120" />
-          </el-table>
+          <!-- 配菜 / 非必须（可折叠，次要信息） -->
+          <el-collapse
+            v-if="(activeVersion.ingredients.side || []).length || (activeVersion.ingredients.optional || []).length"
+            class="minor-collapse order-5"
+          >
+            <el-collapse-item title="🥬 配菜 / 辅料 / 非必须">
+              <div v-if="(activeVersion.ingredients.side || []).length" class="ing-group">
+                <div class="ing-group-title">配菜 / 辅料</div>
+                <el-table :data="activeVersion.ingredients.side || []" size="small" border>
+                  <el-table-column prop="name" label="食材" min-width="110" />
+                  <el-table-column prop="amount" label="用量" min-width="90" />
+                  <el-table-column prop="note" label="备注" min-width="110" />
+                </el-table>
+              </div>
+              <div v-if="(activeVersion.ingredients.optional || []).length" class="ing-group">
+                <div class="ing-group-title">非必须（可选）</div>
+                <el-table :data="activeVersion.ingredients.optional || []" size="small" border>
+                  <el-table-column prop="name" label="食材" min-width="110" />
+                  <el-table-column prop="amount" label="用量" min-width="90" />
+                  <el-table-column prop="note" label="备注" min-width="110" />
+                </el-table>
+              </div>
+            </el-collapse-item>
+          </el-collapse>
+
+          <!-- 过程图 / 视频 -->
+          <div
+            v-if="(activeVersion.media.images?.length || 0) || activeVersion.media.video_url"
+            class="block media-block order-6"
+          >
+            <div class="block-title">🖼 过程图 / 视频</div>
+            <div class="images">
+              <el-image
+                v-for="(img, i) in activeVersion.media.images || []"
+                :key="i"
+                :src="resolveAsset(img)"
+                fit="cover"
+                class="gallery-img"
+                :preview-src-list="(activeVersion.media.images || []).map(resolveAsset)"
+              />
+            </div>
+            <div v-if="activeVersion.media.video_url" class="video">
+              <el-link type="primary" :href="activeVersion.media.video_url" target="_blank">
+                查看视频
+              </el-link>
+            </div>
+          </div>
         </div>
-        <div v-if="(activeVersion.ingredients.side || []).length" class="ing-group">
-          <div class="ing-group-title">配菜 / 辅料</div>
-          <el-table :data="activeVersion.ingredients.side || []" size="small" border>
-            <el-table-column prop="name" label="食材" min-width="120" />
-            <el-table-column prop="amount" label="用量" min-width="100" />
-            <el-table-column prop="note" label="备注" min-width="120" />
-          </el-table>
-        </div>
-        <div v-if="(activeVersion.ingredients.optional || []).length" class="ing-group">
-          <div class="ing-group-title">非必须（可选）</div>
-          <el-table :data="activeVersion.ingredients.optional || []" size="small" border>
-            <el-table-column prop="name" label="食材" min-width="120" />
-            <el-table-column prop="amount" label="用量" min-width="100" />
-            <el-table-column prop="note" label="备注" min-width="120" />
-          </el-table>
-        </div>
+
+        <!-- 侧栏：统计 / 主要食材 / 调料（桌面 sticky；移动端按 order 融入单列） -->
+        <aside class="detail-side">
+          <!-- 统计卡 -->
+          <div class="stats-card order-1">
+            <div class="stat-item">
+              <span class="stat-icon">⏱</span>
+              <span class="stat-label">准备</span>
+              <span class="stat-value">{{ activeVersion.stats.prep_time }} 分钟</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-icon">🔥</span>
+              <span class="stat-label">烹饪</span>
+              <span class="stat-value">{{ activeVersion.stats.cook_time }} 分钟</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-icon">⭐</span>
+              <span class="stat-label">难度</span>
+              <span class="stat-value">
+                <el-rate :model-value="activeVersion.stats.difficulty" disabled size="small" />
+              </span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-icon">🕐</span>
+              <span class="stat-label">总耗时</span>
+              <span class="stat-value">{{ activeVersion.stats.prep_time + activeVersion.stats.cook_time }} 分钟</span>
+            </div>
+          </div>
+
+          <!-- 主要食材（必选） -->
+          <div v-if="(activeVersion.ingredients.main || []).length" class="block main-ing-block order-3">
+            <div class="block-title">🥘 主要食材（必选）</div>
+            <el-table :data="activeVersion.ingredients.main || []" size="small" border>
+              <el-table-column prop="name" label="食材" min-width="110" />
+              <el-table-column prop="amount" label="用量" min-width="90" />
+              <el-table-column prop="note" label="备注" min-width="110" />
+            </el-table>
+          </div>
+
+          <!-- 调料（含备选方案） -->
+          <div v-if="(activeVersion.seasonings || []).length" class="block season-block order-4">
+            <div class="block-title">🧂 调料</div>
+            <el-table :data="activeVersion.seasonings || []" size="small" border>
+              <el-table-column prop="name" label="调料" min-width="100" />
+              <el-table-column prop="amount" label="用量" min-width="80" />
+              <el-table-column prop="note" label="备注" min-width="100" />
+              <el-table-column label="备选方案" min-width="150">
+                <template #default="{ row }">
+                  <template v-if="(row.alternatives || []).length">
+                    <el-tag
+                      v-for="(a, j) in row.alternatives || []"
+                      :key="j"
+                      size="small"
+                      type="success"
+                      effect="plain"
+                      class="alt-tag"
+                    >
+                      {{ a.name }}{{ a.amount ? ` ${a.amount}` : '' }}{{ a.note ? `（${a.note}）` : '' }}
+                    </el-tag>
+                  </template>
+                  <span v-else class="muted">—</span>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </aside>
       </div>
-
-      <!-- 调料（含备选方案，表格与食材一致） -->
-      <template v-if="(activeVersion.seasonings || []).length">
-        <el-divider content-position="left">调料</el-divider>
-        <el-table :data="activeVersion.seasonings || []" size="small" border>
-          <el-table-column prop="name" label="调料" min-width="120" />
-          <el-table-column prop="amount" label="用量" min-width="100" />
-          <el-table-column prop="note" label="备注" min-width="120" />
-          <el-table-column label="备选方案" min-width="180">
-            <template #default="{ row }">
-              <template v-if="(row.alternatives || []).length">
-                <el-tag
-                  v-for="(a, j) in row.alternatives || []"
-                  :key="j"
-                  size="small"
-                  type="success"
-                  effect="plain"
-                  class="alt-tag"
-                >
-                  {{ a.name }}{{ a.amount ? ` ${a.amount}` : '' }}{{ a.note ? `（${a.note}）` : '' }}
-                </el-tag>
-              </template>
-              <span v-else class="muted">—</span>
-            </template>
-          </el-table-column>
-        </el-table>
-      </template>
-
-      <!-- 步骤 -->
-      <el-divider content-position="left">步骤</el-divider>
-      <el-steps direction="vertical" :active="(activeVersion.steps || []).length">
-        <el-step v-for="s in activeVersion.steps || []" :key="s.order" :title="`第 ${s.order} 步`">
-          <template #description>
-            <div class="step-desc">{{ s.description }}</div>
-            <el-image
-              v-if="s.image_ref"
-              :src="resolveAsset(s.image_ref)"
-              fit="cover"
-              class="step-img"
-              :preview-src-list="[resolveAsset(s.image_ref)]"
-              :preview-teleported="true"
-            />
-          </template>
-        </el-step>
-      </el-steps>
-
-      <!-- 图片 / 视频 -->
-      <template v-if="(activeVersion.media.images?.length || 0) || activeVersion.media.video_url">
-        <el-divider content-position="left">过程图</el-divider>
-        <div class="images">
-          <el-image
-            v-for="(img, i) in activeVersion.media.images || []"
-            :key="i"
-            :src="resolveAsset(img)"
-            fit="cover"
-            class="step-img"
-            :preview-src-list="(activeVersion.media.images || []).map(resolveAsset)"
-          />
-        </div>
-        <div v-if="activeVersion.media.video_url" class="video">
-          <el-link type="primary" :href="activeVersion.media.video_url" target="_blank">
-            查看视频
-          </el-link>
-        </div>
-      </template>
     </template>
   </el-card>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useViewport } from '../composables/useViewport'
 import type { RecipeDetail, Version } from '../types'
 
 const props = defineProps<{ detail: RecipeDetail }>()
-
-// 移动端描述列数减少，避免挤压
-const { isMobile } = useViewport()
 
 // 多版本：versions 非空用 versions；否则顶层字段作为单个默认版本
 const versions = computed<Version[]>(() => {
@@ -191,12 +221,88 @@ function resolveAsset(p: string): string {
   line-height: 1.6;
 }
 
-.detail-stats {
+.version-tabs {
+  margin-top: 4px;
+}
+
+/* 双栏布局：主列（步骤优先）+ 侧栏（统计/主料/调料） */
+.detail-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
   margin-top: 16px;
 }
 
+.detail-main {
+  flex: 1 1 62%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.detail-side {
+  flex: 0 0 34%;
+  min-width: 0;
+  position: sticky;
+  top: 76px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.block-title {
+  font-weight: 600;
+  margin-bottom: 10px;
+  font-size: 15px;
+  color: var(--el-text-color-primary);
+}
+
+/* 统计卡（紧凑） */
+.stats-card {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+  background: var(--el-fill-color-lighter);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.stat-icon {
+  font-size: 18px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+}
+
+.stat-value {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* 配菜/非必须折叠 */
+.minor-collapse {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 10px;
+}
+
+.minor-collapse :deep(.el-collapse-item__header) {
+  font-weight: 600;
+}
+
 .ing-group {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .ing-group-title {
@@ -205,26 +311,26 @@ function resolveAsset(p: string): string {
   color: var(--el-text-color-primary);
 }
 
-.images {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
 .step-desc {
   line-height: 1.6;
   margin-bottom: 8px;
   white-space: pre-wrap;
 }
 
-/* 步骤配图（略小于过程图） */
-.el-step .step-img {
-  width: 160px;
-  height: 110px;
+/* 步骤图（桌面较大） */
+.step-img {
+  width: 240px;
+  height: 150px;
   border-radius: 8px;
 }
 
-.step-img {
+.images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.gallery-img {
   width: 180px;
   height: 120px;
   border-radius: 8px;
@@ -232,10 +338,6 @@ function resolveAsset(p: string): string {
 
 .video {
   margin-top: 12px;
-}
-
-.version-tabs {
-  margin-top: 4px;
 }
 
 .alt-tag {
@@ -247,7 +349,7 @@ function resolveAsset(p: string): string {
   color: var(--el-text-color-placeholder);
 }
 
-/* H5 自适应 */
+/* H5 自适应：单列 + 步骤优先（display:contents 让各块按 order 重排） */
 @media (max-width: 768px) {
   .recipe-detail :deep(.el-card__body) {
     padding: 14px !important;
@@ -258,16 +360,49 @@ function resolveAsset(p: string): string {
   .detail-desc {
     font-size: 13px;
   }
-  .el-step .step-img,
-  .step-img {
-    width: 120px;
-    height: 90px;
+
+  .detail-layout {
+    flex-direction: column;
+    gap: 16px;
   }
+  /* 移除 main/side 容器盒，块成为 layout 直接子项以应用 order */
+  .detail-main,
+  .detail-side {
+    display: contents;
+  }
+
+  .order-1 { order: 1; } /* 统计 */
+  .order-2 { order: 2; } /* 步骤 */
+  .order-3 { order: 3; } /* 主要食材 */
+  .order-4 { order: 4; } /* 调料 */
+  .order-5 { order: 5; } /* 配菜/非必须折叠 */
+  .order-6 { order: 6; } /* 过程图/视频 */
+
+  /* 统计卡 2x2 */
+  .stats-card {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* 步骤图移动端全宽 16:9 */
+  .step-img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+
   .step-desc {
     font-size: 13px;
   }
+
+  .gallery-img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+  }
+
   /* 表格横向可滚动，避免溢出 */
-  .ingredients :deep(.el-table) {
+  .detail-main :deep(.el-table),
+  .detail-side :deep(.el-table) {
     width: 100%;
     overflow-x: auto;
     display: block;
