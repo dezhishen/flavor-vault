@@ -162,36 +162,28 @@ func applyEditPatch(raw string, r *models.Recipe) error {
 	if err != nil {
 		return err
 	}
-	// 旧结构（无版本）→ 先转为单版本
-	if len(r.Versions) == 0 {
-		r.Versions = []models.Version{{
-			Ingredients: r.Ingredients,
-			Seasonings:  r.Seasonings,
-			Steps:       r.Steps,
-			Media:       r.Media,
-			Stats:       r.Stats,
-		}}
-		r.Ingredients = models.Ingredients{}
-		r.Seasonings = nil
-		r.Steps = nil
-		r.Media = models.Media{}
-		r.Stats = models.Stats{}
-	}
 
 	var m map[string]json.RawMessage
 	if err := json.Unmarshal(data, &m); err != nil {
 		return fmt.Errorf("解析菜谱 JSON 失败: %w", err)
 	}
+
+	// 补丁显式含 versions → 整体替换版本（菜谱变为多版本，顶层内容清空、内容在 versions）
 	if rawVersions, ok := m["versions"]; ok {
 		var vs []models.Version
 		if err := json.Unmarshal(rawVersions, &vs); err != nil {
 			return err
 		}
 		r.Versions = vs
+		r.Ingredients = models.Ingredients{}
+		r.Seasonings = nil
+		r.Steps = nil
+		r.Media = models.Media{}
+		r.Stats = models.Stats{}
 		return nil
 	}
 
-	// 顶层字段
+	// 顶层元数据字段
 	if rawName, ok := m["name"]; ok {
 		json.Unmarshal(rawName, &r.Name)
 	}
@@ -205,8 +197,6 @@ func applyEditPatch(raw string, r *models.Recipe) error {
 		json.Unmarshal(rawKw, &r.Kitchenware)
 	}
 
-	// 版本内容字段 → 合并进第一个版本
-	v := &r.Versions[0]
 	apply := func(key string, dst interface{}) error {
 		if rawVal, ok := m[key]; ok {
 			if err := json.Unmarshal(rawVal, dst); err != nil {
@@ -215,23 +205,44 @@ func applyEditPatch(raw string, r *models.Recipe) error {
 		}
 		return nil
 	}
-	if err := apply("ingredients", &v.Ingredients); err != nil {
-		return err
-	}
-	if err := apply("seasonings", &v.Seasonings); err != nil {
-		return err
-	}
-	if err := apply("steps", &v.Steps); err != nil {
-		return err
-	}
-	if err := apply("media", &v.Media); err != nil {
-		return err
-	}
-	if err := apply("stats", &v.Stats); err != nil {
-		return err
-	}
-	if rawVName, ok := m["version"]; ok { // 可选：设置版本名
-		json.Unmarshal(rawVName, &v.Name)
+
+	// 版本内容字段：多版本菜谱 → 合并进第一个版本；单版本菜谱 → 直接更新顶层主体（保持单版本，不迁移）
+	if len(r.Versions) > 0 {
+		v := &r.Versions[0]
+		if err := apply("ingredients", &v.Ingredients); err != nil {
+			return err
+		}
+		if err := apply("seasonings", &v.Seasonings); err != nil {
+			return err
+		}
+		if err := apply("steps", &v.Steps); err != nil {
+			return err
+		}
+		if err := apply("media", &v.Media); err != nil {
+			return err
+		}
+		if err := apply("stats", &v.Stats); err != nil {
+			return err
+		}
+		if rawVName, ok := m["version"]; ok {
+			json.Unmarshal(rawVName, &v.Name)
+		}
+	} else {
+		if err := apply("ingredients", &r.Ingredients); err != nil {
+			return err
+		}
+		if err := apply("seasonings", &r.Seasonings); err != nil {
+			return err
+		}
+		if err := apply("steps", &r.Steps); err != nil {
+			return err
+		}
+		if err := apply("media", &r.Media); err != nil {
+			return err
+		}
+		if err := apply("stats", &r.Stats); err != nil {
+			return err
+		}
 	}
 	return nil
 }
