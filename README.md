@@ -166,7 +166,7 @@ dist/
     └── ai-corpus.json     # AI 快照（JSON Lines）
 ```
 
-> 菜谱数据模型：`versions`（多版本，为空则用顶层字段为默认版本）；食材分 `main`（必选）/`side`（配菜）/`optional`（非必须）；调料 `seasonings` 每项可带 `alternatives` 备选方案（如香菜代替香葱）。
+> 菜谱数据模型：**统一多版本**——内容（食材/调料/步骤/media/统计）一律放 `versions`（至少 1 个版本），顶层只保留元数据（`id/name/description/tags/kitchenware`）；`fv add`/`fv edit` 统一输出多版本，历史单版本结构自动迁移；食材分 `main`（必选）/`side`（配菜）/`optional`（非必须）；调料 `seasonings` 每项可带 `alternatives` 备选方案（如香菜代替香葱）。
 
 ---
 
