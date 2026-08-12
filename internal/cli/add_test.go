@@ -2,6 +2,8 @@ package cli
 
 import (
 	"bufio"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -46,5 +48,35 @@ func TestPromptAddRecipeSingleVersion(t *testing.T) {
 	}
 	if len(r.Ingredients.Main) != 1 || r.Ingredients.Main[0].Name != "材料" {
 		t.Fatalf("顶层主要食材错误: %+v", r.Ingredients)
+	}
+}
+
+// TestResolveStepImage 验证交互式步骤配图：本地文件复制到 assets/images/<id>/ 并返回分组引用，
+// 供 stageLocalAssets/apiSaveRecipe 随菜谱一起上传；外部 URL 原样保留。
+func TestResolveStepImage(t *testing.T) {
+	root := t.TempDir()
+	cfg := &models.Config{}
+	src := filepath.Join(root, "step.png")
+	if err := os.WriteFile(src, []byte("png"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ref, err := resolveStepImage(root, cfg, "红烧肉", "hong-shao-rou", 2, src)
+	if err != nil {
+		t.Fatalf("resolveStepImage err: %v", err)
+	}
+	if ref != "images/hong-shao-rou/红烧肉-2-1.png" {
+		t.Fatalf("步骤图引用错误: %s", ref)
+	}
+	if _, err := os.Stat(filepath.Join(root, ".flavor-vault/assets/images/hong-shao-rou/红烧肉-2-1.png")); err != nil {
+		t.Fatalf("步骤图文件未落盘到分组目录: %v", err)
+	}
+	// 外部 URL 原样
+	ref, err = resolveStepImage(root, cfg, "x", "x", 1, "https://example.com/s.png")
+	if err != nil || ref != "https://example.com/s.png" {
+		t.Fatalf("URL 应原样返回: %q %v", ref, err)
+	}
+	// 缺失本地图片报错
+	if _, err := resolveStepImage(root, cfg, "x", "x", 1, filepath.Join(root, "nope.png")); err == nil {
+		t.Fatal("缺失本地图片应报错")
 	}
 }
