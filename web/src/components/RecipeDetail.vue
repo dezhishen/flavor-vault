@@ -2,7 +2,13 @@
   <el-card shadow="never" class="recipe-detail" :body-style="{ padding: '24px' }">
     <!-- 头部 -->
     <div class="detail-head">
-      <div class="detail-title">{{ detail.name }}</div>
+      <div class="detail-head-top">
+        <div class="detail-title">{{ detail.name }}</div>
+        <el-button size="small" type="primary" plain :loading="capturing" @click="captureShot" class="shot-btn">
+          <el-icon v-if="!capturing"><Download /></el-icon>
+          <span>{{ capturing ? '生成中…' : '截图' }}</span>
+        </el-button>
+      </div>
       <div class="detail-tags">
         <el-tag v-for="t in detail.tags" :key="t" type="warning" effect="plain" class="tag">
           {{ t }}
@@ -46,33 +52,6 @@
                 </template>
               </el-step>
             </el-steps>
-          </div>
-
-          <!-- 配菜 / 辅料（用料，优先显示） -->
-          <div v-if="(activeVersion.ingredients.side || []).length" class="block side-ing-block order-2">
-            <div class="block-title">🥬 配菜 / 辅料</div>
-            <el-table :data="activeVersion.ingredients.side || []" size="small" border>
-              <el-table-column prop="name" label="食材" min-width="110" />
-              <el-table-column prop="amount" label="用量" min-width="90" />
-              <el-table-column prop="note" label="备注" min-width="110" />
-              <el-table-column label="可替换" min-width="150">
-                <template #default="{ row }">
-                  <template v-if="(row.alternatives || []).length">
-                    <el-tag
-                      v-for="(a, j) in row.alternatives || []"
-                      :key="j"
-                      size="small"
-                      type="success"
-                      effect="plain"
-                      class="alt-tag"
-                    >
-                      {{ a.name }}{{ a.amount ? ` ${a.amount}` : '' }}{{ a.note ? `（${a.note}）` : '' }}
-                    </el-tag>
-                  </template>
-                  <span v-else class="muted">—</span>
-                </template>
-              </el-table-column>
-            </el-table>
           </div>
 
           <!-- 过程图 / 视频 -->
@@ -158,6 +137,33 @@
             </el-table>
           </div>
 
+          <!-- 配菜 / 辅料（用料） -->
+          <div v-if="(activeVersion.ingredients.side || []).length" class="block side-ing-block order-2">
+            <div class="block-title">🥬 配菜 / 辅料</div>
+            <el-table :data="activeVersion.ingredients.side || []" size="small" border>
+              <el-table-column prop="name" label="食材" min-width="110" />
+              <el-table-column prop="amount" label="用量" min-width="90" />
+              <el-table-column prop="note" label="备注" min-width="110" />
+              <el-table-column label="可替换" min-width="150">
+                <template #default="{ row }">
+                  <template v-if="(row.alternatives || []).length">
+                    <el-tag
+                      v-for="(a, j) in row.alternatives || []"
+                      :key="j"
+                      size="small"
+                      type="success"
+                      effect="plain"
+                      class="alt-tag"
+                    >
+                      {{ a.name }}{{ a.amount ? ` ${a.amount}` : '' }}{{ a.note ? `（${a.note}）` : '' }}
+                    </el-tag>
+                  </template>
+                  <span v-else class="muted">—</span>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+
           <!-- 调料（含备选方案） -->
           <div v-if="(activeVersion.seasonings || []).length" class="block season-block order-3">
             <div class="block-title">🧂 调料</div>
@@ -192,10 +198,39 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { toPng } from 'html-to-image'
+import { ElMessage } from 'element-plus'
+import { Download } from '@element-plus/icons-vue'
 import { useViewport } from '../composables/useViewport'
 import type { RecipeDetail, Version } from '../types'
 
 const props = defineProps<{ detail: RecipeDetail }>()
+
+const capturing = ref(false)
+
+// 生成当前菜谱长图（PNG）并触发下载
+async function captureShot() {
+  const node = document.querySelector<HTMLElement>('.recipe-detail')
+  if (!node) return
+  capturing.value = true
+  try {
+    const dataUrl = await toPng(node, {
+      pixelRatio: 2,
+      backgroundColor: '#ffffff',
+      cacheBust: true,
+    })
+    const link = document.createElement('a')
+    link.download = `${props.detail.name || '菜谱'}.png`
+    link.href = dataUrl
+    link.click()
+    ElMessage.success('长图已生成，开始下载')
+  } catch (e) {
+    console.error(e)
+    ElMessage.error('截图失败（可能含跨域图片），请稍后重试')
+  } finally {
+    capturing.value = false
+  }
+}
 
 // 统计卡（时间/难度）：桌面默认展开，移动端默认折叠藏起（顶部让给食材）
 const { isMobile } = useViewport()
@@ -243,6 +278,21 @@ function resolveAsset(p: string): string {
   font-size: 26px;
   font-weight: 700;
   margin-bottom: 8px;
+}
+
+.detail-head-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.shot-btn {
+  flex-shrink: 0;
+}
+
+.detail-head-top .shot-btn .el-icon + span {
+  margin-left: 4px;
 }
 
 .detail-tags .tag {
