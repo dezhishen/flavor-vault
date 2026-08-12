@@ -21,7 +21,7 @@
 
 | 组件 | 选型 |
 |------|------|
-| CLI | Go 1.22+ · Cobra · Viper · go-github |
+| CLI | Go 1.25+ · Cobra · Viper · go-github |
 | 前端 | Vue 3 + TypeScript · Element Plus · Pinia · Vite |
 | 部署 | GitHub Actions · GitHub Pages |
 | 存储 | Git（菜谱 JSON 于独立 `recipes` 分支） |
@@ -191,14 +191,14 @@ fv ask "不用炒锅的凉菜" --json
 # Go 单元测试（store / cache / pipeline / plugins / utils）
 go test ./...
 
-# 前端类型检查 + 构建
-cd web && npm run typecheck
-cd web && npm run build
+# 前端类型检查 + 构建（pnpm 11）
+cd web && pnpm run typecheck
+cd web && pnpm run build
 ```
 
 **本地预览**：
 
 ```bash
 go run ./cmd/build --sync --force     # 从 recipes 数据分支拉取数据 + 生成 dist/data 与 dist/assets（--sync 可省略）
-cd web && npm install && npm run dev  # 开发服务器（5173，/data 与 /assets 代理到 dist/）
+cd web && pnpm install && pnpm run dev  # 开发服务器（5173，/data 与 /assets 代理到 dist/）
 ```
