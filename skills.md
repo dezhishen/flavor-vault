@@ -1,6 +1,6 @@
 ---
 name: flavor-vault
-description: 'Flavor Vault 菜谱管理 CLI（fv）使用指南。Use when: 需要读取/查询菜谱（list/search/show/stats/filter），编辑/新增/删除菜谱（add/edit/rm），构建静态站点（build），或操作 GitHub 数据分支（gh）。提供命令与参数用法、配置与示例，供 AI 助手（如 OpenClaw）调用 fv 命令完成任务。'
+description: 'Flavor Vault 菜谱管理 CLI（fv）使用指南。Use when: 需要读取/查询菜谱（list/search/show/share/stats/filter），编辑/新增/删除菜谱（add/edit/rm），构建静态站点（build），或操作 GitHub 数据分支（gh）。提供命令与参数用法、配置与示例，供 AI 助手（如 OpenClaw）调用 fv 命令完成任务。'
 ---
 
 # Flavor Vault · `fv` CLI 能力指南
@@ -75,6 +75,7 @@ fv rm -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y
 |---|---|---|
 | `fv list [-c <cfg>] [--tag 标签] [--json]` | 列出菜谱 | `fv list -c ~/.flavor-vault/config.yaml` |
 | `fv show <id> [-c <cfg>] [--raw]` | 打印单菜谱详情 | `fv show hong-shao-rou -c ~/.flavor-vault/config.yaml` |
+| `fv share <id> [-c <cfg>] [--out <file>] [--no-img]` | 生成菜谱 Markdown 分享消息（默认带封面/步骤图 + 菜谱链接，可直接发 IM/AI 助手；`--no-img` 纯文字） | `fv share hong-shao-rou -c ~/.flavor-vault/config.yaml --out ~/share.md` |
 | `fv search <关键词...> [-c <cfg>] [--json]` | 全文搜索（菜名/食材/步骤等，多词 AND） | `fv search 鸡翅 烤箱 -c ~/.flavor-vault/config.yaml` |
 | `fv stats [-c <cfg>] [--json]` | 统计（总数/标签/难度等） | `fv stats -c ~/.flavor-vault/config.yaml` |
 | `fv filter --厨具 炒锅 --标签 凉菜 [-c <cfg>] [--json]` | 按倒排索引求交集 | `fv filter --食材 鸡翅 -c ~/.flavor-vault/config.yaml` |
@@ -86,7 +87,7 @@ fv rm -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y
 |---|---|---|
 | `fv add [-c <cfg>] [--json '...'\|@file] [--action-id X] [-y]` | 新增菜谱（交互式或 JSON），提交前预览+确认（`-y` 跳过） | `fv add -c ~/.flavor-vault/config.yaml --repo owner/recipes --branch recipes --json @r.json -y` |
 | `fv edit <id> [-c <cfg>] [--json '{"stats":{"difficulty":4}}'] [-y]` | 编辑（JSON 补丁式，未提供字段保留），提交前预览+确认 | `fv edit hong-shao-rou -c ~/.flavor-vault/config.yaml --repo owner/recipes --json '{"stats":{"difficulty":4}}' -y` |
-| `fv rm <id> [-c <cfg>] [-y]` | 删除菜谱 | `fv rm hong-shao-rou -c ~/.flavor-vault/config.yaml --repo owner/recipes -y` |
+| `fv rm <id> [-c <cfg>] [-y]` | 删除菜谱（**同时清理其图片资产 `images/<id>/`**，无图静默跳过） | `fv rm hong-shao-rou -c ~/.flavor-vault/config.yaml --repo owner/recipes -y` |
 | `fv gh push --recipe <id> [-c <cfg>] [--json @file] [-y]` | 用 API 推单个菜谱文件（含图片），提交前预览+确认（`-y` 跳过） | `fv gh push --recipe hong-shao-rou -c ~/.flavor-vault/config.yaml --json @r.json -y` |
 
 ### 构建 / 其他
@@ -97,7 +98,7 @@ fv rm -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y
 | `fv init [-c <path>] [-f] [--github] [--repo <owner/repo>] [--branch <b>]` | 对话式生成配置到 `~/.flavor-vault/config.yaml`（回车即用默认；`--github` 一并配置编辑仓库） |
 | `fv config get / set <key> <val>` | 查看/修改可选配置（endpoint / asset_dir / github.repo / github.branch） |
 | `fv action list/show/clear` | 管理 `--action-id` 操作缓存（草稿续写） |
-| `fv update [--check] [--version vX] [--repo owner/repo]` | 自更新到 GitHub Releases 最新版（公开仓库免 token；Windows 自动延迟替换） |
+| `fv update [--check] [--pre] [--version vX] [--repo owner/repo]` | 自更新到 GitHub Releases 最新版（公开仓库免 token；Windows 自动延迟替换）；`--pre` 更新/检查最新预览版（含预发布，方便测试） |
 | `fv gh status/pr/release/workflow` | GitHub API 操作（只读/追加式，防冲突） |
 
 ## 菜谱 JSON 结构
@@ -169,13 +170,19 @@ fv edit -c "$CONFIG" <id> --repo <owner>/<repo> --branch recipes -y --json '{"st
 # 3b. 给步骤配图（image_ref 填本地图片路径，自动复制到 images/<id>/ 并按 <菜谱名>-<步骤>-<序号> 命名后上传；注意 steps 为整体替换，需带上全部步骤）
 fv edit -c "$CONFIG" chao-jue-zi-su-xia --repo <owner>/<repo> --branch recipes -y --json '{"steps":[{"order":1,"description":"处理虾","image_ref":"/tmp/step1.jpg"},{"order":2,"description":"炒"}]}'
 
-# 4. 删除
+# 4. 删除（会同时清理该菜谱的图片资产 images/<id>/）
 fv rm -c "$CONFIG" <id> --repo <owner>/<repo> --branch recipes -y
 
-# 5. 自更新
+# 5. 自更新 / 检查预览版
 fv update --check
+fv update --check --pre    # 检查最新预览版（含预发布）
+fv update --pre            # 更新到最新预览版（方便测试）
 
-# 6. 本地复刻 CI 构建（fv 不含 build 命令，用独立构建器）
+# 6. 生成分享消息（Markdown 带封面/步骤图 + 菜谱链接，可直接发 IM / AI 助手）
+fv share <id> -c "$CONFIG" --out ~/share.md
+fv share <id> -c "$CONFIG" --no-img   # 纯文字不带图
+
+# 7. 本地复刻 CI 构建（fv 不含 build 命令，用独立构建器）
 go run ./cmd/build --sync --force --output ./dist --asset-dir .flavor-vault/assets --ai-snapshot --endpoint <url>
 ```
 
