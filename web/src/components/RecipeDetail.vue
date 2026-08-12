@@ -78,9 +78,27 @@
           </div>
         </div>
 
-        <!-- 侧栏：统计 / 主要食材 / 调料（桌面 sticky；移动端按 order 融入单列） -->
+        <!-- 侧栏：主要食材 / 调料 / 统计（桌面 sticky；移动端按 order 融入单列） -->
         <aside class="detail-side">
-          <!-- 统计卡（时间/难度；移动端默认折叠藏起，顶部让给食材） -->
+          <!-- 主要食材（非必须通过条目 Note 备注表达，无独立 optional 分组） -->
+          <div v-if="mainIngredients.length" class="block main-ing-block order-1">
+            <div class="block-title">🥘 主要食材</div>
+            <IngredientTable :items="mainIngredients" />
+          </div>
+
+          <!-- 配菜 / 辅料（用料） -->
+          <div v-if="(activeVersion.ingredients.side || []).length" class="block side-ing-block order-2">
+            <div class="block-title">🥬 配菜 / 辅料</div>
+            <IngredientTable :items="activeVersion.ingredients.side || []" />
+          </div>
+
+          <!-- 调料（含备选方案） -->
+          <div v-if="(activeVersion.seasonings || []).length" class="block season-block order-3">
+            <div class="block-title">🧂 调料</div>
+            <IngredientTable :items="activeVersion.seasonings || []" name-label="调料" />
+          </div>
+
+          <!-- 统计卡（时间/难度；桌面放食材下方；移动端默认折叠藏起，顶部让给食材） -->
           <el-collapse v-model="statsActive" class="stats-collapse order-5">
             <el-collapse-item title="⏱ 时间 / 难度 / 总耗时" name="stats">
               <div class="stats-card">
@@ -109,24 +127,6 @@
               </div>
             </el-collapse-item>
           </el-collapse>
-
-          <!-- 主要食材（非必须通过条目 Note 备注表达，无独立 optional 分组） -->
-          <div v-if="mainIngredients.length" class="block main-ing-block order-1">
-            <div class="block-title">🥘 主要食材</div>
-            <IngredientTable :items="mainIngredients" />
-          </div>
-
-          <!-- 配菜 / 辅料（用料） -->
-          <div v-if="(activeVersion.ingredients.side || []).length" class="block side-ing-block order-2">
-            <div class="block-title">🥬 配菜 / 辅料</div>
-            <IngredientTable :items="activeVersion.ingredients.side || []" />
-          </div>
-
-          <!-- 调料（含备选方案） -->
-          <div v-if="(activeVersion.seasonings || []).length" class="block season-block order-3">
-            <div class="block-title">🧂 调料</div>
-            <IngredientTable :items="activeVersion.seasonings || []" name-label="调料" />
-          </div>
         </aside>
       </div>
     </template>
