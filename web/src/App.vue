@@ -15,10 +15,14 @@
     <el-footer class="app-footer">
       Flavor Vault · 菜谱库
     </el-footer>
+
+    <!-- PC 端右下角：当前页面二维码，方便手机扫码打开 -->
+    <QrShare />
   </el-container>
 </template>
 
 <script setup lang="ts">
+import QrShare from './components/QrShare.vue'
 // 根组件：负责整体布局
 </script>
 

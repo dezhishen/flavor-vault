@@ -17,15 +17,17 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import QRCode from 'qrcode'
 import { useViewport } from '../composables/useViewport'
 
 const { isMobile } = useViewport()
+const route = useRoute()
 const qr = ref('')
 const url = ref('')
 
-onMounted(async () => {
+async function genQr() {
   url.value = window.location.href
   try {
     qr.value = await QRCode.toDataURL(url.value, {
@@ -36,7 +38,14 @@ onMounted(async () => {
   } catch (e) {
     console.error('生成二维码失败', e)
   }
-})
+}
+
+onMounted(genQr)
+// SPA 路由切换（首页→详情等）时重新生成当前页面二维码
+watch(
+  () => route.fullPath,
+  () => genQr()
+)
 </script>
 
 <style scoped>

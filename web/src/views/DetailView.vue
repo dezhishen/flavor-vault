@@ -15,9 +15,6 @@
     </el-empty>
 
     <RecipeDetail v-else :detail="detail" />
-
-    <!-- PC 端右下角：当前网址二维码，方便手机扫码打开 -->
-    <QrShare />
   </div>
 </template>
 
@@ -25,7 +22,6 @@
 import { onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import RecipeDetail from '../components/RecipeDetail.vue'
-import QrShare from '../components/QrShare.vue'
 import { useRecipeStore } from '../stores/recipe'
 import type { RecipeDetail as RecipeDetailType } from '../types'
 
