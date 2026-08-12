@@ -255,17 +255,6 @@ func promptVersion(reader *bufio.Reader, cfg *models.Config, projectRoot, recipe
 		moreSide, _ = promptBool(reader, "继续添加辅料?", false)
 	}
 
-	// 非必须（可选）食材
-	moreOpt, _ := promptBool(reader, "添加非必须（可选）食材?", len(v.Ingredients.Optional) > 0)
-	for moreOpt {
-		ing, err := promptIngredient(reader, "可选")
-		if err != nil {
-			return err
-		}
-		v.Ingredients.Optional = append(v.Ingredients.Optional, ing)
-		moreOpt, _ = promptBool(reader, "继续添加可选食材?", false)
-	}
-
 	// 调料（方案一 + 备选方案二/三…，如 香葱 / 香菜）
 	moreSeas, _ := promptBool(reader, "添加调料?", len(v.Seasonings) > 0)
 	for moreSeas {

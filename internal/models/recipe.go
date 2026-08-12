@@ -29,16 +29,15 @@ type Recipe struct {
 // Ingredients 食材分组
 //   - Main：主料（必选）
 //   - Side：配菜/辅料
-//   - Optional：非必须（可选）食材
+// 非必须（可选）通过条目 Note 备注表达（如 "可省略"），不设独立分组。
 
 type Ingredients struct {
-	Main     []Ingredient `json:"main"`
-	Side     []Ingredient `json:"side"`
-	Optional []Ingredient `json:"optional"` // 非必须食材
+	Main []Ingredient `json:"main"`
+	Side []Ingredient `json:"side"`
 }
 
 // Ingredient 单个食材
-// Required 语义由分组表达：main/side 为必选或常规，optional 为非必须；Note 可补充说明。
+// 必选/非必须由 Note 备注表达（如 "可省略"），或由 Alternatives 表达可替换方案。
 type Ingredient struct {
 	Name   string `json:"name"`
 	Amount string `json:"amount"`         // 如 "500g", "适量"
@@ -139,7 +138,6 @@ func (r *Recipe) IngredientNamesAll() []string {
 	for _, v := range r.VersionsEffective() {
 		groups := append([]Ingredient{}, v.Ingredients.Main...)
 		groups = append(groups, v.Ingredients.Side...)
-		groups = append(groups, v.Ingredients.Optional...)
 		for _, ing := range groups {
 			add(ing.Name)
 		}
@@ -215,9 +213,6 @@ func (in Ingredients) normalized() Ingredients {
 	}
 	if in.Side == nil {
 		in.Side = []Ingredient{}
-	}
-	if in.Optional == nil {
-		in.Optional = []Ingredient{}
 	}
 	return in
 }

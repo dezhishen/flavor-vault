@@ -42,13 +42,12 @@ func TestMainIngredientNamesAggregate(t *testing.T) {
 	}
 }
 
-// TestIngredientNamesAll 验证聚合主/配/可选 + 调料（含备选）
+// TestIngredientNamesAll 验证聚合主/配食材 + 调料（含备选）
 func TestIngredientNamesAll(t *testing.T) {
 	r := &Recipe{Versions: []Version{{
 		Ingredients: Ingredients{
-			Main:     []Ingredient{{Name: "五花肉"}},
-			Side:     []Ingredient{{Name: "冰糖"}},
-			Optional: []Ingredient{{Name: "鹌鹑蛋"}},
+			Main: []Ingredient{{Name: "五花肉"}},
+			Side: []Ingredient{{Name: "冰糖"}},
 		},
 		Seasonings: []Seasoning{
 			{Name: "香葱", Alternatives: []SeasoningOption{{Name: "香菜"}}},
@@ -56,7 +55,7 @@ func TestIngredientNamesAll(t *testing.T) {
 		},
 	}}}
 	got := r.IngredientNamesAll()
-	for _, want := range []string{"五花肉", "冰糖", "鹌鹑蛋", "香葱", "香菜", "料酒"} {
+	for _, want := range []string{"五花肉", "冰糖", "香葱", "香菜", "料酒"} {
 		found := false
 		for _, g := range got {
 			if g == want {
@@ -70,7 +69,7 @@ func TestIngredientNamesAll(t *testing.T) {
 	}
 }
 
-// TestMarshalJSONVersions 验证序列化时 versions/seasonings/optional 空值输出 [] 而非 null
+// TestMarshalJSONVersions 验证序列化时 versions/seasonings/steps 空值输出 [] 而非 null
 func TestMarshalJSONVersions(t *testing.T) {
 	r := &Recipe{Name: "测试", Versions: []Version{{Name: "v1"}}}
 	b, err := json.Marshal(r)

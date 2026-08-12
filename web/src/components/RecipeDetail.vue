@@ -114,16 +114,11 @@
             </el-collapse-item>
           </el-collapse>
 
-          <!-- 主要食材（含可选，非必须体现在条目备注上） -->
+          <!-- 主要食材（非必须通过条目 Note 备注表达，无独立 optional 分组） -->
           <div v-if="mainIngredients.length" class="block main-ing-block order-1">
             <div class="block-title">🥘 主要食材</div>
             <el-table :data="mainIngredients" size="small" border>
-              <el-table-column label="食材" min-width="110">
-                <template #default="{ row }">
-                  {{ row.name }}
-                  <el-tag v-if="row.optional" size="small" type="warning" effect="plain" class="opt-tag">可选</el-tag>
-                </template>
-              </el-table-column>
+              <el-table-column prop="name" label="食材" min-width="110" />
               <el-table-column prop="amount" label="用量" min-width="90" />
               <el-table-column prop="note" label="备注" min-width="110" />
             </el-table>
@@ -196,12 +191,8 @@ const activeVersion = computed<Version>(
   () => versions.value[Number(activeIdx.value)] ?? versions.value[0]
 )
 
-// 主要食材 = main + optional（optional 条目标注"可选"，仍是主要食材；非必须体现在条目备注上）
-const mainIngredients = computed(() => {
-  const main = (activeVersion.value.ingredients.main || []).map((i) => ({ ...i }))
-  const opt = (activeVersion.value.ingredients.optional || []).map((i) => ({ ...i, optional: true }))
-  return [...main, ...opt]
-})
+// 主要食材（非必须通过条目 Note 备注表达，不再有独立 optional 分组）
+const mainIngredients = computed(() => activeVersion.value.ingredients.main || [])
 
 function resolveAsset(p: string): string {
   if (/^(https?:)?\/\//.test(p)) return p
@@ -370,10 +361,6 @@ function resolveAsset(p: string): string {
 .alt-tag {
   margin-right: 6px;
   margin-bottom: 2px;
-}
-
-.opt-tag {
-  margin-left: 6px;
 }
 
 .muted {

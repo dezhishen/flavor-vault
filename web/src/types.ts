@@ -39,7 +39,6 @@ export interface Version {
   ingredients: {
     main: Ingredient[]
     side: Ingredient[]
-    optional: Ingredient[]
   }
   seasonings?: Seasoning[]
   steps: Step[]
@@ -75,7 +74,6 @@ export interface RecipeDetail {
   ingredients: {
     main: Ingredient[]
     side: Ingredient[]
-    optional: Ingredient[]
   }
   seasonings?: Seasoning[]
   steps: Step[]
