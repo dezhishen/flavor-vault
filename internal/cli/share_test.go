@@ -36,7 +36,7 @@ func TestShareText(t *testing.T) {
 		}},
 	}
 
-	out := shareText(r)
+	out := shareText(r, "")
 	for _, want := range []string{
 		"# 🍳 红烧肉",
 		"肥而不腻，入口即化",
@@ -67,7 +67,7 @@ func TestShareTextMultiVersion(t *testing.T) {
 			{Name: "免辣版", Ingredients: models.Ingredients{Main: []models.Ingredient{{Name: "冬瓜"}}}, Steps: []models.Step{{Order: 1, Description: "清水煮"}}},
 		},
 	}
-	out := shareText(r)
+	out := shareText(r, "")
 	if !strings.Contains(out, "## 经典版") || !strings.Contains(out, "## 免辣版") {
 		t.Fatalf("多版本缺少版本标题：\n%s", out)
 	}
@@ -76,11 +76,60 @@ func TestShareTextMultiVersion(t *testing.T) {
 // TestShareTextFallback 验证无统计/无食材时不崩溃、不输出空标题
 func TestShareTextFallback(t *testing.T) {
 	r := &models.Recipe{Name: "空菜谱"}
-	out := shareText(r)
+	out := shareText(r, "")
 	if !strings.Contains(out, "# 🍳 空菜谱") {
 		t.Fatalf("空菜谱标题缺失：\n%s", out)
 	}
 	if strings.Contains(out, "## 🥘") {
 		t.Fatalf("无食材不应输出主要食材标题：\n%s", out)
+	}
+}
+
+// TestShareTextImages 验证 assetBase 非空时嵌入封面图与步骤图（Markdown 图片语法）
+func TestShareTextImages(t *testing.T) {
+	r := &models.Recipe{
+		Name: "红烧肉",
+		Versions: []models.Version{{
+			Media: models.Media{Cover: "images/hong-shao-rou/红烧肉-cover.jpg"},
+			Ingredients: models.Ingredients{Main: []models.Ingredient{{Name: "五花肉", Amount: "500g"}}},
+			Steps:       []models.Step{{Order: 1, Description: "切块", ImageRef: "images/hong-shao-rou/红烧肉-1-1.jpg"}},
+		}},
+	}
+	base := "https://fv.sdniu.top/assets"
+	out := shareText(r, base)
+	for _, want := range []string{
+		"![封面](https://fv.sdniu.top/assets/images/hong-shao-rou/红烧肉-cover.jpg)",
+		"![第 1 步](https://fv.sdniu.top/assets/images/hong-shao-rou/红烧肉-1-1.jpg)",
+	} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("带图分享缺少 %q：\n%s", want, out)
+		}
+	}
+	// --no-img（assetBase 空）不应出现图片语法
+	none := shareText(r, "")
+	if strings.Contains(none, "![封面]") || strings.Contains(none, "![第 1 步]") {
+		t.Fatalf("--no-img 不应嵌入图片：\n%s", none)
+	}
+}
+
+// TestShareAssetBase 验证图片资源基址派生（远程 details 与本地默认 endpoint）
+func TestShareAssetBase(t *testing.T) {
+	// 远程：locator = endpoint/details/<id>.json
+	if got := shareAssetBase(true, "https://fv.sdniu.top/data/details/chao-jue-zi-su-xia.json", nil, "/x", "chao-jue-zi-su-xia"); got != "https://fv.sdniu.top/assets" {
+		t.Fatalf("远程派生错误: %s", got)
+	}
+	// 本地：无配置时用内置默认 endpoint
+	if got := shareAssetBase(false, "", nil, "/x", "id"); got != "https://fv.sdniu.top/assets" {
+		t.Fatalf("本地默认派生错误: %s", got)
+	}
+}
+
+// TestShareSiteRoot 验证站点根（菜谱页面链接基址）派生
+func TestShareSiteRoot(t *testing.T) {
+	if got := shareSiteRoot(true, "https://fv.sdniu.top/data/details/chao-jue-zi-su-xia.json", nil, "/x", "chao-jue-zi-su-xia"); got != "https://fv.sdniu.top" {
+		t.Fatalf("远程站点根错误: %s", got)
+	}
+	if got := shareSiteRoot(false, "", nil, "/x", "id"); got != "https://fv.sdniu.top" {
+		t.Fatalf("本地站点根错误: %s", got)
 	}
 }

@@ -16,15 +16,20 @@ import (
 // newShareCmd 生成本地可发送的菜谱分享消息（Markdown 文本），
 // 可直接复制发给 IM / AI 助手；--out 可写入文件。
 func newShareCmd() *cobra.Command {
-	var outFile string
+	var (
+		outFile string
+		noImg   bool
+	)
 	cmd := &cobra.Command{
 		Use:   "share <id>",
-		Short: "生成本地可发送的菜谱分享消息（Markdown，可直接发给 IM / AI 助手）",
+		Short: "生成本地可发送的菜谱分享消息（Markdown 带图，可直接发给 IM / AI 助手）",
 		Long: `生成菜谱的 Markdown 分享文案（标题/简介/标签/统计/食材/调料/步骤），
-可直接复制到微信、钉钉、飞书等 IM，或交给 AI 助手整理发送。
-数据来源：优先本地 recipes/<id>.json（维护者模式），否则读取部署的 details/<id>.json（使用者模式）。`,
-		Example: `  fv share chao-jue-zi-su-xia            # 打印分享消息
-  fv share chao-jue-zi-su-xia --out ~/share.md  # 写入文件`,
+默认嵌入封面图与步骤图（线上资源 URL），可直接复制到支持 Markdown 的 IM（钉钉/飞书/语雀等）或交给 AI 助手整理发送。
+数据来源：优先本地 recipes/<id>.json（维护者模式），否则读取部署的 details/<id>.json（使用者模式）。
+--no-img 可输出纯文字（不嵌图）。`,
+		Example: `  fv share chao-jue-zi-su-xia                 # 打印带图 Markdown
+  fv share chao-jue-zi-su-xia --out ~/share.md  # 写入文件
+  fv share chao-jue-zi-su-xia --no-img          # 纯文字不带图`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			id := args[0]
@@ -35,12 +40,14 @@ func newShareCmd() *cobra.Command {
 
 			// 1. 优先本地菜谱文件（维护者模式，数据最新）
 			var r *models.Recipe
+			remote := false
+			locator := ""
 			fs := store.NewRecipeFileStore(recipesDir(cfg, projectRoot))
 			if rr, err := fs.Load(id); err == nil {
 				r = rr
 			} else {
 				// 2. 回退读取部署的 details/<id>.json（使用者模式）
-				locator, remote := data.Locator(cfg, projectRoot, "details/"+id+".json")
+				locator, remote = data.Locator(cfg, projectRoot, "details/"+id+".json")
 				raw, err := data.ReadJSON(locator, remote)
 				if err != nil {
 					return err
@@ -52,7 +59,16 @@ func newShareCmd() *cobra.Command {
 				r = &rr
 			}
 
-			text := shareText(r)
+			assetBase := ""
+			siteRoot := ""
+			if !noImg {
+				assetBase = shareAssetBase(remote, locator, cfg, projectRoot, id)
+			}
+			siteRoot = shareSiteRoot(remote, locator, cfg, projectRoot, id)
+			text := shareText(r, assetBase)
+			if siteRoot != "" {
+				text += fmt.Sprintf("\n---\n👉 完整菜谱：%s/recipe/%s\n", siteRoot, id)
+			}
 			if strings.TrimSpace(outFile) != "" {
 				if err := os.WriteFile(outFile, []byte(text), 0o644); err != nil {
 					return fmt.Errorf("写入文件失败: %w", err)
@@ -65,12 +81,47 @@ func newShareCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&outFile, "out", "", "写入文件路径（默认打印到终端）")
+	cmd.Flags().BoolVar(&noImg, "no-img", false, "不嵌入图片（纯文字 Markdown）")
 	return cmd
 }
 
-// shareText 将菜谱渲染为 Markdown 分享文案
-func shareText(r *models.Recipe) string {
+// shareEndpoints 解析数据 endpoint（远程详情反推 / 本地 meta 注入 / 内置默认），返回去尾斜杠的地址
+func shareEndpoints(remote bool, locator string, cfg *models.Config, projectRoot, id string) string {
+	var endpoint string
+	if remote && locator != "" {
+		endpoint = strings.TrimSuffix(locator, "/details/"+id+".json")
+	} else {
+		endpoint = data.DefaultEndpointFromMeta(cfg, projectRoot)
+		if endpoint == "" {
+			endpoint = data.DefaultEndpoint
+		}
+	}
+	return strings.TrimRight(strings.TrimSpace(endpoint), "/")
+}
+
+// shareSiteRoot 派生站点根地址（endpoint 去 /data，如 https://fv.sdniu.top），用于菜谱页面链接
+func shareSiteRoot(remote bool, locator string, cfg *models.Config, projectRoot, id string) string {
+	endpoint := shareEndpoints(remote, locator, cfg, projectRoot, id)
+	if endpoint == "" {
+		return ""
+	}
+	return strings.TrimSuffix(endpoint, "/data")
+}
+
+// shareAssetBase 派生菜谱图片资源的 Markdown URL 基址（如 https://fv.sdniu.top/assets）。
+// endpoint 形如 https://fv.sdniu.top/data → 站点根 + /assets
+func shareAssetBase(remote bool, locator string, cfg *models.Config, projectRoot, id string) string {
+	siteRoot := shareSiteRoot(remote, locator, cfg, projectRoot, id)
+	if siteRoot == "" {
+		return ""
+	}
+	return siteRoot + "/assets"
+}
+
+// shareText 将菜谱渲染为 Markdown 分享文案；assetBase 非空时嵌入封面图与步骤图
+func shareText(r *models.Recipe, assetBase string) string {
 	var b strings.Builder
+	base := strings.TrimRight(assetBase, "/")
 
 	// 标题 + 简介
 	fmt.Fprintf(&b, "# 🍳 %s\n", r.Name)
@@ -112,6 +163,11 @@ func shareText(r *models.Recipe) string {
 				fmt.Fprintf(&b, " · 难度 %s", strings.Repeat("★", v.Stats.Difficulty))
 			}
 			b.WriteString("\n")
+		}
+
+		// 封面图（统计后、食材前）
+		if base != "" && strings.TrimSpace(v.Media.Cover) != "" {
+			fmt.Fprintf(&b, "\n![封面](%s/%s)\n", base, v.Media.Cover)
 		}
 
 		// 主要食材
@@ -161,6 +217,10 @@ func shareText(r *models.Recipe) string {
 					fmt.Fprintf(&b, "%d. %s\n", order, desc)
 				} else {
 					fmt.Fprintf(&b, "- %s\n", desc)
+				}
+				// 步骤图
+				if base != "" && strings.TrimSpace(s.ImageRef) != "" {
+					fmt.Fprintf(&b, "   ![第 %d 步](%s/%s)\n", order, base, s.ImageRef)
 				}
 			}
 		}

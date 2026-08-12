@@ -80,7 +80,7 @@ fv rm   <id> -c ~/.flavor-vault/config.yaml --repo <owner>/<repo> --branch recip
 | `fv init [-c <path>] [-f] [--endpoint <url>]` | 生成配置到 `~/.flavor-vault/config.yaml` |
 | `fv list [-c <cfg>] [--tag 标签] [--json]` | 列出菜谱 |
 | `fv show <id> [-c <cfg>] [--raw]` | 打印单菜谱详情 |
-| `fv share <id> [-c <cfg>] [--out <file>]` | 生成菜谱 Markdown 分享消息（可直接发 IM/AI 助手） |
+| `fv share <id> [-c <cfg>] [--out <file>] [--no-img]` | 生成菜谱 Markdown 分享消息（带封面/步骤图 + 菜谱链接，可直接发 IM/AI 助手） |
 | `fv search <关键词...> [-c <cfg>] [--json]` | 全文搜索（多词 AND） |
 | `fv filter --厨具 炒锅 --标签 凉菜 [-c <cfg>] [--json]` | 倒排索引交集筛选 |
 | `fv stats [-c <cfg>] [--json]` | 统计信息 |
