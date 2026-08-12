@@ -139,7 +139,7 @@ fv rm -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y
 - **统一多版本结构**：菜谱内容（食材/调料/步骤/media/统计）一律放 `versions`（至少 1 个版本），**顶层只保留元数据**（`id/name/description/tags/kitchenware`）；`fv add`/`fv edit` 统一输出多版本，历史单版本结构会自动迁移（`normalizeMultiVersion`），前端按 tab 展示多版本
 - **食材**：`ingredients.main` 必选主料 / `side` 配菜辅料 / `optional` 非必须（可选）；每项可带 `note` 备注
 - **调料**：`seasonings` 每项 `name` 为方案一，`alternatives` 为备选方案（方案二/三，如用香菜代替香葱）
-- **图片**：`image_ref`/`cover`/`images` 可为本地路径（随单文件经 API 提交）或外部 URL；同一菜谱的图片集中存放于 `images/<菜谱ID>/` 目录（如 `images/hong-shao-rou/`），步骤图命名 `<菜谱名>-<步骤>-<序号>`（如 `images/hong-shao-rou/红烧肉-1-1.png`）
+- **图片**：`image_ref`/`cover`/`images` 可为**本地路径**或外部 URL。给步骤配图：`fv edit <id> --json '{"steps":[{"order":1,"description":"...","image_ref":"/本地/图片.png"}]}'`——本地路径会被自动复制到 `images/<菜谱ID>/`（命名 `<菜谱名>-<步骤>-<序号>`，如 `images/hong-shao-rou/红烧肉-1-1.png`）并随菜谱经 API 上传；已分组引用（`images/<id>/...` 且本地有文件）幂等保留；`images/` 前缀本地无文件视为分支已有资产不重复上传；外部 URL 原样。同一菜谱的封面/过程图/步骤图集中存放于 `images/<菜谱ID>/` 目录。
 
 ## 构建（`cmd/build`，在 CI 中完成）
 
@@ -166,6 +166,9 @@ fv add -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y --json '{"name":".
 
 # 3. 编辑（补丁式；多版本菜谱默认编辑第一个版本，补丁含 versions 则整体替换）
 fv edit -c "$CONFIG" <id> --repo <owner>/<repo> --branch recipes -y --json '{"stats":{"difficulty":4}}'
+
+# 3b. 给步骤配图（image_ref 填本地图片路径，自动复制到 images/<id>/ 并按 <菜谱名>-<步骤>-<序号> 命名后上传；注意 steps 为整体替换，需带上全部步骤）
+fv edit -c "$CONFIG" chao-jue-zi-su-xia --repo <owner>/<repo> --branch recipes -y --json '{"steps":[{"order":1,"description":"处理虾","image_ref":"/tmp/step1.jpg"},{"order":2,"description":"炒"}]}'
 
 # 4. 删除
 fv rm -c "$CONFIG" <id> --repo <owner>/<repo> --branch recipes -y
