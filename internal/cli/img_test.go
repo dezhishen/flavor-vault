@@ -11,8 +11,8 @@ import (
 
 // TestRenderShareImage 验证 share --img 生成的 PNG 有效（需系统有 CJK 字体，否则跳过）
 func TestRenderShareImage(t *testing.T) {
-	if _, err := loadCJKFont(); err != nil {
-		t.Skipf("无可用 CJK 字体，跳过: %v", err)
+	if _, err := loadFonts(); err != nil {
+		t.Skipf("无可用字体，跳过: %v", err)
 	}
 	r := &models.Recipe{
 		Name:        "红烧肉",
@@ -45,5 +45,29 @@ func TestRenderShareImage(t *testing.T) {
 	}
 	if format != "png" || cfg.Width <= 0 || cfg.Height <= 0 {
 		t.Fatalf("非 PNG 或尺寸异常: %s %dx%d", format, cfg.Width, cfg.Height)
+	}
+}
+
+// TestPainterGlyphCoverage 验证多字体回退链能覆盖分享图需要的全部字符（中文 + ASCII + 符号），
+// 任何字符在链中都有字体可渲染，就不会出现方块字（.notdef）。
+func TestPainterGlyphCoverage(t *testing.T) {
+	fonts, err := loadFonts()
+	if err != nil {
+		t.Skipf("无可用字体，跳过: %v", err)
+	}
+	p := newPainter(fonts, 840, 48)
+	need := "超绝紫苏虾分钟准备烹饪总耗时难度主要食材配菜辅料调料步骤完整菜谱可换代替省略" +
+		"0123456789ABCXYZ" + "#./:·-()（）&%.★"
+	for _, r := range need {
+		ok := false
+		for _, f := range fonts {
+			if p.hasGlyph(f, r) {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			t.Errorf("字符 %q（U+%04X）在回退链中无字体可渲染，将显示为方块", r, r)
+		}
 	}
 }

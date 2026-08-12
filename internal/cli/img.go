@@ -11,16 +11,17 @@ import (
 
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
+	"golang.org/x/image/font/sfnt"
 	"golang.org/x/image/math/fixed"
 
 	"flavor-vault/internal/models"
 )
 
-// CJK 字体候选（跨平台系统字体）
+// CJK 字体候选（跨平台系统字体；注意 wqy-zenhei.ttc 在新版 x/image 解析失败，故排在 Droid 之后）
 var cjkFontCandidates = []string{
 	// Linux
-	"/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
 	"/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf",
+	"/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc",
 	"/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
 	"/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
 	// macOS
@@ -31,6 +32,20 @@ var cjkFontCandidates = []string{
 	`C:\Windows\Fonts\msyh.ttc`,
 	`C:\Windows\Fonts\simhei.ttf`,
 	`C:\Windows\Fonts\simsun.ttc`,
+}
+
+// Latin/ASCII 字体候选（覆盖数字/字母/标点，CJK 字体大多缺 ASCII）
+var latinFontCandidates = []string{
+	// Linux
+	"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+	"/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+	"/usr/share/fonts/truetype/freefont/FreeSans.ttf",
+	// macOS
+	"/System/Library/Fonts/Helvetica.ttc",
+	"/System/Library/Fonts/HelveticaNeue.ttc",
+	// Windows
+	`C:\Windows\Fonts\arial.ttf`,
+	`C:\Windows\Fonts\segoeui.ttf`,
 }
 
 // 调色板
@@ -44,50 +59,75 @@ var (
 	colBG      = color.RGBA{0xff, 0xff, 0xff, 0xff} // 背景白
 )
 
-// loadCJKFont 跨平台加载中文字体（ttc/ttf 均可）
-func loadCJKFont() (*opentype.Font, error) {
-	for _, p := range cjkFontCandidates {
+// loadFont 从候选路径解析第一个可用字体（ttc/ttf 均可）
+func loadFont(candidates []string) *opentype.Font {
+	for _, p := range candidates {
 		data, err := os.ReadFile(p)
 		if err != nil {
 			continue
 		}
 		if f, err := opentype.Parse(data); err == nil {
-			return f, nil
+			return f
 		}
 		if coll, err := opentype.ParseCollection(data); err == nil && coll.NumFonts() > 0 {
 			if f, err := coll.Font(0); err == nil {
-				return f, nil
+				return f
 			}
 		}
 	}
-	return nil, fmt.Errorf("未找到可用中文字体（已尝试 %d 个系统字体路径）；请安装任意 CJK 字体", len(cjkFontCandidates))
+	return nil
 }
 
-// painter 长图画布
+// loadFonts 加载多字体回退链：CJK 字体在前（覆盖中文），Latin 字体在后（覆盖 ASCII/数字/符号）。
+// 多数系统 CJK 字体缺 ASCII、Latin 字体缺中文，必须混排（逐字符选字体）才能避免方块字。
+func loadFonts() ([]*opentype.Font, error) {
+	var fonts []*opentype.Font
+	if f := loadFont(cjkFontCandidates); f != nil {
+		fonts = append(fonts, f)
+	}
+	if f := loadFont(latinFontCandidates); f != nil {
+		fonts = append(fonts, f)
+	}
+	if len(fonts) == 0 {
+		return nil, fmt.Errorf("未找到可用字体（已尝试 %d 个系统路径）；请安装任意 CJK 或 Latin 字体", len(cjkFontCandidates)+len(latinFontCandidates))
+	}
+	return fonts, nil
+}
+
+// painter 长图画布（多字体回退混排）
 type painter struct {
-	img   *image.RGBA
-	font  *opentype.Font
-	faces map[float64]font.Face
-	W     int  // 画布宽
-	maxW  int  // 内容最大宽
+	img    *image.RGBA
+	fonts  []*opentype.Font // 回退链：CJK 在前，Latin 在后
+	faces  map[*opentype.Font]map[float64]font.Face
+	buf    sfnt.Buffer
+	main   *opentype.Font // 主字体（行高/基线基准，取第一个 CJK）
+	W      int            // 画布宽
+	maxW   int            // 内容最大宽
 }
 
-func newPainter(f *opentype.Font, width, pad int) *painter {
+func newPainter(fonts []*opentype.Font, width, pad int) *painter {
+	main := fonts[0]
 	return &painter{
 		img:   image.NewRGBA(image.Rect(0, 0, width, 9000)),
-		font:  f,
-		faces: map[float64]font.Face{},
+		fonts: fonts,
+		faces: map[*opentype.Font]map[float64]font.Face{},
+		main:  main,
 		W:     width,
 		maxW:  width - 2*pad,
 	}
 }
 
-// face 按字号缓存字体
-func (p *painter) face(size float64) font.Face {
-	if f, ok := p.faces[size]; ok {
-		return f
+// face 按字体+字号缓存
+func (p *painter) face(f *opentype.Font, size float64) font.Face {
+	m, ok := p.faces[f]
+	if !ok {
+		m = map[float64]font.Face{}
+		p.faces[f] = m
 	}
-	f, err := opentype.NewFace(p.font, &opentype.FaceOptions{
+	if ff, ok := m[size]; ok {
+		return ff
+	}
+	ff, err := opentype.NewFace(f, &opentype.FaceOptions{
 		Size:    size,
 		DPI:     72,
 		Hinting: font.HintingFull,
@@ -95,22 +135,45 @@ func (p *painter) face(size float64) font.Face {
 	if err != nil {
 		panic(err)
 	}
-	p.faces[size] = f
-	return f
+	m[size] = ff
+	return ff
+}
+
+// hasGlyph 判断字体是否含某字符的真实字形（g!=0 排除 .notdef 缺字形）
+func (p *painter) hasGlyph(f *opentype.Font, r rune) bool {
+	g, err := f.GlyphIndex(&p.buf, r)
+	return err == nil && g != 0
+}
+
+// faceFor 返回渲染 rune 的字体（回退链中第一个含该字符字形的）
+func (p *painter) faceFor(r rune, size float64) font.Face {
+	for _, f := range p.fonts {
+		if p.hasGlyph(f, r) {
+			return p.face(f, size)
+		}
+	}
+	return p.face(p.main, size)
 }
 
 func (p *painter) lineHeight(size float64) int {
-	return p.face(size).Metrics().Height.Ceil()
+	return p.face(p.main, size).Metrics().Height.Ceil()
 }
 
-// wrap 按最大宽度换行（中文按字符断行）
+func (p *painter) textWidth(text string, size float64) int {
+	w := 0
+	for _, r := range text {
+		w += font.MeasureString(p.faceFor(r, size), string(r)).Ceil()
+	}
+	return w
+}
+
+// wrap 按最大宽度换行（中文按字符断行，逐字符测量）
 func (p *painter) wrap(text string, size float64, maxW int) []string {
-	f := p.face(size)
 	var lines []string
 	cur := ""
 	for _, r := range text {
 		t := cur + string(r)
-		if cur != "" && font.MeasureString(f, t).Ceil() > maxW {
+		if cur != "" && p.textWidth(t, size) > maxW {
 			lines = append(lines, cur)
 			cur = string(r)
 		} else {
@@ -123,15 +186,20 @@ func (p *painter) wrap(text string, size float64, maxW int) []string {
 	return lines
 }
 
-// text 绘制文本（自动换行），返回下一个可用 y（下一行顶部）
+// text 绘制文本（自动换行，逐字符按字形选择字体），返回下一个可用 y（下一行顶部）
 func (p *painter) text(text string, x, y int, size float64, col color.RGBA, maxW int) int {
-	f := p.face(size)
-	ascent := f.Metrics().Ascent.Ceil()
 	yy := y
-	d := &font.Drawer{Dst: p.img, Src: image.NewUniform(col), Face: f}
+	ascent := p.face(p.main, size).Metrics().Ascent.Ceil()
 	for _, ln := range p.wrap(text, size, maxW) {
-		d.Dot = fixed.P(x, yy+ascent)
-		d.DrawString(ln)
+		xx := x
+		baseline := yy + ascent
+		for _, r := range ln {
+			f := p.faceFor(r, size)
+			d := &font.Drawer{Dst: p.img, Src: image.NewUniform(col), Face: f}
+			d.Dot = fixed.P(xx, baseline)
+			d.DrawString(string(r))
+			xx += font.MeasureString(f, string(r)).Ceil()
+		}
 		yy += p.lineHeight(size)
 	}
 	return yy
@@ -145,7 +213,7 @@ func (p *painter) rect(x, y, w, h int, col color.RGBA) {
 // renderShareImage 将菜谱渲染为竖版分享长图（PNG），写入 outPath。
 // siteRoot 非空时在底部标注菜谱页面链接。
 func renderShareImage(r *models.Recipe, siteRoot, outPath string) error {
-	f, err := loadCJKFont()
+	fonts, err := loadFonts()
 	if err != nil {
 		return err
 	}
@@ -153,7 +221,7 @@ func renderShareImage(r *models.Recipe, siteRoot, outPath string) error {
 		W   = 840
 		pad = 48
 	)
-	p := newPainter(f, W, pad)
+	p := newPainter(fonts, W, pad)
 	x := pad
 	draw.Draw(p.img, p.img.Bounds(), image.NewUniform(colBG), image.Point{}, draw.Src)
 
