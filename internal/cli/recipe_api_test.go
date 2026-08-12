@@ -9,12 +9,12 @@ import (
 )
 
 // TestStageLocalAssets 验证本地图片暂存逻辑（修复 edit / add --json 图片未上传）：
-// 本地图片复制到资源目录并更新引用；远程 URL 与分支已有资产（images/）原样保留；缺失本地图片报错。
+// 本地图片按菜谱分组复制到 assets/images/<id>/ 并更新引用；远程 URL 与分支已有资产（images/）原样保留；缺失本地图片报错。
 func TestStageLocalAssets(t *testing.T) {
 	root := t.TempDir()
 	cfg := &models.Config{}
 
-	r := &models.Recipe{Name: "红烧肉"}
+	r := &models.Recipe{ID: "hong-shao-rou", Name: "红烧肉"}
 	img := filepath.Join(root, "meat.png")
 	if err := os.WriteFile(img, []byte("fake-png"), 0o644); err != nil {
 		t.Fatal(err)
@@ -32,10 +32,10 @@ func TestStageLocalAssets(t *testing.T) {
 	if n != 1 {
 		t.Fatalf("期望暂存 1 个本地图片，得到 %d", n)
 	}
-	if r.Media.Cover != "images/红烧肉-cover.png" {
+	if r.Media.Cover != "images/hong-shao-rou/红烧肉-cover.png" {
 		t.Fatalf("cover 引用未按规范更新: %s", r.Media.Cover)
 	}
-	if _, err := os.Stat(filepath.Join(root, ".flavor-vault/assets/images/红烧肉-cover.png")); err != nil {
+	if _, err := os.Stat(filepath.Join(root, ".flavor-vault/assets/images/hong-shao-rou/红烧肉-cover.png")); err != nil {
 		t.Fatalf("暂存的图片文件不存在: %v", err)
 	}
 	// 远程 URL 与分支已有资产引用保持原样

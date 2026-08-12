@@ -158,12 +158,12 @@ func apiSaveRecipe(ctx context.Context, cl *ghc.Client, branch string, r *models
 //   - 远程 URL（http/https/data:）原样保留；
 //   - 引用规范化：去掉 assetBase 前缀（.flavor-vault/assets/）→ 相对引用；
 //   - 已在资源目录内，或为分支已有资产（images/ 前缀，本地无文件）：原样保留；
-//   - 其余按本地文件复制（cwd 相对或 assetBase 相对），步骤图命名 <菜谱名>-<步骤>-<序号>，封面/过程图 <菜谱名>-cover/img-N。
+//   - 其余按本地文件复制，同一菜谱的图片集中存放于 assets/images/<recipeID>/，
+//     步骤图命名 <菜谱名>-<步骤>-<序号>，封面/过程图 <菜谱名>-cover/img-N。
 //
 // 返回暂存的图片数；任一本地图片缺失则返回错误。
 func stageLocalAssets(cfg *models.Config, projectRoot string, r *models.Recipe) (int, error) {
 	dir := assetDirFor(cfg, projectRoot)
-	imagesDir := filepath.Join(dir, "images")
 	assetBase := ".flavor-vault/assets"
 	if cfg != nil && strings.TrimSpace(cfg.AssetDir) != "" {
 		assetBase = strings.TrimSpace(cfg.AssetDir)
@@ -172,6 +172,12 @@ func stageLocalAssets(cfg *models.Config, projectRoot string, r *models.Recipe) 
 	if base == "" {
 		base = "recipe"
 	}
+	// 图片按菜谱分组：<assets>/images/<recipeID>/（ID 缺失时用菜谱名）
+	sub := strings.TrimSpace(r.ID)
+	if sub == "" {
+		sub = base
+	}
+	imagesDir := filepath.Join(dir, "images", sub)
 	staged := 0
 
 	stage := func(ref, hint string) (string, error) {
@@ -206,7 +212,7 @@ func stageLocalAssets(cfg *models.Config, projectRoot string, r *models.Recipe) 
 		if src == "" {
 			return "", fmt.Errorf("本地图片不存在: %s（请将图片放到 %s 或以相对路径引用）", ref, dir)
 		}
-		// 复制到 images/ 并更新引用（命名 <菜谱名>-<hint>[-<序号>]）
+		// 复制到 images/<recipeID>/ 并更新引用（命名 <菜谱名>-<hint>[-<序号>]）
 		ext := filepath.Ext(src)
 		if ext == "" {
 			ext = ".img"
@@ -230,7 +236,7 @@ func stageLocalAssets(cfg *models.Config, projectRoot string, r *models.Recipe) 
 		if err := os.WriteFile(dst, data, 0o644); err != nil {
 			return "", err
 		}
-		return "images/" + name, nil
+		return "images/" + sub + "/" + name, nil
 	}
 
 	if v, err := stage(r.Media.Cover, "cover"); err != nil {

@@ -145,7 +145,7 @@ github:
 
 ## 🌿 数据与部署
 
-- **数据分支**：菜谱存于独立 `recipes` 分支（`recipes/<id>.json` 单文件 + `assets/`），相当于可 fork / 私有化的数据仓库。
+- **数据分支**：菜谱存于独立 `recipes` 分支（`recipes/<id>.json` 单文件 + `assets/`），相当于可 fork / 私有化的数据仓库；同一菜谱的图片集中存放于 `assets/images/<id>/`（如 `assets/images/hong-shao-rou/`）。
 - **触发**：`recipes` 分支有变动 → GitHub Actions 构建并部署 gh-pages（只更新页面）；推送 `v*` tag → 构建 + 发布多架构客户端 Release 并更新页面（tag 含 `-` 为预览版 prerelease）；`main` 不触发部署。
 - **构建**：静态站点数据由独立构建器 `cmd/build` 在 CI 中完成（`go build -o build ./cmd/build && ./build --force --output ./dist --asset-dir .flavor-vault/assets --ai-snapshot --endpoint https://fv.sdniu.top/data`），配置默认值 = 当前运行仓库的 GitHub 信息；`fv` CLI 制品不包含 build 命令。
 

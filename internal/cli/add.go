@@ -129,6 +129,15 @@ func promptAddRecipe(reader *bufio.Reader, cfg *models.Config, projectRoot strin
 	}
 	r.Name = name
 
+	// ID 需在收集配图前确定（图片按菜谱分组存放 images/<id>/）
+	id, _ := prompt(reader, "ID（回车自动生成）", r.ID)
+	if id != "" {
+		r.ID = id
+	}
+	if strings.TrimSpace(r.ID) == "" {
+		r.ID = generateID(r.Name)
+	}
+
 	desc, _ := prompt(reader, "简介", r.Description)
 	r.Description = desc
 
@@ -165,7 +174,7 @@ func promptAddRecipe(reader *bufio.Reader, cfg *models.Config, projectRoot strin
 			Stats:       r.Stats,
 		}}
 	}
-	if err := promptVersion(reader, cfg, projectRoot, r.Name, "", versions[0]); err != nil {
+	if err := promptVersion(reader, cfg, projectRoot, r.Name, r.ID, "", versions[0]); err != nil {
 		return nil, err
 	}
 
@@ -174,7 +183,7 @@ func promptAddRecipe(reader *bufio.Reader, cfg *models.Config, projectRoot strin
 	for moreVersions {
 		vName, _ := prompt(reader, "版本名（如 少油版；回车留空）", "")
 		v := &models.Version{Name: strings.TrimSpace(vName)}
-		if err := promptVersion(reader, cfg, projectRoot, r.Name, v.Name, v); err != nil {
+		if err := promptVersion(reader, cfg, projectRoot, r.Name, r.ID, v.Name, v); err != nil {
 			return nil, err
 		}
 		versions = append(versions, v)
@@ -200,15 +209,11 @@ func promptAddRecipe(reader *bufio.Reader, cfg *models.Config, projectRoot strin
 		r.Stats = versions[0].Stats
 	}
 
-	id, _ := prompt(reader, "ID（回车自动生成）", r.ID)
-	if id != "" {
-		r.ID = id
-	}
 	return r, nil
 }
 
 // promptVersion 交互式收集一个版本的内容（食材/调料/步骤/统计）
-func promptVersion(reader *bufio.Reader, cfg *models.Config, projectRoot, recipeName, versionName string, v *models.Version) error {
+func promptVersion(reader *bufio.Reader, cfg *models.Config, projectRoot, recipeName, recipeID, versionName string, v *models.Version) error {
 	if versionName != "" {
 		fmt.Fprintf(os.Stderr, "\n—— 版本[%s] ——\n", versionName)
 	}
@@ -288,7 +293,7 @@ func promptVersion(reader *bufio.Reader, cfg *models.Config, projectRoot, recipe
 			img, _ := prompt(reader, fmt.Sprintf("第 %d 步配图（本地路径将复制到 assets / 图片URL，回车跳过）", n), "")
 			imgRef := ""
 			if strings.TrimSpace(img) != "" {
-				ref, err := resolveStepImage(projectRoot, cfg, recipeName, n, strings.TrimSpace(img))
+				ref, err := resolveStepImage(projectRoot, cfg, recipeName, recipeID, n, strings.TrimSpace(img))
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "⚠ 配图失败（已跳过）: %v\n", err)
 				} else {
@@ -317,9 +322,9 @@ func defaultDifficulty(d int) int {
 	return 2
 }
 
-// resolveStepImage 处理步骤配图：本地文件复制到 assets/images/ 并返回引用，外部 URL 原样返回。
-// 命名规范：<菜谱名>-<步骤>-<序号>，如 红烧肉-2-1.png
-func resolveStepImage(projectRoot string, cfg *models.Config, recipeName string, step int, src string) (string, error) {
+// resolveStepImage 处理步骤配图：本地文件复制到 assets/images/<recipeID>/ 并返回引用，外部 URL 原样返回。
+// 命名规范：<菜谱名>-<步骤>-<序号>，如 红烧肉-2-1.png；同一菜谱的图片集中存放在其 ID 目录下。
+func resolveStepImage(projectRoot string, cfg *models.Config, recipeName, recipeID string, step int, src string) (string, error) {
 	if utils.IsRemoteURL(src) {
 		return src, nil
 	}
@@ -335,8 +340,12 @@ func resolveStepImage(projectRoot string, cfg *models.Config, recipeName string,
 	if base == "" {
 		base = "recipe"
 	}
+	sub := strings.TrimSpace(recipeID)
+	if sub == "" {
+		sub = base
+	}
 	name := fmt.Sprintf("%s-%d-1%s", base, step, ext)
-	dst := filepath.Join(assetDirFor(cfg, projectRoot), "images", name)
+	dst := filepath.Join(assetDirFor(cfg, projectRoot), "images", sub, name)
 	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 		return "", err
 	}
@@ -347,7 +356,7 @@ func resolveStepImage(projectRoot string, cfg *models.Config, recipeName string,
 	if err := os.WriteFile(dst, data, 0o644); err != nil {
 		return "", err
 	}
-	return "images/" + name, nil
+	return "images/" + sub + "/" + name, nil
 }
 
 // sanitizeName 清洗文件名字段：仅去除文件系统/URL 非法字符与空白，保留中文
