@@ -2,6 +2,7 @@ package github
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net/http"
@@ -136,9 +137,15 @@ func (c *Client) baseTreeSHA(ctx context.Context, commitSHA string) (string, err
 	return commit.Tree.GetSHA(), nil
 }
 
-// createBlob 创建 blob，返回 SHA
+// createBlob 创建 blob，返回 SHA。
+// 注意：必须显式 base64 编码再上传——go-github 的 JSON 序列化会把字符串里的
+// 无效 UTF-8 字节替换为 U+FFFD，若直接 string(content)+encoding=utf-8，
+// 二进制（JPEG 等）会被整体损坏；base64 内容为纯 ASCII，服务端按 base64 还原原始字节。
 func (c *Client) createBlob(ctx context.Context, content []byte) (string, error) {
-	blob := &github.Blob{Content: github.String(string(content)), Encoding: github.String("utf-8")}
+	blob := &github.Blob{
+		Content:  github.String(base64.StdEncoding.EncodeToString(content)),
+		Encoding: github.String("base64"),
+	}
 	b, _, err := c.gh.Git.CreateBlob(ctx, c.Owner, c.Repo, blob)
 	if err != nil {
 		return "", fmt.Errorf("创建 blob 失败: %w", err)
