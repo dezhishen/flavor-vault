@@ -1,0 +1,74 @@
+{
+  "id": "dou-chi-ling-yu-chao-you-mai-cai",
+  "name": "豆豉鲮鱼炒莜麦菜",
+  "description": "经典的粤式下饭菜。豆豉鲮鱼罐头的咸鲜和油脂，配上莜麦菜的清甜脆嫩，大火快炒，简单又开胃。",
+  "stats": {
+    "prep_time": 5,
+    "cook_time": 5,
+    "difficulty": 1
+  },
+  "created_at": "0001-01-01T00:00:00Z",
+  "updated_at": "0001-01-01T00:00:00Z",
+  "tags": [
+    "热菜",
+    "快手",
+    "下饭"
+  ],
+  "kitchenware": [
+    "炒锅"
+  ],
+  "ingredients": {
+    "main": [
+      {
+        "name": "豆豉鲮鱼",
+        "amount": "1条（罐头里的）"
+      },
+      {
+        "name": "莜麦菜",
+        "amount": "一把（切段）"
+      },
+      {
+        "name": "大蒜",
+        "amount": "2瓣（切粒）"
+      }
+    ],
+    "side": [
+      {
+        "name": "生抽",
+        "amount": "半勺"
+      }
+    ]
+  },
+  "seasonings": [],
+  "steps": [
+    {
+      "order": 1,
+      "description": "备菜：莜麦菜洗净切段，大蒜子2瓣切粒，豆豉鲮鱼罐头打开备用",
+      "image_ref": "images/dou-chi-ling-yu-chao-you-mai-cai/豆豉鲮鱼炒莜麦菜-1-1.jpg"
+    },
+    {
+      "order": 2,
+      "description": "热锅，倒入适量食用油，下蒜粒爆香",
+      "image_ref": "images/dou-chi-ling-yu-chao-you-mai-cai/豆豉鲮鱼炒莜麦菜-2-1.jpg"
+    },
+    {
+      "order": 3,
+      "description": "下豆豉鲮鱼，小火稍微把鱼和豆豉炒出香味",
+      "image_ref": "images/dou-chi-ling-yu-chao-you-mai-cai/豆豉鲮鱼炒莜麦菜-3-1.jpg"
+    },
+    {
+      "order": 4,
+      "description": "转大火，加入莜麦菜翻炒，炒到变软",
+      "image_ref": "images/dou-chi-ling-yu-chao-you-mai-cai/豆豉鲮鱼炒莜麦菜-4-1.jpg"
+    },
+    {
+      "order": 5,
+      "description": "加入半勺生抽，翻炒均匀即可出锅"
+    }
+  ],
+  "media": {
+    "cover": "images/dou-chi-ling-yu-chao-you-mai-cai/豆豉鲮鱼炒莜麦菜-cover.jpg",
+    "images": []
+  },
+  "versions": []
+}
