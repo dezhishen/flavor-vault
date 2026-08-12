@@ -29,7 +29,7 @@
         <!-- 主列：步骤优先 -->
         <div class="detail-main">
           <!-- 步骤 -->
-          <div class="block steps-block order-2">
+          <div class="block steps-block order-4">
             <div class="block-title">📋 步骤</div>
             <el-steps direction="vertical" :active="(activeVersion.steps || []).length">
               <el-step v-for="s in activeVersion.steps || []" :key="s.order" :title="`第 ${s.order} 步`">
@@ -48,30 +48,15 @@
             </el-steps>
           </div>
 
-          <!-- 配菜 / 非必须（可折叠，次要信息） -->
-          <el-collapse
-            v-if="(activeVersion.ingredients.side || []).length || (activeVersion.ingredients.optional || []).length"
-            class="minor-collapse order-4"
-          >
-            <el-collapse-item title="🥬 配菜 / 辅料 / 非必须">
-              <div v-if="(activeVersion.ingredients.side || []).length" class="ing-group">
-                <div class="ing-group-title">配菜 / 辅料</div>
-                <el-table :data="activeVersion.ingredients.side || []" size="small" border>
-                  <el-table-column prop="name" label="食材" min-width="110" />
-                  <el-table-column prop="amount" label="用量" min-width="90" />
-                  <el-table-column prop="note" label="备注" min-width="110" />
-                </el-table>
-              </div>
-              <div v-if="(activeVersion.ingredients.optional || []).length" class="ing-group">
-                <div class="ing-group-title">非必须（可选）</div>
-                <el-table :data="activeVersion.ingredients.optional || []" size="small" border>
-                  <el-table-column prop="name" label="食材" min-width="110" />
-                  <el-table-column prop="amount" label="用量" min-width="90" />
-                  <el-table-column prop="note" label="备注" min-width="110" />
-                </el-table>
-              </div>
-            </el-collapse-item>
-          </el-collapse>
+          <!-- 配菜 / 辅料（用料，优先显示） -->
+          <div v-if="(activeVersion.ingredients.side || []).length" class="block side-ing-block order-2">
+            <div class="block-title">🥬 配菜 / 辅料</div>
+            <el-table :data="activeVersion.ingredients.side || []" size="small" border>
+              <el-table-column prop="name" label="食材" min-width="110" />
+              <el-table-column prop="amount" label="用量" min-width="90" />
+              <el-table-column prop="note" label="备注" min-width="110" />
+            </el-table>
+          </div>
 
           <!-- 过程图 / 视频 -->
           <div
@@ -129,11 +114,16 @@
             </el-collapse-item>
           </el-collapse>
 
-          <!-- 主要食材（必选） -->
-          <div v-if="(activeVersion.ingredients.main || []).length" class="block main-ing-block order-1">
-            <div class="block-title">🥘 主要食材（必选）</div>
-            <el-table :data="activeVersion.ingredients.main || []" size="small" border>
-              <el-table-column prop="name" label="食材" min-width="110" />
+          <!-- 主要食材（含可选，非必须体现在条目备注上） -->
+          <div v-if="mainIngredients.length" class="block main-ing-block order-1">
+            <div class="block-title">🥘 主要食材</div>
+            <el-table :data="mainIngredients" size="small" border>
+              <el-table-column label="食材" min-width="110">
+                <template #default="{ row }">
+                  {{ row.name }}
+                  <el-tag v-if="row.optional" size="small" type="warning" effect="plain" class="opt-tag">可选</el-tag>
+                </template>
+              </el-table-column>
               <el-table-column prop="amount" label="用量" min-width="90" />
               <el-table-column prop="note" label="备注" min-width="110" />
             </el-table>
@@ -205,6 +195,13 @@ const activeIdx = ref('0')
 const activeVersion = computed<Version>(
   () => versions.value[Number(activeIdx.value)] ?? versions.value[0]
 )
+
+// 主要食材 = main + optional（optional 条目标注"可选"，仍是主要食材；非必须体现在条目备注上）
+const mainIngredients = computed(() => {
+  const main = (activeVersion.value.ingredients.main || []).map((i) => ({ ...i }))
+  const opt = (activeVersion.value.ingredients.optional || []).map((i) => ({ ...i, optional: true }))
+  return [...main, ...opt]
+})
 
 function resolveAsset(p: string): string {
   if (/^(https?:)?\/\//.test(p)) return p
@@ -375,6 +372,10 @@ function resolveAsset(p: string): string {
   margin-bottom: 2px;
 }
 
+.opt-tag {
+  margin-left: 6px;
+}
+
 .muted {
   color: var(--el-text-color-placeholder);
 }
@@ -401,10 +402,10 @@ function resolveAsset(p: string): string {
     display: contents;
   }
 
-  .order-1 { order: 1; } /* 主要食材 */
-  .order-2 { order: 2; } /* 步骤 */
+  .order-1 { order: 1; } /* 主要食材（含可选） */
+  .order-2 { order: 2; } /* 配菜/辅料 */
   .order-3 { order: 3; } /* 调料 */
-  .order-4 { order: 4; } /* 配菜/非必须折叠 */
+  .order-4 { order: 4; } /* 步骤 */
   .order-5 { order: 5; } /* 统计（时间/难度，折叠藏起） */
   .order-6 { order: 6; } /* 过程图/视频 */
 
