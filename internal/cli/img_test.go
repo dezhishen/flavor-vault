@@ -2,6 +2,7 @@ package cli
 
 import (
 	"image"
+	"image/draw"
 	"os"
 	"path/filepath"
 	"testing"
@@ -97,5 +98,32 @@ func TestEmbeddedFontsFallback(t *testing.T) {
 		if !ok {
 			t.Errorf("内置字体链缺字符 %q（U+%04X），无系统字体时将为方块", r, r)
 		}
+	}
+}
+
+// TestMakeQRImage 验证分享长图底部的二维码生成有效（140x140 且含黑色模块）
+func TestMakeQRImage(t *testing.T) {
+	img, err := makeQRImage("https://fv.sdniu.top/recipe/chao-jue-zi-su-xia")
+	if err != nil {
+		t.Fatalf("生成二维码失败: %v", err)
+	}
+	b := img.Bounds()
+	if b.Dx() != 140 || b.Dy() != 140 {
+		t.Fatalf("二维码尺寸异常: %dx%d", b.Dx(), b.Dy())
+	}
+	// 用 draw.Draw 到 RGBA 上统计非白像素，确认二维码被绘制
+	dst := image.NewRGBA(image.Rect(0, 0, 140, 140))
+	draw.Draw(dst, dst.Bounds(), img, image.Point{}, draw.Over)
+	dark := 0
+	for y := 0; y < 140; y += 2 {
+		for x := 0; x < 140; x += 2 {
+			r, g, bl, _ := dst.At(x, y).RGBA()
+			if r < 32768 || g < 32768 || bl < 32768 {
+				dark++
+			}
+		}
+	}
+	if dark == 0 {
+		t.Fatal("二维码区域无黑色模块，可能未绘制")
 	}
 }

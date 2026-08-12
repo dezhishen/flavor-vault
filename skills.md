@@ -75,7 +75,7 @@ fv rm -c "$CONFIG" --repo <owner>/<repo> --branch recipes -y
 |---|---|---|
 | `fv list [-c <cfg>] [--tag 标签] [--json]` | 列出菜谱 | `fv list -c ~/.flavor-vault/config.yaml` |
 | `fv show <id> [-c <cfg>] [--raw]` | 打印单菜谱详情 | `fv show hong-shao-rou -c ~/.flavor-vault/config.yaml` |
-| `fv share <id> [-c <cfg>] [--out <file>] [--img <png>] [--no-img]` | 生成分享内容：Markdown（默认带封面/步骤图+菜谱链接，可直接发 IM/AI 助手；`--no-img` 纯文字）或 `--img` 导出 PNG 分享长图（适合不支持带图 Markdown 的平台） | `fv share hong-shao-rou -c ~/.flavor-vault/config.yaml --img ~/share.png` |
+| `fv share <id> [-c <cfg>] [--out <file>] [--img <png>] [--no-img]` | 生成分享内容：Markdown（默认带封面/步骤图+菜谱链接，可直接发 IM/AI 助手；`--no-img` 纯文字）或 `--img` 导出 PNG 分享长图（底部带菜谱二维码，手机扫码打开，适合不支持带图 Markdown 的平台） | `fv share hong-shao-rou -c ~/.flavor-vault/config.yaml --img ~/share.png` |
 | `fv search <关键词...> [-c <cfg>] [--json]` | 全文搜索（菜名/食材/步骤等，多词 AND） | `fv search 鸡翅 烤箱 -c ~/.flavor-vault/config.yaml` |
 | `fv stats [-c <cfg>] [--json]` | 统计（总数/标签/难度等） | `fv stats -c ~/.flavor-vault/config.yaml` |
 | `fv filter --厨具 炒锅 --标签 凉菜 [-c <cfg>] [--json]` | 按倒排索引求交集 | `fv filter --食材 鸡翅 -c ~/.flavor-vault/config.yaml` |

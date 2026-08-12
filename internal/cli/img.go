@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	qrcode "github.com/skip2/go-qrcode"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/font/sfnt"
@@ -336,12 +337,23 @@ func renderShareImage(r *models.Recipe, siteRoot, outPath string) error {
 		}
 	}
 
-	// 底部链接
+	// 底部链接 + 二维码（手机扫码打开菜谱）
 	if siteRoot != "" {
+		recipeURL := siteRoot + "/recipe/" + r.ID
 		y += 4
 		p.rect(x, y, p.maxW, 2, colLine)
 		y += 14
-		y = p.text("完整菜谱："+siteRoot+"/recipe/"+r.ID, x, y, 13, colMuted, p.maxW)
+		y = p.text("完整菜谱："+recipeURL, x, y, 13, colMuted, p.maxW)
+
+		// 二维码（右下角）
+		if qrImg, err := makeQRImage(recipeURL); err == nil {
+			y += 10
+			y = p.text("手机扫码打开菜谱", x, y, 12, colMuted, p.maxW) + 6
+			qrSize := 140
+			qrX := p.W - pad - qrSize
+			draw.Draw(p.img, image.Rect(qrX, y, qrX+qrSize, y+qrSize), qrImg, image.Point{}, draw.Over)
+			y += qrSize
+		}
 	}
 
 	end := y + pad
@@ -359,4 +371,13 @@ func renderShareImage(r *models.Recipe, siteRoot, outPath string) error {
 		return fmt.Errorf("编码 PNG 失败: %w", err)
 	}
 	return nil
+}
+
+// makeQRImage 生成指向 URL 的二维码图片（140x140，含静区），用于分享长图底部扫码打开
+func makeQRImage(text string) (image.Image, error) {
+	q, err := qrcode.New(text, qrcode.Medium)
+	if err != nil {
+		return nil, err
+	}
+	return q.Image(140), nil
 }
