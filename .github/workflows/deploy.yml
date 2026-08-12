@@ -93,14 +93,16 @@ jobs:
           fi
 
       - name: Run ETL pipeline
-        # build 配置在此声明（默认值 = 当前运行的 GitHub 信息，如 PAGES_BASE 由仓库推导）：
+        # 构建器为独立入口 cmd/build（fv CLI 制品不包含 build 命令；构建只在 CI 完成）。
+        # 构建配置在此声明（默认值 = 当前运行的 GitHub 信息，如 PAGES_BASE 由仓库推导）：
         #   --output     输出目录 ./dist
         #   --asset-dir  图片资源目录 .flavor-vault/assets
         #   --ai-snapshot 生成 ai-corpus.json
         #   --endpoint   默认数据地址 = 站点 https://fv.sdniu.top 的 data（写入 meta.json，供消费端 CLI 默认读取）
         run: |
+          go build -o build ./cmd/build
           PAGES_BASE="https://fv.sdniu.top"
-          ./fv build --force \
+          ./build --force \
             --output ./dist \
             --asset-dir .flavor-vault/assets \
             --ai-snapshot \
