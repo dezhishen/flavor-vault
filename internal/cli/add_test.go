@@ -34,7 +34,7 @@ func TestPromptAddRecipeMultiVersion(t *testing.T) {
 	}
 }
 
-// TestPromptAddRecipeSingleVersion 验证单版本（不添加其他版本）→ 保留顶层结构
+// TestPromptAddRecipeSingleVersion 验证单版本（不添加其他版本）→ 也写入 versions[0]，顶层只留元数据
 func TestPromptAddRecipeSingleVersion(t *testing.T) {
 	// 菜名/ID(回车自动生成)/简介/标签/厨具 → 版本1 主料(材料) → 无配菜/可选/调料 → 步骤1(做)+配图空 → 统计默认 → 不添加其他版本(n)
 	input := "测试菜\n\n\n\n\ny\n材料\n1份\nn\nn\nn\nn\n做\n\n\n\n\n\nn\n\n"
@@ -43,11 +43,14 @@ func TestPromptAddRecipeSingleVersion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("promptAddRecipe err: %v", err)
 	}
-	if len(r.Versions) != 0 {
-		t.Fatalf("单版本不应有 versions，得到 %d", len(r.Versions))
+	if len(r.Versions) != 1 {
+		t.Fatalf("单版本也应写入 versions[0]，得到 %d", len(r.Versions))
 	}
-	if len(r.Ingredients.Main) != 1 || r.Ingredients.Main[0].Name != "材料" {
-		t.Fatalf("顶层主要食材错误: %+v", r.Ingredients)
+	if len(r.Versions[0].Ingredients.Main) != 1 || r.Versions[0].Ingredients.Main[0].Name != "材料" {
+		t.Fatalf("versions[0] 主要食材错误: %+v", r.Versions[0].Ingredients)
+	}
+	if len(r.Ingredients.Main) != 0 || len(r.Steps) != 0 {
+		t.Fatalf("统一多版本后顶层内容应清空: %+v", r)
 	}
 }
 

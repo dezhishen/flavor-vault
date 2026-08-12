@@ -6,9 +6,9 @@ import (
 	"flavor-vault/internal/models"
 )
 
-// TestApplyEditPatch 验证 --json 编辑补丁：单版本菜谱直接更新顶层（保持单版本）；多版本默认编辑第一个版本；versions 整体替换
+// TestApplyEditPatch 验证 --json 编辑补丁：单版本菜谱补丁触发迁移为多版本（内容入 versions[0]）；多版本默认编辑第一个版本；versions 整体替换
 func TestApplyEditPatch(t *testing.T) {
-	// 1) 单版本菜谱（无 versions）→ 版本字段补丁直接更新顶层，保持单版本结构（不迁移成多版本）
+	// 1) 单版本菜谱（无 versions）→ 补丁触发迁移：内容入 versions[0]，顶层清空，补丁合并进 versions[0]
 	r := &models.Recipe{
 		Name:  "红烧肉",
 		Stats: models.Stats{PrepTime: 10, CookTime: 60, Difficulty: 2},
@@ -18,17 +18,20 @@ func TestApplyEditPatch(t *testing.T) {
 	if err := applyEditPatch(`{"stats":{"difficulty":4}}`, r); err != nil {
 		t.Fatalf("applyEditPatch err: %v", err)
 	}
-	if len(r.Versions) != 0 {
-		t.Fatalf("单版本菜谱不应被迁移成多版本，得到 %d 个版本", len(r.Versions))
+	if len(r.Versions) != 1 {
+		t.Fatalf("应迁移为 1 个版本，得到 %d", len(r.Versions))
 	}
-	if r.Stats.Difficulty != 4 || r.Stats.PrepTime != 10 || r.Stats.CookTime != 60 {
-		t.Fatalf("顶层 stats 未正确合并: %+v", r.Stats)
+	if r.Versions[0].Stats.Difficulty != 4 || r.Versions[0].Stats.PrepTime != 10 || r.Versions[0].Stats.CookTime != 60 {
+		t.Fatalf("versions[0] stats 未正确合并: %+v", r.Versions[0].Stats)
 	}
-	if len(r.Steps) != 1 || r.Media.Cover != "images/x.png" {
-		t.Fatalf("顶层内容未保留: %+v", r)
+	if len(r.Versions[0].Steps) != 1 || r.Versions[0].Media.Cover != "images/x.png" {
+		t.Fatalf("versions[0] 内容未保留: %+v", r.Versions[0])
+	}
+	if len(r.Steps) != 0 || r.Stats.Difficulty != 0 || r.Media.Cover != "" {
+		t.Fatalf("统一多版本后顶层内容应清空: %+v", r)
 	}
 
-	// 1b) 单版本菜谱只传 steps（用户的步骤图场景）→ 顶层 steps 更新，其余保留
+	// 1b) 单版本菜谱只传 steps（用户的步骤图场景）→ 迁移为多版本，versions[0].steps 更新，其余保留
 	r1 := &models.Recipe{
 		Name:  "红烧肉",
 		Stats: models.Stats{Difficulty: 2},
@@ -38,11 +41,14 @@ func TestApplyEditPatch(t *testing.T) {
 	if err := applyEditPatch(`{"steps":[{"order":1,"description":"新步骤","image_ref":"images/hong-shao-rou/红烧肉-1-1.png"}]}`, r1); err != nil {
 		t.Fatalf("err: %v", err)
 	}
-	if len(r1.Versions) != 0 || len(r1.Steps) != 1 || r1.Steps[0].Description != "新步骤" {
-		t.Fatalf("单版本 steps 应更新顶层且不迁移: %+v", r1)
+	if len(r1.Versions) != 1 || len(r1.Versions[0].Steps) != 1 || r1.Versions[0].Steps[0].Description != "新步骤" {
+		t.Fatalf("versions[0].steps 应更新: %+v", r1)
 	}
-	if r1.Media.Cover != "images/x.png" || r1.Stats.Difficulty != 2 {
-		t.Fatalf("未补丁字段应保留: %+v", r1)
+	if r1.Versions[0].Media.Cover != "images/x.png" || r1.Versions[0].Stats.Difficulty != 2 {
+		t.Fatalf("未补丁字段应保留在 versions[0]: %+v", r1)
+	}
+	if len(r1.Steps) != 0 {
+		t.Fatalf("顶层 steps 应清空（统一多版本）: %+v", r1)
 	}
 
 	// 2) 多版本 → 默认编辑第一个版本，其他版本不动

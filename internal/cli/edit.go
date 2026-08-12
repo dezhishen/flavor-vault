@@ -206,43 +206,26 @@ func applyEditPatch(raw string, r *models.Recipe) error {
 		return nil
 	}
 
-	// 版本内容字段：多版本菜谱 → 合并进第一个版本；单版本菜谱 → 直接更新顶层主体（保持单版本，不迁移）
-	if len(r.Versions) > 0 {
-		v := &r.Versions[0]
-		if err := apply("ingredients", &v.Ingredients); err != nil {
-			return err
-		}
-		if err := apply("seasonings", &v.Seasonings); err != nil {
-			return err
-		}
-		if err := apply("steps", &v.Steps); err != nil {
-			return err
-		}
-		if err := apply("media", &v.Media); err != nil {
-			return err
-		}
-		if err := apply("stats", &v.Stats); err != nil {
-			return err
-		}
-		if rawVName, ok := m["version"]; ok {
-			json.Unmarshal(rawVName, &v.Name)
-		}
-	} else {
-		if err := apply("ingredients", &r.Ingredients); err != nil {
-			return err
-		}
-		if err := apply("seasonings", &r.Seasonings); err != nil {
-			return err
-		}
-		if err := apply("steps", &r.Steps); err != nil {
-			return err
-		}
-		if err := apply("media", &r.Media); err != nil {
-			return err
-		}
-		if err := apply("stats", &r.Stats); err != nil {
-			return err
-		}
+	// 版本内容字段：统一合并进第一个版本；单版本菜谱（无 versions）先迁移为多版本（顶层入 versions[0]）
+	normalizeMultiVersion(r)
+	v := &r.Versions[0]
+	if err := apply("ingredients", &v.Ingredients); err != nil {
+		return err
+	}
+	if err := apply("seasonings", &v.Seasonings); err != nil {
+		return err
+	}
+	if err := apply("steps", &v.Steps); err != nil {
+		return err
+	}
+	if err := apply("media", &v.Media); err != nil {
+		return err
+	}
+	if err := apply("stats", &v.Stats); err != nil {
+		return err
+	}
+	if rawVName, ok := m["version"]; ok {
+		json.Unmarshal(rawVName, &v.Name)
 	}
 	return nil
 }

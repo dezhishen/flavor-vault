@@ -72,6 +72,9 @@ func newAddCmd() *cobra.Command {
 				r.ID = generateID(r.Name)
 			}
 
+			// 统一为多版本结构（历史单版本顶层结构迁移到 versions[0]）
+			normalizeMultiVersion(r)
+
 			// 5. 校验；有误则缓存草稿供重试
 			if err := plugins.ValidateRecipe(r, cfg); err != nil {
 				return failAndCache(cmd, st, "add", r.ID, r, err)
@@ -205,24 +208,16 @@ func promptAddRecipe(reader *bufio.Reader, cfg *models.Config, projectRoot strin
 		moreVersions, _ = promptBool(reader, "继续添加版本?", false)
 	}
 
-	if len(versions) > 1 {
-		// 多版本 → 写入 versions，顶层内容清空
-		r.Versions = make([]models.Version, 0, len(versions))
-		for _, v := range versions {
-			r.Versions = append(r.Versions, *v)
-		}
-		r.Ingredients = models.Ingredients{}
-		r.Seasonings = nil
-		r.Steps = nil
-		r.Stats = models.Stats{}
-	} else {
-		// 单版本 → 保留顶层结构（默认版本）
-		r.Versions = nil
-		r.Ingredients = versions[0].Ingredients
-		r.Seasonings = versions[0].Seasonings
-		r.Steps = versions[0].Steps
-		r.Stats = versions[0].Stats
+	// 一律写入 versions（单版本也写 versions[0]），顶层只保留元数据
+	r.Versions = make([]models.Version, 0, len(versions))
+	for _, v := range versions {
+		r.Versions = append(r.Versions, *v)
 	}
+	r.Ingredients = models.Ingredients{}
+	r.Seasonings = nil
+	r.Steps = nil
+	r.Media = models.Media{}
+	r.Stats = models.Stats{}
 
 	return r, nil
 }
