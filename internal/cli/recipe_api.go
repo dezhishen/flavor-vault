@@ -223,7 +223,7 @@ func stageLocalAssets(cfg *models.Config, projectRoot string, r *models.Recipe) 
 		if src == "" {
 			return "", fmt.Errorf("本地图片不存在: %s（请将图片放到 %s 或以相对路径引用）", ref, dir)
 		}
-		// 复制到 images/<recipeID>/ 并更新引用（命名 <菜谱名>-<hint>[-<序号>]）
+		// 复制到 images/<recipeID>/ 并更新引用（命名 <菜谱名>-<hint>）
 		ext := filepath.Ext(src)
 		if ext == "" {
 			ext = ".img"
@@ -233,13 +233,8 @@ func stageLocalAssets(cfg *models.Config, projectRoot string, r *models.Recipe) 
 		}
 		name := fmt.Sprintf("%s-%s%s", base, hint, ext)
 		dst := filepath.Join(imagesDir, name)
-		for i := 2; ; i++ {
-			if _, err := os.Stat(dst); os.IsNotExist(err) {
-				break
-			}
-			name = fmt.Sprintf("%s-%s-%d%s", base, hint, i, ext)
-			dst = filepath.Join(imagesDir, name)
-		}
+		// 目标已存在（此前归位/上传过同源图片）：直接覆盖并复用该引用，
+		// 避免生成 -2 重复文件（按菜谱隔离目录 + hint 唯一，同名即本菜谱该资源；覆盖也支持后续更新）
 		data, err := os.ReadFile(src)
 		if err != nil {
 			return "", err
