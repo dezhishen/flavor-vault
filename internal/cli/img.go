@@ -80,16 +80,23 @@ func loadFont(candidates []string) *opentype.Font {
 
 // loadFonts 加载多字体回退链：CJK 字体在前（覆盖中文），Latin 字体在后（覆盖 ASCII/数字/符号）。
 // 多数系统 CJK 字体缺 ASCII、Latin 字体缺中文，必须混排（逐字符选字体）才能避免方块字。
+// 系统字体优先；系统找不到时用内置字体兜底（fonts.go），保证任何环境都能渲染。
 func loadFonts() ([]*opentype.Font, error) {
 	var fonts []*opentype.Font
+	// CJK：系统优先，内置兜底
 	if f := loadFont(cjkFontCandidates); f != nil {
 		fonts = append(fonts, f)
+	} else if f := parseEmbedded(embeddedCJK); f != nil {
+		fonts = append(fonts, f)
 	}
+	// Latin/ASCII：系统优先，内置兜底
 	if f := loadFont(latinFontCandidates); f != nil {
+		fonts = append(fonts, f)
+	} else if f := parseEmbedded(embeddedLatin); f != nil {
 		fonts = append(fonts, f)
 	}
 	if len(fonts) == 0 {
-		return nil, fmt.Errorf("未找到可用字体（已尝试 %d 个系统路径）；请安装任意 CJK 或 Latin 字体", len(cjkFontCandidates)+len(latinFontCandidates))
+		return nil, fmt.Errorf("未找到可用字体（系统与内置均不可用）")
 	}
 	return fonts, nil
 }

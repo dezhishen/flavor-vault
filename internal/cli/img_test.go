@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"golang.org/x/image/font/opentype"
+
 	"flavor-vault/internal/models"
 )
 
@@ -68,6 +70,32 @@ func TestPainterGlyphCoverage(t *testing.T) {
 		}
 		if !ok {
 			t.Errorf("字符 %q（U+%04X）在回退链中无字体可渲染，将显示为方块", r, r)
+		}
+	}
+}
+
+// TestEmbeddedFontsFallback 验证内置字体（go:embed）有效，且仅用内置字体也能覆盖
+// 分享图需要的全部字符——即使系统没有任何中文字体（精简 Linux/服务器/Docker），
+// fv 二进制自带字体仍可正常渲染，不会出方块。
+func TestEmbeddedFontsFallback(t *testing.T) {
+	cjk := parseEmbedded(embeddedCJK)
+	latin := parseEmbedded(embeddedLatin)
+	if cjk == nil || latin == nil {
+		t.Fatalf("内置字体解析失败：CJK=%v Latin=%v", cjk, latin)
+	}
+	p := newPainter([]*opentype.Font{cjk, latin}, 840, 48)
+	need := "超绝紫苏虾分钟准备烹饪总耗时难度主要食材配菜辅料调料步骤完整菜谱可换代替省略" +
+		"0123456789ABCXYZ" + "#./:·-()（）&%.★"
+	for _, r := range need {
+		ok := false
+		for _, f := range []*opentype.Font{cjk, latin} {
+			if p.hasGlyph(f, r) {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			t.Errorf("内置字体链缺字符 %q（U+%04X），无系统字体时将为方块", r, r)
 		}
 	}
 }
