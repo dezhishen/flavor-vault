@@ -48,22 +48,18 @@
     },
     {
       "order": 2,
-      "description": "热锅，倒入适量食用油，下蒜粒爆香",
+      "description": "热锅，倒入适量食用油，下蒜粒爆香；下豆豉鲮鱼，小火稍微把鱼和豆豉炒出香味",
       "image_ref": "images/dou-chi-ling-yu-chao-you-mai-cai/豆豉鲮鱼炒莜麦菜-2-1.jpg"
     },
     {
       "order": 3,
-      "description": "下豆豉鲮鱼，小火稍微把鱼和豆豉炒出香味",
+      "description": "转大火，加入莜麦菜翻炒，炒到变软",
       "image_ref": "images/dou-chi-ling-yu-chao-you-mai-cai/豆豉鲮鱼炒莜麦菜-3-1.jpg"
     },
     {
       "order": 4,
-      "description": "转大火，加入莜麦菜翻炒，炒到变软",
+      "description": "加入半勺生抽，翻炒均匀即可出锅",
       "image_ref": "images/dou-chi-ling-yu-chao-you-mai-cai/豆豉鲮鱼炒莜麦菜-4-1.jpg"
-    },
-    {
-      "order": 5,
-      "description": "加入半勺生抽，翻炒均匀即可出锅"
     }
   ],
   "media": {
