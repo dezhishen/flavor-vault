@@ -11,6 +11,9 @@
 web/node_modules/
 web/dist/
 
+# 内置字体（构建时由 scripts/fetch-fonts.sh 下载，不提交仓库）
+internal/cli/fonts/*.ttf
+
 # 系统文件
 .DS_Store
 *.log
