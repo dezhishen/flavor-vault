@@ -273,6 +273,33 @@ func stageLocalAssets(cfg *models.Config, projectRoot string, r *models.Recipe) 
 			r.Steps[i].ImageRef = v
 		}
 	}
+	// 多版本：版本内的封面/过程图/步骤图同样归位到 images/<id>/
+	for vi := range r.Versions {
+		v := &r.Versions[vi]
+		if vv, err := stage(v.Media.Cover, "cover"); err != nil {
+			return staged, err
+		} else if vv != v.Media.Cover {
+			staged++
+			v.Media.Cover = vv
+		}
+		for i := range v.Media.Images {
+			if vv, err := stage(v.Media.Images[i], fmt.Sprintf("img-%d", i+1)); err != nil {
+				return staged, err
+			} else if vv != v.Media.Images[i] {
+				staged++
+				v.Media.Images[i] = vv
+			}
+		}
+		for i := range v.Steps {
+			hint := fmt.Sprintf("%d-1", v.Steps[i].Order)
+			if vv, err := stage(v.Steps[i].ImageRef, hint); err != nil {
+				return staged, err
+			} else if vv != v.Steps[i].ImageRef {
+				staged++
+				v.Steps[i].ImageRef = vv
+			}
+		}
+	}
 	return staged, nil
 }
 

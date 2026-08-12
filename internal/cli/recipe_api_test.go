@@ -90,3 +90,57 @@ func TestStageLocalAssets(t *testing.T) {
 		t.Fatalf("已分组引用被改动: %s", r3b.Media.Cover)
 	}
 }
+
+// TestStageLocalAssetsVersions 验证多版本菜谱的版本内封面/步骤图同样归位到 images/<id>/
+func TestStageLocalAssetsVersions(t *testing.T) {
+	root := t.TempDir()
+	cfg := &models.Config{}
+
+	vImg := filepath.Join(root, "v-step.png")
+	if err := os.WriteFile(vImg, []byte("step"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	r := &models.Recipe{
+		ID:   "hong-shao-rou",
+		Name: "红烧肉",
+		Versions: []models.Version{
+			{
+				Name:  "少油版",
+				Media: models.Media{Cover: vImg},
+				Steps: []models.Step{{Order: 1, ImageRef: vImg}},
+			},
+		},
+	}
+	n, err := stageLocalAssets(cfg, root, r)
+	if err != nil {
+		t.Fatalf("stageLocalAssets err: %v", err)
+	}
+	if n != 2 {
+		t.Fatalf("期望暂存 2 个版本图片（封面 + 步骤图），得到 %d", n)
+	}
+	if r.Versions[0].Media.Cover != "images/hong-shao-rou/红烧肉-cover.png" {
+		t.Fatalf("版本封面未归位: %s", r.Versions[0].Media.Cover)
+	}
+	if r.Versions[0].Steps[0].ImageRef != "images/hong-shao-rou/红烧肉-1-1.png" {
+		t.Fatalf("版本步骤图未归位: %s", r.Versions[0].Steps[0].ImageRef)
+	}
+	for _, f := range []string{
+		".flavor-vault/assets/images/hong-shao-rou/红烧肉-cover.png",
+		".flavor-vault/assets/images/hong-shao-rou/红烧肉-1-1.png",
+	} {
+		if _, err := os.Stat(filepath.Join(root, f)); err != nil {
+			t.Fatalf("版本图片文件不存在 %s: %v", f, err)
+		}
+	}
+	// AssetRefs 应聚合归位后的版本引用（上传阶段据此读文件上传）
+	refs := r.AssetRefs()
+	found := 0
+	for _, ref := range refs {
+		if ref == r.Versions[0].Media.Cover || ref == r.Versions[0].Steps[0].ImageRef {
+			found++
+		}
+	}
+	if found != 2 {
+		t.Fatalf("AssetRefs 应包含 2 个版本图片引用: %v", refs)
+	}
+}
