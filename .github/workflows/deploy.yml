@@ -108,6 +108,10 @@ jobs:
             --ai-snapshot \
             --endpoint "$PAGES_BASE/data"
 
+      # 合并前端构建产物（web/dist）到部署目录：cmd/build 只生成 data/assets（不含 index.html 等静态文件）
+      - name: Merge frontend into dist
+        run: cp -r web/dist/. ./dist/
+
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v3
         with:
