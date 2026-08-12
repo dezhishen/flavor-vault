@@ -13,7 +13,7 @@
 - **AI 就绪**：`fv ask` 自然语言检索；构建生成 `ai-corpus.json`（JSON Lines）供云端 AI 拉取。
 - **增量构建**：基于文件哈希 + TTL 的缓存系统，重复构建毫秒完成。
 - **纯静态部署**：产物为 HTML/JS/CSS/JSON，由 GitHub Actions 部署到 gh-pages。
-- **自更新**：`fv update` 从 GitHub Releases 拉取当前平台二进制并原子替换。
+- **自更新**：`fv update` 从 GitHub Releases 拉取当前平台二进制并原子替换；`--pre` 可更新到最新预览版（含预发布，便于测试）。
 
 ---
 
@@ -63,6 +63,7 @@ fv init --github --repo <owner>/<repo>     # 非交互：一并配置编辑仓�
 fv list -c ~/.flavor-vault/config.yaml
 fv search 红烧 -c ~/.flavor-vault/config.yaml
 fv show <id> -c ~/.flavor-vault/config.yaml
+fv share <id> -c ~/.flavor-vault/config.yaml --out ~/share.md   # 生成分享消息（Markdown 带图 + 菜谱链接，可直接发 IM/AI 助手）
 
 # 读写：编辑菜谱（提交作者自动取自你的 GITHUB_TOKEN 对应账户）
 export GITHUB_TOKEN=ghp_xxx
