@@ -1,0 +1,103 @@
+{
+  "id": "nong-jia-yi-wan-xiang",
+  "name": "农家一碗香",
+  "description": "湘式下饭经典。荷包蛋、青椒丝、肉片一锅炒，锅边淋入生抽激出酱香，简单粗暴又下饭。",
+  "stats": {
+    "prep_time": 10,
+    "cook_time": 10,
+    "difficulty": 3
+  },
+  "created_at": "0001-01-01T00:00:00Z",
+  "updated_at": "0001-01-01T00:00:00Z",
+  "tags": [
+    "热菜",
+    "下饭"
+  ],
+  "kitchenware": [
+    "炒锅"
+  ],
+  "ingredients": {
+    "main": [
+      {
+        "name": "鸡蛋",
+        "amount": "3个"
+      },
+      {
+        "name": "青辣椒",
+        "amount": "3个（切丝）"
+      },
+      {
+        "name": "猪肉",
+        "amount": "300g左右（最好梅条，切丝或片）"
+      }
+    ],
+    "side": [
+      {
+        "name": "大蒜",
+        "amount": "2瓣（切末）"
+      },
+      {
+        "name": "大葱",
+        "amount": "1根（切段，非必须）"
+      },
+      {
+        "name": "盐",
+        "amount": "腌肉1勺 + 炒制1勺"
+      },
+      {
+        "name": "生抽",
+        "amount": "腌肉1汤勺 + 出锅前锅边淋入1汤勺"
+      },
+      {
+        "name": "料酒",
+        "amount": "1汤勺（腌肉用）"
+      },
+      {
+        "name": "老抽",
+        "amount": "半汤勺"
+      },
+      {
+        "name": "食用油",
+        "amount": "适量"
+      }
+    ]
+  },
+  "seasonings": [],
+  "steps": [
+    {
+      "order": 1,
+      "description": "备菜：辣椒切丝，肉切丝或片，加1勺盐、1汤勺生抽、1汤勺料酒腌制；大蒜子切末，大蒜切段",
+      "image_ref": "images/nong-jia-yi-wan-xiang/农家一碗香-1-1.jpg"
+    },
+    {
+      "order": 2,
+      "description": "依次煎三个荷包蛋，煎好后盛出",
+      "image_ref": "images/nong-jia-yi-wan-xiang/农家一碗香-2-1.jpg"
+    },
+    {
+      "order": 3,
+      "description": "就锅里面剩的油，把青椒丝炒断生，盛出",
+      "image_ref": "images/nong-jia-yi-wan-xiang/农家一碗香-3-1.jpg"
+    },
+    {
+      "order": 4,
+      "description": "添加少许油（如果锅里有，则不需要添加），小火把蒜末爆香",
+      "image_ref": "images/nong-jia-yi-wan-xiang/农家一碗香-4-1.jpg"
+    },
+    {
+      "order": 5,
+      "description": "改大火，加入肉，炒至变色",
+      "image_ref": "images/nong-jia-yi-wan-xiang/农家一碗香-5-1.jpg"
+    },
+    {
+      "order": 6,
+      "description": "把辣椒丝和荷包蛋回锅（如果有大蒜叶，也一起加入），用锅铲把荷包蛋切小块，放入1勺盐、1汤勺生抽（锅边淋入）、半汤勺老抽，翻炒均匀，炒出香味后盛出",
+      "image_ref": "images/nong-jia-yi-wan-xiang/农家一碗香-6-1.jpg"
+    }
+  ],
+  "media": {
+    "cover": "images/nong-jia-yi-wan-xiang/农家一碗香-cover.jpg",
+    "images": []
+  },
+  "versions": []
+}
