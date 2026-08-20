@@ -1,0 +1,105 @@
+{
+  "kitchenware": {
+    "汤锅": [
+      "su-cai-gao-tang"
+    ],
+    "炒锅": [
+      "chao-jue-zi-su-xia",
+      "dou-chi-ling-yu-chao-you-mai-cai",
+      "jian-chao-hong-tian-jiao",
+      "nong-jia-yi-wan-xiang",
+      "su-cai-gao-tang",
+      "zi-ran-tu-dou-niu-rou"
+    ],
+    "秤": [
+      "zheng-dan"
+    ],
+    "蒸锅": [
+      "zheng-dan"
+    ]
+  },
+  "ingredients": {
+    "土豆": [
+      "zi-ran-tu-dou-niu-rou"
+    ],
+    "大蒜": [
+      "dou-chi-ling-yu-chao-you-mai-cai"
+    ],
+    "开水": [
+      "su-cai-gao-tang"
+    ],
+    "油麦菜": [
+      "dou-chi-ling-yu-chao-you-mai-cai"
+    ],
+    "牛肉": [
+      "zi-ran-tu-dou-niu-rou"
+    ],
+    "猪肉": [
+      "nong-jia-yi-wan-xiang"
+    ],
+    "甜玉米": [
+      "su-cai-gao-tang"
+    ],
+    "紫苏": [
+      "chao-jue-zi-su-xia"
+    ],
+    "红甜椒": [
+      "jian-chao-hong-tian-jiao"
+    ],
+    "蒜": [
+      "jian-chao-hong-tian-jiao"
+    ],
+    "虾": [
+      "chao-jue-zi-su-xia"
+    ],
+    "蟹味菇": [
+      "su-cai-gao-tang"
+    ],
+    "西红柿": [
+      "su-cai-gao-tang"
+    ],
+    "豆豉鲮鱼": [
+      "dou-chi-ling-yu-chao-you-mai-cai"
+    ],
+    "青辣椒": [
+      "nong-jia-yi-wan-xiang"
+    ],
+    "香菜": [
+      "su-cai-gao-tang"
+    ],
+    "鸡蛋": [
+      "nong-jia-yi-wan-xiang",
+      "su-cai-gao-tang",
+      "zheng-dan"
+    ]
+  },
+  "tags": {
+    "下饭": [
+      "chao-jue-zi-su-xia",
+      "dou-chi-ling-yu-chao-you-mai-cai",
+      "jian-chao-hong-tian-jiao",
+      "nong-jia-yi-wan-xiang",
+      "zi-ran-tu-dou-niu-rou"
+    ],
+    "家常": [
+      "su-cai-gao-tang",
+      "zheng-dan"
+    ],
+    "快手": [
+      "chao-jue-zi-su-xia",
+      "dou-chi-ling-yu-chao-you-mai-cai",
+      "su-cai-gao-tang",
+      "zheng-dan"
+    ],
+    "汤": [
+      "su-cai-gao-tang"
+    ],
+    "热菜": [
+      "chao-jue-zi-su-xia",
+      "dou-chi-ling-yu-chao-you-mai-cai",
+      "jian-chao-hong-tian-jiao",
+      "nong-jia-yi-wan-xiang",
+      "zi-ran-tu-dou-niu-rou"
+    ]
+  }
+}

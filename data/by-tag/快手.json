@@ -1,0 +1,91 @@
+[
+  {
+    "id": "chao-jue-zi-su-xia",
+    "name": "超绝紫苏虾",
+    "description": "紫苏的清香是灵魂，出锅前3分钟放紫苏沫，紫苏叶变软趴趴就入味了。虾先单独炒半熟，再和姜蒜小米辣一起炒。虾头煎出虾油是鲜味关键。",
+    "tags": [
+      "热菜",
+      "快手",
+      "下饭"
+    ],
+    "kitchenware": [
+      "炒锅"
+    ],
+    "ingredients": [
+      "虾",
+      "紫苏"
+    ],
+    "cover": "images/chao-jue-zi-su-xia/超绝紫苏虾-cover-2.jpg",
+    "prep_time": 10,
+    "cook_time": 10,
+    "difficulty": 2
+  },
+  {
+    "id": "dou-chi-ling-yu-chao-you-mai-cai",
+    "name": "豆豉鲮鱼炒油麦菜",
+    "description": "经典的粤式下饭菜。豆豉鲮鱼罐头的咸鲜和油脂，配上油麦菜的清甜脆嫩，大火快炒，简单又开胃。",
+    "tags": [
+      "热菜",
+      "快手",
+      "下饭"
+    ],
+    "kitchenware": [
+      "炒锅"
+    ],
+    "ingredients": [
+      "豆豉鲮鱼",
+      "油麦菜",
+      "大蒜"
+    ],
+    "cover": "images/dou-chi-ling-yu-chao-you-mai-cai/豆豉鲮鱼炒油麦菜-cover.jpg",
+    "prep_time": 5,
+    "cook_time": 5,
+    "difficulty": 1
+  },
+  {
+    "id": "su-cai-gao-tang",
+    "name": "素菜高汤",
+    "description": "白汤的关键是开水和煎鸡蛋；鲜味来自蟹味菇、煎蛋和白胡椒粉。味道层次：鲜味、生抽、西红柿、胡椒粉、香菜、甜玉米的自然甜味。想风味更足可用西红柿罐头代替西红柿（市面西红柿普遍一般）。其他食材可选豆腐、娃娃菜，但类似菠菜这种味道重的不行。",
+    "tags": [
+      "汤",
+      "快手",
+      "家常"
+    ],
+    "kitchenware": [
+      "炒锅",
+      "汤锅"
+    ],
+    "ingredients": [
+      "鸡蛋",
+      "蟹味菇",
+      "西红柿",
+      "甜玉米",
+      "香菜",
+      "开水"
+    ],
+    "cover": "images/su-cai-gao-tang/素菜高汤-cover.jpg",
+    "prep_time": 10,
+    "cook_time": 15,
+    "difficulty": 2
+  },
+  {
+    "id": "zheng-dan",
+    "name": "蒸蛋",
+    "description": "嫩滑蒸蛋，1:1:1 黄金配比，大火快蒸加闷制，出锅淋生抽香油。",
+    "tags": [
+      "家常",
+      "快手"
+    ],
+    "kitchenware": [
+      "蒸锅",
+      "秤"
+    ],
+    "ingredients": [
+      "鸡蛋"
+    ],
+    "cover": "images/zheng-dan/蒸蛋-cover.jpg",
+    "prep_time": 3,
+    "cook_time": 12,
+    "difficulty": 3
+  }
+]

@@ -1,0 +1,127 @@
+{
+  "id": "su-cai-gao-tang",
+  "name": "素菜高汤",
+  "description": "白汤的关键是开水和煎鸡蛋；鲜味来自蟹味菇、煎蛋和白胡椒粉。味道层次：鲜味、生抽、西红柿、胡椒粉、香菜、甜玉米的自然甜味。想风味更足可用西红柿罐头代替西红柿（市面西红柿普遍一般）。其他食材可选豆腐、娃娃菜，但类似菠菜这种味道重的不行。",
+  "stats": {
+    "prep_time": 0,
+    "cook_time": 0,
+    "difficulty": 0
+  },
+  "created_at": "2026-08-11T18:59:47.045029006+08:00",
+  "updated_at": "2026-08-20T13:05:19.737059502+08:00",
+  "tags": [
+    "汤",
+    "快手",
+    "家常"
+  ],
+  "kitchenware": [
+    "炒锅",
+    "汤锅"
+  ],
+  "ingredients": {
+    "main": [],
+    "side": []
+  },
+  "seasonings": [],
+  "steps": [],
+  "media": {
+    "cover": "",
+    "images": []
+  },
+  "versions": [
+    {
+      "name": "",
+      "ingredients": {
+        "main": [
+          {
+            "name": "鸡蛋",
+            "amount": "1个"
+          },
+          {
+            "name": "蟹味菇",
+            "amount": "1盒"
+          },
+          {
+            "name": "西红柿",
+            "amount": "1大个或2小个"
+          },
+          {
+            "name": "甜玉米",
+            "amount": "1根"
+          },
+          {
+            "name": "香菜",
+            "amount": "取香菜叶适量"
+          },
+          {
+            "name": "开水",
+            "amount": "一壶"
+          }
+        ],
+        "side": [
+          {
+            "name": "食用油",
+            "amount": "平常煎蛋的1.5-2倍"
+          },
+          {
+            "name": "生抽",
+            "amount": "1~2勺（炒料激发香味）+ 出锅前调味"
+          },
+          {
+            "name": "食盐",
+            "amount": "先加1~2勺，汤开后调味"
+          },
+          {
+            "name": "白胡椒粉",
+            "amount": "适量"
+          },
+          {
+            "name": "可选食材",
+            "amount": "豆腐、娃娃菜等（味道重的菜不行）"
+          }
+        ]
+      },
+      "steps": [
+        {
+          "order": 1,
+          "description": "备菜：蟹味菇去根洗净，西红柿切丁，甜玉米切小块；其他食材切成差不多大小，煮不软的最多食指长度，叶子菜保证一筷子好夹；香菜摘好叶子",
+          "image_ref": "images/su-cai-gao-tang/素菜高汤-1-1.jpg"
+        },
+        {
+          "order": 2,
+          "description": "热锅冷油，油量为平常煎蛋的1.5-2倍，煎一个荷包蛋，盛出备用",
+          "image_ref": "images/su-cai-gao-tang/素菜高汤-2-1.jpg"
+        },
+        {
+          "order": 3,
+          "description": "不用洗锅，倒入西红柿丁，炒出沙（汤底味道的关键）",
+          "image_ref": "images/su-cai-gao-tang/素菜高汤-3-1.jpg"
+        },
+        {
+          "order": 4,
+          "description": "倒入蟹味菇，与番茄裹均匀后，加入1~2勺生抽，把生抽香味激发出来，再把煎蛋倒进去搅拌均匀",
+          "image_ref": "images/su-cai-gao-tang/素菜高汤-4-1.jpg"
+        },
+        {
+          "order": 5,
+          "description": "加入其他食材，立即加入开水（白汤关键），保证水没过食材，先加1~2勺食盐，汤开后再调味",
+          "image_ref": "images/su-cai-gao-tang/素菜高汤-5-1.jpg"
+        },
+        {
+          "order": 6,
+          "description": "汤开后（食材难熟可小火再炖，一般素菜不会难熟），加入白胡椒粉、生抽、食盐按个人口味调味，最后撒入香菜，关火即可",
+          "image_ref": "images/su-cai-gao-tang/素菜高汤-6-1.jpg"
+        }
+      ],
+      "media": {
+        "cover": "images/su-cai-gao-tang/素菜高汤-cover.jpg",
+        "images": []
+      },
+      "stats": {
+        "prep_time": 10,
+        "cook_time": 15,
+        "difficulty": 2
+      }
+    }
+  ]
+}

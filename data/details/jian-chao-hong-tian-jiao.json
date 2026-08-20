@@ -1,0 +1,94 @@
+{
+  "id": "jian-chao-hong-tian-jiao",
+  "name": "煎炒红甜椒",
+  "description": "小火把红甜椒煎到略微起虎皮，倒入蒜香碗汁，中大火收汁到起绵密气泡，酸甜微辣，简单下饭。",
+  "stats": {
+    "prep_time": 0,
+    "cook_time": 0,
+    "difficulty": 2
+  },
+  "created_at": "0001-01-01T00:00:00Z",
+  "updated_at": "0001-01-01T00:00:00Z",
+  "tags": [
+    "热菜",
+    "下饭"
+  ],
+  "kitchenware": [
+    "炒锅"
+  ],
+  "ingredients": {
+    "main": [
+      {
+        "name": "红甜椒",
+        "amount": "3根（切片）"
+      },
+      {
+        "name": "蒜",
+        "amount": "2瓣（切末）"
+      }
+    ],
+    "side": [
+      {
+        "name": "味精",
+        "amount": "半勺"
+      },
+      {
+        "name": "蚝油",
+        "amount": "1勺"
+      },
+      {
+        "name": "生抽",
+        "amount": "1勺"
+      },
+      {
+        "name": "陈醋",
+        "amount": "半勺"
+      },
+      {
+        "name": "盐",
+        "amount": "1勺（煎辣椒时用）"
+      },
+      {
+        "name": "食用油",
+        "amount": "适量"
+      },
+      {
+        "name": "凉水",
+        "amount": "少许（调碗汁用）"
+      }
+    ]
+  },
+  "seasonings": [],
+  "steps": [
+    {
+      "order": 1,
+      "description": "备菜：红辣椒切片，蒜切末",
+      "image_ref": "images/jian-chao-hong-tian-jiao/煎炒红甜椒-1-1.jpg"
+    },
+    {
+      "order": 2,
+      "description": "调碗汁：蒜末加半勺味精、1勺蚝油、1勺生抽、半勺陈醋，用少许凉水冲开，搅拌均匀",
+      "image_ref": "images/jian-chao-hong-tian-jiao/煎炒红甜椒-2-1.jpg"
+    },
+    {
+      "order": 3,
+      "description": "热锅冷油，小火，放入一勺盐，把辣椒煎到略微起虎皮",
+      "image_ref": "images/jian-chao-hong-tian-jiao/煎炒红甜椒-3-1.jpg"
+    },
+    {
+      "order": 4,
+      "description": "倒入碗汁，搅拌均匀",
+      "image_ref": "images/jian-chao-hong-tian-jiao/煎炒红甜椒-4-1.jpg"
+    },
+    {
+      "order": 5,
+      "description": "中大火收汁，到汁水起绵密气泡即可出锅",
+      "image_ref": "images/jian-chao-hong-tian-jiao/煎炒红甜椒-5-1.jpg"
+    }
+  ],
+  "media": {
+    "cover": "images/jian-chao-hong-tian-jiao/煎炒红甜椒-cover.jpg",
+    "images": []
+  },
+  "versions": []
+}
