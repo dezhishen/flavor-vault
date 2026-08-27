@@ -1,0 +1,125 @@
+{
+  "id": "jin-yin-suan-rong-jiang",
+  "name": "金银蒜蓉酱",
+  "description": "熟蒜与生蒜双拼的「金银蒜」，蒜香浓郁层次丰富，拌面、蘸料、蒸菜皆宜。",
+  "stats": {
+    "prep_time": 0,
+    "cook_time": 0,
+    "difficulty": 0
+  },
+  "created_at": "2026-08-27T14:06:41.987578299+08:00",
+  "updated_at": "2026-08-27T14:06:41.987578299+08:00",
+  "tags": [
+    "酱料",
+    "快手"
+  ],
+  "kitchenware": [
+    "炒锅"
+  ],
+  "ingredients": {
+    "main": [],
+    "side": []
+  },
+  "seasonings": [],
+  "steps": [],
+  "media": {
+    "cover": "",
+    "images": []
+  },
+  "versions": [
+    {
+      "name": "经典版",
+      "ingredients": {
+        "main": [
+          {
+            "name": "蒜",
+            "amount": "大量（切末，按1/3、2/3分两份）"
+          },
+          {
+            "name": "香菜",
+            "amount": "若干（切段）"
+          },
+          {
+            "name": "小葱",
+            "amount": "若干（切段）"
+          },
+          {
+            "name": "大葱",
+            "amount": "若干（切段）"
+          },
+          {
+            "name": "洋葱",
+            "amount": "若干（切丝）"
+          }
+        ],
+        "side": [
+          {
+            "name": "食用油",
+            "amount": "适量（炸香料用）"
+          },
+          {
+            "name": "清水",
+            "amount": "小半碗（蒜水，清洗蒜末时留用）"
+          }
+        ]
+      },
+      "seasonings": [
+        {
+          "name": "蚝油",
+          "amount": "1勺"
+        },
+        {
+          "name": "鸡精/鸡汁",
+          "amount": "1勺"
+        },
+        {
+          "name": "盐",
+          "amount": "2勺"
+        },
+        {
+          "name": "糖",
+          "amount": "1勺"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "description": "备菜：香菜、小葱、大葱切段，洋葱切丝"
+        },
+        {
+          "order": 2,
+          "description": "备菜：蒜切末，以1/3、2/3的比例分为两份"
+        },
+        {
+          "order": 3,
+          "description": "备菜：将2/3的蒜转入漏网或卤料等容具，清洗至水体较清、不黏手，沥干水分，清洗过程中留小半碗蒜水"
+        },
+        {
+          "order": 4,
+          "description": "炒制：起锅大火烧油，加入香菜、小葱、大葱、洋葱，炸至焦黄后捞出"
+        },
+        {
+          "order": 5,
+          "description": "炒制：加入2/3蒜末，炸至略微发黄发焦后，加入1/3生蒜翻匀，加入蒜水"
+        },
+        {
+          "order": 6,
+          "description": "炒制：蒜水蒸发、熟蒜基本发黄后关火，加入一勺蚝油、一勺鸡精/鸡汁、两勺盐、一勺糖翻拌均匀"
+        },
+        {
+          "order": 7,
+          "description": "炒制：盛出盖盖焖凉"
+        }
+      ],
+      "media": {
+        "cover": "",
+        "images": []
+      },
+      "stats": {
+        "prep_time": 15,
+        "cook_time": 15,
+        "difficulty": 2
+      }
+    }
+  ]
+}
