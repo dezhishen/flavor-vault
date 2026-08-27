@@ -8,7 +8,7 @@
     "difficulty": 0
   },
   "created_at": "2026-08-27T13:13:37.045123254+08:00",
-  "updated_at": "2026-08-27T13:13:37.045123254+08:00",
+  "updated_at": "2026-08-27T20:45:25.584656468+08:00",
   "tags": [
     "热菜",
     "下饭",
@@ -109,7 +109,7 @@
         }
       ],
       "media": {
-        "cover": "",
+        "cover": "images/sha-cha-niu-rou/沙茶牛肉-cover.jpg",
         "images": []
       },
       "stats": {
