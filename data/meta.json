@@ -1,0 +1,29 @@
+{
+  "total": 10,
+  "generated_at": "2026-08-27T12:46:29.086524207Z",
+  "tags": {
+    "下饭": 7,
+    "家常": 2,
+    "快手": 6,
+    "汤": 1,
+    "热菜": 7,
+    "煲": 1,
+    "酱料": 1
+  },
+  "kitchenware": {
+    "汤锅": 1,
+    "炒锅": 9,
+    "砂锅": 1,
+    "秤": 1,
+    "蒸锅": 1
+  },
+  "difficulty": {
+    "0": 8,
+    "2": 2
+  },
+  "avg_prep_time": 0,
+  "avg_cook_time": 1,
+  "avg_total_time": 2,
+  "all_count": 10,
+  "endpoint": "https://fv.sdniu.top/data"
+}

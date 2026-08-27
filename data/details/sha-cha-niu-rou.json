@@ -1,0 +1,122 @@
+{
+  "id": "sha-cha-niu-rou",
+  "name": "沙茶牛肉",
+  "description": "沙茶酱爆香打底，牛肉滑嫩，洋葱焦甜，咸香下饭的经典快炒。",
+  "stats": {
+    "prep_time": 0,
+    "cook_time": 0,
+    "difficulty": 0
+  },
+  "created_at": "2026-08-27T13:13:37.045123254+08:00",
+  "updated_at": "2026-08-27T20:45:25.584656468+08:00",
+  "tags": [
+    "热菜",
+    "下饭",
+    "快手"
+  ],
+  "kitchenware": [
+    "炒锅"
+  ],
+  "ingredients": {
+    "main": [],
+    "side": []
+  },
+  "seasonings": [],
+  "steps": [],
+  "media": {
+    "cover": "",
+    "images": []
+  },
+  "versions": [
+    {
+      "name": "经典版",
+      "ingredients": {
+        "main": [
+          {
+            "name": "牛肉",
+            "amount": "300g"
+          },
+          {
+            "name": "洋葱",
+            "amount": "半颗"
+          },
+          {
+            "name": "葱",
+            "amount": "1根"
+          },
+          {
+            "name": "蒜",
+            "amount": "若干（蒜米）"
+          }
+        ],
+        "side": [
+          {
+            "name": "淀粉",
+            "amount": "适量（腌肉用）"
+          },
+          {
+            "name": "胡椒粉",
+            "amount": "适量（腌肉用）"
+          },
+          {
+            "name": "生油",
+            "amount": "适量（腌肉+炒制用）"
+          },
+          {
+            "name": "小苏打",
+            "amount": "小半勺（可选，炉火不够旺时切片后加水腌制）"
+          }
+        ]
+      },
+      "seasonings": [
+        {
+          "name": "酱油（生抽）",
+          "amount": "1勺（出锅前沿锅边淋入）"
+        },
+        {
+          "name": "老抽",
+          "amount": "适量（腌肉用）"
+        },
+        {
+          "name": "皇牌沙茶酱",
+          "amount": "1~2勺（爆香用）"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "description": "备菜：牛肉切薄片，加入老抽、胡椒粉抓匀，加入淀粉抓匀，加入生油抓匀（炉不够旺的话可在切片后先腌小半勺小苏打+水）"
+        },
+        {
+          "order": 2,
+          "description": "备菜：洋葱切丝，5mm左右"
+        },
+        {
+          "order": 3,
+          "description": "备菜：葱切葱花，蒜切蒜末"
+        },
+        {
+          "order": 4,
+          "description": "炒制：热锅冷油放入洋葱丝，炒至洋葱丝起焦、变软后盛出，留底油"
+        },
+        {
+          "order": 5,
+          "description": "炒制：热锅，视锅中油量添油，冷油状态放入1~2勺沙茶酱、蒜末爆香"
+        },
+        {
+          "order": 6,
+          "description": "炒制：油热放入牛肉快速翻炒，基本变色后快速沿锅边放入一勺生抽，放入洋葱丝、葱花，炒匀出锅"
+        }
+      ],
+      "media": {
+        "cover": "images/sha-cha-niu-rou/沙茶牛肉-cover.jpg",
+        "images": []
+      },
+      "stats": {
+        "prep_time": 10,
+        "cook_time": 10,
+        "difficulty": 2
+      }
+    }
+  ]
+}

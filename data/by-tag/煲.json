@@ -1,0 +1,24 @@
+[
+  {
+    "id": "guang-shi-niu-nan-bao",
+    "name": "广式牛腩煲",
+    "description": "柱侯酱与花生酱调出广式经典酱香，牛腩软糯入味，砂锅收尾浓香四溢。",
+    "tags": [
+      "热菜",
+      "下饭",
+      "煲"
+    ],
+    "kitchenware": [
+      "炒锅",
+      "砂锅"
+    ],
+    "ingredients": [
+      "牛腩",
+      "螺丝椒/水果彩椒"
+    ],
+    "cover": "",
+    "prep_time": 15,
+    "cook_time": 60,
+    "difficulty": 3
+  }
+]

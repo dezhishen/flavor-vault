@@ -1,0 +1,220 @@
+[
+  {
+    "id": "chao-jue-zi-su-xia",
+    "name": "超绝紫苏虾",
+    "description": "紫苏的清香是灵魂，出锅前3分钟放紫苏沫，紫苏叶变软趴趴就入味了。虾先单独炒半熟，再和姜蒜小米辣一起炒。虾头煎出虾油是鲜味关键。",
+    "tags": [
+      "热菜",
+      "快手",
+      "下饭"
+    ],
+    "kitchenware": [
+      "炒锅"
+    ],
+    "ingredients": [
+      "虾",
+      "紫苏"
+    ],
+    "cover": "images/chao-jue-zi-su-xia/超绝紫苏虾-cover.jpg",
+    "prep_time": 10,
+    "cook_time": 10,
+    "difficulty": 2
+  },
+  {
+    "id": "dou-chi-ling-yu-chao-you-mai-cai",
+    "name": "豆豉鲮鱼炒油麦菜",
+    "description": "经典的粤式下饭菜。豆豉鲮鱼罐头的咸鲜和油脂，配上油麦菜的清甜脆嫩，大火快炒，简单又开胃。",
+    "tags": [
+      "热菜",
+      "快手",
+      "下饭"
+    ],
+    "kitchenware": [
+      "炒锅"
+    ],
+    "ingredients": [
+      "豆豉鲮鱼",
+      "油麦菜",
+      "大蒜"
+    ],
+    "cover": "images/dou-chi-ling-yu-chao-you-mai-cai/豆豉鲮鱼炒油麦菜-cover.jpg",
+    "prep_time": 5,
+    "cook_time": 5,
+    "difficulty": 1
+  },
+  {
+    "id": "guang-shi-niu-nan-bao",
+    "name": "广式牛腩煲",
+    "description": "柱侯酱与花生酱调出广式经典酱香，牛腩软糯入味，砂锅收尾浓香四溢。",
+    "tags": [
+      "热菜",
+      "下饭",
+      "煲"
+    ],
+    "kitchenware": [
+      "炒锅",
+      "砂锅"
+    ],
+    "ingredients": [
+      "牛腩",
+      "螺丝椒/水果彩椒"
+    ],
+    "cover": "",
+    "prep_time": 15,
+    "cook_time": 60,
+    "difficulty": 3
+  },
+  {
+    "id": "jian-chao-hong-tian-jiao",
+    "name": "煎炒红甜椒",
+    "description": "小火把红甜椒煎到略微起虎皮，倒入蒜香碗汁，中大火收汁到起绵密气泡，酸甜微辣，简单下饭。",
+    "tags": [
+      "热菜",
+      "下饭"
+    ],
+    "kitchenware": [
+      "炒锅"
+    ],
+    "ingredients": [
+      "红甜椒",
+      "蒜"
+    ],
+    "cover": "images/jian-chao-hong-tian-jiao/煎炒红甜椒-cover.jpg",
+    "prep_time": 0,
+    "cook_time": 0,
+    "difficulty": 2
+  },
+  {
+    "id": "jin-yin-suan-rong-jiang",
+    "name": "金银蒜蓉酱",
+    "description": "熟蒜与生蒜双拼的「金银蒜」，蒜香浓郁层次丰富，拌面、蘸料、蒸菜皆宜。",
+    "tags": [
+      "酱料",
+      "快手"
+    ],
+    "kitchenware": [
+      "炒锅"
+    ],
+    "ingredients": [
+      "蒜",
+      "香菜",
+      "小葱",
+      "大葱",
+      "洋葱"
+    ],
+    "cover": "",
+    "prep_time": 15,
+    "cook_time": 150,
+    "difficulty": 2
+  },
+  {
+    "id": "nong-jia-yi-wan-xiang",
+    "name": "农家一碗香",
+    "description": "湘式下饭经典。荷包蛋、青椒丝、肉片一锅炒，锅边淋入生抽激出酱香，简单粗暴又下饭。",
+    "tags": [
+      "热菜",
+      "下饭"
+    ],
+    "kitchenware": [
+      "炒锅"
+    ],
+    "ingredients": [
+      "鸡蛋",
+      "青辣椒",
+      "猪肉"
+    ],
+    "cover": "images/nong-jia-yi-wan-xiang/农家一碗香-cover.jpg",
+    "prep_time": 10,
+    "cook_time": 10,
+    "difficulty": 3
+  },
+  {
+    "id": "sha-cha-niu-rou",
+    "name": "沙茶牛肉",
+    "description": "沙茶酱爆香打底，牛肉滑嫩，洋葱焦甜，咸香下饭的经典快炒。",
+    "tags": [
+      "热菜",
+      "下饭",
+      "快手"
+    ],
+    "kitchenware": [
+      "炒锅"
+    ],
+    "ingredients": [
+      "牛肉",
+      "洋葱",
+      "葱",
+      "蒜"
+    ],
+    "cover": "images/sha-cha-niu-rou/沙茶牛肉-cover.jpg",
+    "prep_time": 10,
+    "cook_time": 10,
+    "difficulty": 2
+  },
+  {
+    "id": "su-cai-gao-tang",
+    "name": "素菜高汤",
+    "description": "白汤的关键是开水和煎鸡蛋；鲜味来自蟹味菇、煎蛋和白胡椒粉。味道层次：鲜味、生抽、西红柿、胡椒粉、香菜、甜玉米的自然甜味。想风味更足可用西红柿罐头代替西红柿（市面西红柿普遍一般）。其他食材可选豆腐、娃娃菜，但类似菠菜这种味道重的不行。",
+    "tags": [
+      "汤",
+      "快手",
+      "家常"
+    ],
+    "kitchenware": [
+      "炒锅",
+      "汤锅"
+    ],
+    "ingredients": [
+      "鸡蛋",
+      "蟹味菇",
+      "西红柿",
+      "甜玉米",
+      "香菜",
+      "开水"
+    ],
+    "cover": "images/su-cai-gao-tang/素菜高汤-cover.jpg",
+    "prep_time": 10,
+    "cook_time": 15,
+    "difficulty": 2
+  },
+  {
+    "id": "zheng-dan",
+    "name": "蒸蛋",
+    "description": "嫩滑蒸蛋，1:1:1 黄金配比，大火快蒸加闷制，出锅淋生抽香油。",
+    "tags": [
+      "家常",
+      "快手"
+    ],
+    "kitchenware": [
+      "蒸锅",
+      "秤"
+    ],
+    "ingredients": [
+      "鸡蛋"
+    ],
+    "cover": "images/zheng-dan/蒸蛋-cover.jpg",
+    "prep_time": 3,
+    "cook_time": 12,
+    "difficulty": 3
+  },
+  {
+    "id": "zi-ran-tu-dou-niu-rou",
+    "name": "孜然土豆牛肉",
+    "description": "土豆丁小火煎至两面金黄，牛肉粒大火快炒锁住汁水，再用孜然和辣椒面激发香味，撒上熟芝麻和葱花，香辣下饭。",
+    "tags": [
+      "热菜",
+      "下饭"
+    ],
+    "kitchenware": [
+      "炒锅"
+    ],
+    "ingredients": [
+      "牛肉",
+      "土豆"
+    ],
+    "cover": "",
+    "prep_time": 5,
+    "cook_time": 15,
+    "difficulty": 2
+  }
+]

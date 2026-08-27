@@ -1,0 +1,155 @@
+{
+  "id": "guang-shi-niu-nan-bao",
+  "name": "广式牛腩煲",
+  "description": "柱侯酱与花生酱调出广式经典酱香，牛腩软糯入味，砂锅收尾浓香四溢。",
+  "stats": {
+    "prep_time": 0,
+    "cook_time": 0,
+    "difficulty": 0
+  },
+  "created_at": "2026-08-27T13:48:54.671510373+08:00",
+  "updated_at": "2026-08-27T13:48:54.671510373+08:00",
+  "tags": [
+    "热菜",
+    "下饭",
+    "煲"
+  ],
+  "kitchenware": [
+    "炒锅",
+    "砂锅"
+  ],
+  "ingredients": {
+    "main": [],
+    "side": []
+  },
+  "seasonings": [],
+  "steps": [],
+  "media": {
+    "cover": "",
+    "images": []
+  },
+  "versions": [
+    {
+      "name": "经典版",
+      "ingredients": {
+        "main": [
+          {
+            "name": "牛腩",
+            "amount": "300g（首选牛坑腩/崩沙）"
+          },
+          {
+            "name": "螺丝椒/水果彩椒",
+            "amount": "若干"
+          }
+        ],
+        "side": [
+          {
+            "name": "姜",
+            "amount": "1块（切片）"
+          },
+          {
+            "name": "葱",
+            "amount": "1根（切段）"
+          },
+          {
+            "name": "香菜",
+            "amount": "1根（切段）"
+          },
+          {
+            "name": "蒜",
+            "amount": "若干（拍扁）"
+          },
+          {
+            "name": "开水或高汤",
+            "amount": "适量（基本没过食材）"
+          }
+        ]
+      },
+      "seasonings": [
+        {
+          "name": "酱油",
+          "amount": "2勺（锅边淋入）"
+        },
+        {
+          "name": "老抽",
+          "amount": "适量（腌牛腩用）"
+        },
+        {
+          "name": "胡椒粉",
+          "amount": "适量（腌牛腩用）"
+        },
+        {
+          "name": "小苏打",
+          "amount": "1~2勺（腌牛腩用，加少许水抓匀）"
+        },
+        {
+          "name": "柱侯酱",
+          "amount": "2勺"
+        },
+        {
+          "name": "花生酱",
+          "amount": "1勺"
+        },
+        {
+          "name": "八角",
+          "amount": "2粒"
+        },
+        {
+          "name": "香叶",
+          "amount": "2片"
+        }
+      ],
+      "steps": [
+        {
+          "order": 1,
+          "description": "备菜：煮一壶开水，有条件的话备沸腾的高汤"
+        },
+        {
+          "order": 2,
+          "description": "备菜：牛腩清洗表面血水后擦干水分，切2~3cm左右大小，加入1~2勺小苏打、少许水抓匀，加入老抽、胡椒粉抓匀"
+        },
+        {
+          "order": 3,
+          "description": "备菜：姜切片、香菜切段、葱切段、蒜拍扁"
+        },
+        {
+          "order": 4,
+          "description": "备菜：螺丝椒/水果彩椒切滚刀块"
+        },
+        {
+          "order": 5,
+          "description": "烹饪：热锅冷油，大火下入姜片，炸至半焦后加入蒜爆香"
+        },
+        {
+          "order": 6,
+          "description": "烹饪：加入2勺柱侯酱、一勺花生酱炒匀炒香"
+        },
+        {
+          "order": 7,
+          "description": "烹饪：加入牛腩块翻炒至起焦，锅边加入两勺酱油翻炒"
+        },
+        {
+          "order": 8,
+          "description": "烹饪：加入八角、香叶，冲入开水或高汤，基本没过食材即可，煮沸后中火炖煮45min~60min（或高压锅压20min）"
+        },
+        {
+          "order": 9,
+          "description": "烹饪：加入螺丝椒/水果彩椒滚刀块翻匀，大火收至汤汁浓稠"
+        },
+        {
+          "order": 10,
+          "description": "烹饪：转至砂锅，加入葱段、香菜段，大火焖煮1min"
+        }
+      ],
+      "media": {
+        "cover": "",
+        "images": []
+      },
+      "stats": {
+        "prep_time": 15,
+        "cook_time": 60,
+        "difficulty": 3
+      }
+    }
+  ]
+}

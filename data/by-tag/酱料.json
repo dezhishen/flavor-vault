@@ -1,0 +1,25 @@
+[
+  {
+    "id": "jin-yin-suan-rong-jiang",
+    "name": "金银蒜蓉酱",
+    "description": "熟蒜与生蒜双拼的「金银蒜」，蒜香浓郁层次丰富，拌面、蘸料、蒸菜皆宜。",
+    "tags": [
+      "酱料",
+      "快手"
+    ],
+    "kitchenware": [
+      "炒锅"
+    ],
+    "ingredients": [
+      "蒜",
+      "香菜",
+      "小葱",
+      "大葱",
+      "洋葱"
+    ],
+    "cover": "",
+    "prep_time": 15,
+    "cook_time": 150,
+    "difficulty": 2
+  }
+]
